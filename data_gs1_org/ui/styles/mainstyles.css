@@ -1,0 +1,132 @@
+@import url(https://cloud.typography.com/6247692/752844/css/fonts.css);
+
+body {
+    font-family: "Gotham SSm A", "Gotham SSm B", Verdana, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #002c6c;
+}
+
+#corporateHead {
+    background-color:#eee;
+    color: #454545;
+    height:100px;
+    padding: 0 2em;
+}
+
+#logo {
+    width: 100px;
+    float:left;
+}
+
+#strapline {
+    text-align:right;
+    position: relative;
+    top:40px;
+}
+
+header dl {
+    font-size:smaller;
+}
+
+header > hr {
+    background-color:#EF6334;
+    height: 4px;
+}
+
+header #versionDate {
+    font-weight: normal;
+    font-size:smaller;
+}
+
+section#legal {
+    font-size:smaller;
+}
+
+figure figcaption {
+    font-style:italic;
+    font-size:smaller;
+    text-align:center;
+    margin: .5em 0;
+    font-family: Verdana, sans-serif;
+}
+
+figure figcaption em {
+    font-style: normal;
+}
+
+dd {
+    margin-bottom:1em;
+}
+
+dfn {
+    font-style: normal;
+    font-weight: bold;
+}
+
+.comment {
+    background-color: yellow;
+}
+
+
+/* following defs handle insertion of numbers for paragraphs */
+
+p {
+    position:relative;
+}
+
+span.lineNo {
+    font-size: small;
+    position:absolute;
+    left: -2em;
+    color: #999;
+    visibility: visible;
+}
+
+span.lineNoHide {
+    visibility: hidden;
+}
+
+p#lineNoToggleP {
+    text-align: right;
+    font-size:smaller;
+    font-style:italic;
+}
+
+/* styles for external links (uses icon from Wikipedia) */
+a.external {
+    background-position: center right;
+    background-repeat: no-repeat;
+    background-image: url(https://id.gs1.org/styles/external-link-ltr-icon.png);
+    padding-right: 13px;
+}
+
+/* GS1 tables */
+
+table.gs1Table {
+    border-collapse:collapse;
+    width:100%;
+    max-width:800px;
+}
+
+table.gs1Table th, table.gs1Table td {
+    font-weight: normal;
+    text-align: left;
+    padding: 0.3em;
+    border: thin solid black;
+}
+
+table.gs1Table tr th {
+    background-color: #002c6c;
+    color: white;
+}
+
+/* corporate policy requires that figure and table captions are above the thing. */
+figure {
+    display: table;
+}
+figcaption {
+    display: table-caption;
+    caption-side: top;
+}

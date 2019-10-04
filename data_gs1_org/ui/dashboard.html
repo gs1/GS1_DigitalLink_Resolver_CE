@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="styles/mainstyles.css" />
+    <style>
+        table {
+            border-collapse: collapse;
+            border-spacing: 0;
+            width: 100%;
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 16px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2
+        }
+    </style>
+    <title>Resolver Dashboard</title>
+    <script src="resolver.js"></script>
+</head>
+<body>
+<table>
+    <tr>
+        <td>
+            <img src="gs1resolverlogo593x311.png" height="100" alt="GS1 Resolver Logo"/>
+            <img id="img_company_logo" height="100"/>
+        </td>
+    </tr>
+
+</table>
+
+<h3 id="h3_company_header"></h3>
+<table>
+    <tr>
+        <td style="background-color: darkblue ">
+            <button id="new_uri_request_button" onclick="GS1URI_DASHBOARD.NewURIRequest();">ADD NEW<br />RESOLVER ENTRY</button>
+        </td>
+        <td>
+            Search / Filter:
+        </td>
+        <td>
+            Exact GS1 Key Value: <input type="text" id="text_search_gs1_key_value">
+        </td>
+        <td>
+            Within Item Description: <input type="text" id="text_search_item_description">
+        </td>
+        <td>
+            <button id="search_button" onclick="GS1URI_DASHBOARD.Search();">Search</button>
+        </td>
+        <td>
+            <button id="clear_search_button" onclick="GS1URI_DASHBOARD.ClearSearchBoxesAndRestoreDefaultResults();">Clear</button>
+        </td>
+        <td style="background-color: darkblue ">
+            <button id="nlogout_button" onclick="GS1URI_COMMON.Logout();">LOGOUT<br />From Resolver</button>
+        </td>
+    </tr>
+</table>
+<table id="table_uri_list">
+
+</table>
+<table>
+    <tr>
+        <td>
+            <button id="buttonPreviousGroup" onclick="GS1URI_DASHBOARD.GetPreviousListGroup()" value="<<"><<</button>
+        </td>
+        <td>
+            <button id="buttonNextGroup" onclick="GS1URI_DASHBOARD.GetNextListGroup()" value=">>">>></button>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "nick/gs1resolver_ui_api",
+  "description": "GS1 Resolver UI and API service",
+  "type": "project",
+  "authors": [
+    {
+      "name": "Nick Lansley",
+      "email": "nick@lansley.com"
+    }
+  ],
+  "require": {
+    "ext-json": "*",
+    "ext-mongodb": "*",
+    "mongodb/mongodb": "^1.4",
+    "ext-intl": "*",
+    "ext-curl": "*"
+  }
+}

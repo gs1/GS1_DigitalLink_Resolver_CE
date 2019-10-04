@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GS1 URI Resolver</title>
+    <link rel="stylesheet" type="text/css" href="styles/mainstyles.css" />
+    <script src="resolver.js"></script>
+    <style>
+        tableMainMenu {
+            border-collapse: collapse;
+            border-spacing: 0;
+            width: 100%;
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 16px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2
+        }
+    </style>
+</head>
+<body>
+<img src="gs1resolverlogo593x311.png" height="311" width="593" alt="GS1 Resolver Logo"/>
+<table id="table_login">
+    <tr>
+        <td colspan="2" id="resolver_ui_app_version"></td>
+    </tr>
+    <tr>
+        <td>E-mail:</td>
+        <td><input type="text" id="email"></td>
+    </tr>
+    <tr>
+        <td>Password:</td>
+        <td><input type="password" id="password"></td>
+    </tr>
+    <tr>
+        <td>&nbsp&nbsp;</td>
+        <td><input type="button" onclick="GS1URI_HOMEPAGE.Login()" value="Login to your account"></td>
+    </tr>
+    </table>
+    <table id="tableGreetings">
+        <tr>
+            <td colspan="2" id="td_message"></td>
+        </tr>
+    </table>
+    <table class="tableMainMenu" id="table_menu">
+    </table>
+    <img id="wait_animation" src="wait.gif" style="visibility: hidden">
+</body>
+</html>

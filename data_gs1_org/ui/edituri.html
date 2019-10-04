@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<html lang="en">
+<head>
+    <title>Edit Screen</title>
+    <style>
+        th, td {
+            padding: 5px;
+            text-align: left;
+            border: #ffffff !important;
+        }
+
+        .toggle-content {
+            display: none;
+        }
+
+        .toggle-content.is-visible {
+            display: block;
+        }
+    </style>
+    <link rel="stylesheet" type="text/css" href="https://id.gs1.org/styles/mainstyles.css" />
+    <script src="resolver.js"></script>
+</head>
+<body>
+<img src="gs1resolverlogo300x157.png" height="157" width="300" alt="GS1 Resolver Logo"/>
+<div style="background-color: aliceblue;">
+    <table id="full_uri_request_table">
+        <tr>
+            <td>Item Description: <input type="text" id="text_item_description" size="100"  onblur="GS1URI_EDITURI.SetUnsavedChangesToTrue()"></td>
+            <td>Include in Sitemap? <input type="checkbox" id="checkbox_include_in_sitemap" onblur="GS1URI_EDITURI.SetUnsavedChangesToTrue()"></td>
+        </tr>
+        <tr>
+            <td>
+                <table id="uri_table">
+                    <tr>
+                        <td>Resolver Reference URI: </td>
+                        <td>https://id.gs1.org/</td>
+                        <td>
+                            <select id="select_gs1_key_code" autocomplete="off" onchange="GS1URI_EDITURI.SetGS1KeyComponentsButtons()" onblur="GS1URI_EDITURI.SaveRequestURI()">
+                            </select>
+                        </td>
+                        <td>/</td>
+                        <td><input type="text" size="30" id="text_gs1_key_value" name="text_gs1_key_value" value="" onblur="GS1URI_EDITURI.CheckGS1KeyValueIntegrity()"></td>
+                        <td id="td_uri_prefix_1" style="visibility: hidden">/</td>
+                        <td id="td_uri_suffix_1" style="visibility: hidden"></td>
+                        <td id="td_uri_prefix_2" style="visibility: hidden">/</td>
+                        <td id="td_uri_suffix_2" style="visibility: hidden"></td>
+                        <td id="td_uri_prefix_3" style="visibility: hidden">/</td>
+                        <td id="td_uri_suffix_3" style="visibility: hidden"></td>
+                        <td id="td_uri_prefix_4" style="visibility: hidden">/</td>
+                        <td id="td_uri_suffix_4" style="visibility: hidden"></td>
+                    </tr>
+                </table>
+            </td>
+            <td id="td_query_string" style="visibility: hidden">
+                ?&nbsp; Query Strings are 'passed through' by the resolver
+            </td>
+        </tr>
+    </table>
+    <table>
+        <tr id="tr_uri_buttons">
+        </tr>
+    </table>
+</div>
+<p>&nbsp;</p>
+<div style="background-color: aliceblue; padding: 5px">
+    <table id="full_uri_response_table">
+    </table>
+    <table id="new_uri_response_table">
+    </table>
+    <table>
+        <tr>
+            <td><input type="button" class="toggle-content is-visible" id="button_add_new_dest_boxes" onclick="GS1URI_EDITURI.SaveRequestURI();GS1URI_EDITURI.CreateNewDestinationURIEntryBoxes();" value="Add New Destination"></td>
+        </tr>
+    </table>
+</div>
+<p>&nbsp;</p>
+<div style="background-color: lightpink">
+    <table>
+        <tr>
+            <td colspan="3">Status:
+                <span id="text_status"></span>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">Created:
+                <span id="text_date_created"></span>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">Last Updated:
+                <span id="text_date_last_updated"></span>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">Message from Resolver:
+                <span id="message"></span>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">URI Test every 10 seconds:
+                <span id="uriToTest"></span>
+                <span id="uriTestResult"></span>
+            </td>
+        </tr>
+        <tr>
+            <td><input type="button" id="button_back_to-Dashboard" onclick="GS1URI_EDITURI.BackToDashboard()" value="<< Back To Dashboard"></td>
+            <td><input type="button" id="button_save_changes" onclick="GS1URI_EDITURI.SaveRequestURI();GS1URI_EDITURI.SaveAllResponses()" value="Save Changes"></td>
+            <td><input type="button" id="button_activate_or_suspend_uri" onclick="GS1URI_EDITURI.SuspendURI()" value="Suspend this URI"></td>
+            <td><input type="button" id="button_delete_uri" onclick="GS1URI_EDITURI.DeleteURI()" value="Delete This URI"></td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en-GB" xml:lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <title id="pagetitle">GS1 Resolver</title>
+    <meta name="viewport" content="width=device-width"/>
+    <link rel="stylesheet" href="https://id.gs1.org/styles/mainstyles.css"/>
+    <style>
+        #maintable {
+            font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        #maintable td, #maintable th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        #maintable tr:nth-child(even){background-color: #f2f2f2;}
+
+        #maintable tr:hover {background-color: #ddd;}
+
+        #maintable th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+    <script type="application/ld+json" id="resolverDoc">
+        [resolver_document]
+    </script>
+    <script>
+        function showBasicProductInformation()
+        {
+            let resolverDoc = JSON.parse(document.getElementById("resolverDoc").innerHTML);
+            let baseURI = resolverDoc[Object.keys(resolverDoc)[0]];
+
+            showBasePageLink(baseURI);
+            parseAndDisplayData(resolverDoc, baseURI);
+
+            let firstEntry = resolverDoc[Object.keys(resolverDoc)[1]];
+            document.title = firstEntry.item_name;
+            document.getElementById("headerTitle").innerText = firstEntry.item_name;
+            document.getElementById("pagetitle").innerText = firstEntry.item_name;
+        }
+
+        function showBasePageLink(baseURI)
+        {
+            let linkURL = "https://id.gs1.org" + baseURI;
+            let aLink = document.getElementById("a_base_page_link");
+            aLink.href = linkURL;
+            aLink.innerHTML = linkURL;
+        }
+
+        function appendToHTMLTable(table, line, colSpan)
+        {
+            let tr = document.createElement("tr");
+            let td = document.createElement("td");
+            td.colSpan = colSpan;
+            td.innerHTML = line;
+            tr.appendChild(td);
+            table.appendChild(tr);
+        }
+
+        function parseAndDisplayData(resolverDoc, baseURI)
+        {
+            //We'll display this in a table with the 'main' section
+            let main = document.getElementById("main");
+            let table = document.createElement("table");
+            table.id = "maintable";
+
+            for (let key = 1;
+                 key < Object.keys(resolverDoc).length;
+                 key++)
+            {
+                //Show this URI link
+                appendToHTMLTable(table, "&nbsp;", 3);
+                appendToHTMLTable(table, "<b>Variant URI: <a href='https://id.gs1.org" + baseURI + Object.keys(resolverDoc)[key] + "'>https://id.gs1.org" + baseURI + Object.keys(resolverDoc)[key] + "</a></b>", 3);
+
+                //Show item name
+                appendToHTMLTable(table, "<b>Variant Product Name: <i>" + resolverDoc[Object.keys(resolverDoc)[key]].item_name + "</i></b>", 1);
+
+
+                let responses = resolverDoc[Object.keys(resolverDoc)[key]].responses;
+                for(let response in responses)
+                {
+                    if(responses.linktype !== undefined)
+                    {
+                        for(let linkTypeName in responses.linktype)
+                        {
+                            appendToHTMLTable(table, "LinkType: " + linkTypeName, 1);
+                            let thisLinkType = responses.linktype[linkTypeName];
+                            if (thisLinkType.lang !== undefined)
+                            {
+                                for (let langName in
+                                    thisLinkType.lang)
+                                {
+                                    appendToHTMLTable(table, " >> Language: " + langName, 1);
+                                    let thisLang = thisLinkType.lang[langName];
+                                    if (thisLang.context !== undefined)
+                                    {
+                                        for (let contextName in
+                                            thisLang.context)
+                                        {
+                                            appendToHTMLTable(table, " >> >> Context: " + contextName, 1);
+                                            let thisContext = thisLang.context[contextName];
+                                            if (thisContext.mime_type !== undefined)
+                                            {
+                                                for (let mimeTypeName in
+                                                    thisContext.mime_type)
+                                                {
+                                                    appendToHTMLTable(table, " >> >> >> Document Type: " + mimeTypeName, 1);
+                                                    let thisDestination = thisContext.mime_type[mimeTypeName];
+                                                    appendToHTMLTable(table, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Link: " + thisDestination.link, 1);
+                                                    appendToHTMLTable(table, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Title: " + thisDestination.title, 1);
+                                                    appendToHTMLTable(table, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FWQS: " + thisDestination.fwqs, 1);
+                                                    appendToHTMLTable(table, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;URI: " + thisDestination.linktype_uri, 1);
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                }
+                                ``
+                            }
+                        }
+                    }
+                }
+            }
+
+            main.appendChild(table);
+        }
+
+        // Windows Onload
+        window.onload = function ()
+        {
+            showBasicProductInformation();
+        };
+
+    </script>
+<body>
+<div id="corporateHead">
+    <img src="https://id.gs1.org/gs1logo.png" alt="GS1 Logo" id="logo"/>
+    <p id="strapline">The Global Language of Business</p>
+</div>
+
+<header>
+    <h1 id="headerTitle"></h1>
+    <a id="a_base_page_link"></a>
+</header>
+
+<main id="main">
+</main>
+
+<footer class="resFooter">
+    <img src="https://id.gs1.org/gs1logo.png" alt="GS1 logo"/>
+    <p>Powered by <a href="https://www.gs1.org/">GS1</a></p>
+</footer>
+
+</body>
+</html>
