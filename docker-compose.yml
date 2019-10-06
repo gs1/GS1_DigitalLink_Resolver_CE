@@ -24,6 +24,7 @@ services:
 
   gs1dl_toolkit_server:
     build: './dl_toolkit_server'
+    container_name: gs1dl_toolkit_server
     restart: always
     networks:
       - gs1resolver_network

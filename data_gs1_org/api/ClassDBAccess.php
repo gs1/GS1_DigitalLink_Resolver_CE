@@ -400,7 +400,7 @@ class ClassDBAccess
     public function CheckSessionActive($sessionId) : bool
     {
         $sql = "EXEC [gs1resolver_dataentry_db].[is_session_active] '$sessionId'";
-        $response = $this->DBSelect($sql, false);
+        $response = $this->DBSelect($sql);
         return (string)$response[0]['active'] === 'Y';
     }
 

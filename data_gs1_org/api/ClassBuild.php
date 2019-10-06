@@ -68,7 +68,7 @@ class ClassBuild
 
 
 
-                    if($uriRequest['marked_for_deletion'] === 0)
+                    if($uriRequest['flagged_for_deletion'] === 0)
                     {
                         $this->BUILD_UriRecord($uriRequest, $nextGS1KeyCodeAndValueFoundFlag);
                     }
