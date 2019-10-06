@@ -80,7 +80,7 @@ Make sure that you maintain the syntax-correctness of the JSON format.
       </pre>
  If not, review the errors and correct the connection strings in the repository's config/api.ini file. See below for info on stopping the container, adjusting files, and rebuilding the image. We'll continue as if all was well, but you can jump down the page to the Troubleshooting section.
 7. The SQL Server script that you ran to create the database also added a test account that you can use to login now. Take your browser to <pre>http://localhost:8080/ui</pre>
-...and login using fake email address <pre>sansa.starkw@gs1westeros.com</pre> with this exact password: <pre>Winteriscoming</pre> This account has global administrator capability, which we'll find useful later. What is important is that your instance of this application is working.
+...and login using fake email address <pre>sansa.stark@gs1westeros.com</pre> with this exact password: <pre>Winteriscoming</pre> This account has global administrator capability, which we'll find useful later. What is important is that your instance of this application is working.
 8. To shut down the container, we need to interrupt the docker run command line (press Ctrl-C to exit to terminal prompt - the container will remain running). Now type this command: <pre>docker container list</pre> which lists the one running container, like this (your list will have different values): <pre>
 CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                            PORTS                  NAMES
 833884bd7575        gs1resolver_ui_api       "/usr/sbin/apache2ct…"   5 seconds ago       Up 4 seconds (health: starting)   0.0.0.0:8080->80/tcp   sleepy_neumann</pre> 

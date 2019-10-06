@@ -1,0 +1,61 @@
+version: "3.5"
+
+services:
+  gs1resolver_dataentry_db:
+    build: './gs1resolver-dataentry-db'
+    container_name: gs1resolver_dataentry_db
+    volumes:
+      - gs1resolver_datentry_volume:/gs1resolver_data
+    restart: always
+    networks:
+      - gs1resolver_network
+
+  gs1resolver_document_db:
+    image: mongo:4.2-bionic
+    container_name: gs1resolver_document_db
+    restart: always
+    volumes:
+      - gs1resolver_document_volume:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: gs1resolver
+      MONGO_INITDB_ROOT_PASSWORD: gs1resolver
+    networks:
+      - gs1resolver_network
+
+  gs1dl_toolkit_server:
+    build: './dl_toolkit_server'
+    restart: always
+    networks:
+      - gs1resolver_network
+
+  data_gs1_org:
+    build: './data_gs1_org'
+    container_name: data_gs1_org
+    depends_on:
+      - gs1resolver_dataentry_db
+      - gs1resolver_document_db
+      - gs1dl_toolkit_server
+    restart: always
+    ports:
+      - "8080:80"
+    networks:
+      - gs1resolver_network
+
+  id_gs1_org:
+    build: './id_gs1_org'
+    container_name: id_gs1_org
+    depends_on:
+      - gs1resolver_document_db
+    restart: always
+    ports:
+      - "9090:80"
+    networks:
+      - gs1resolver_network
+
+volumes:
+  gs1resolver_datentry_volume: {}
+  gs1resolver_document_volume: {}
+
+networks:
+  gs1resolver_network:
+    name: gs1resolver_network

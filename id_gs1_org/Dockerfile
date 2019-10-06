@@ -20,10 +20,6 @@ RUN apt-get -y update
 RUN apt-get -y install apt-utils
 RUN apt-get -y install curl dos2unix apt-transport-https libssl-dev pkg-config zlib1g-dev libicu-dev g++ dos2unix tzdata
 
-# We need to install node.js which will run the digital toolkit library:
-RUN curl -sL https://raw.githubusercontent.com/nodesource/distributions/master/deb/setup_12.x | bash -
-RUN apt-get install -y nodejs
-
 # Now we'll use PECL (PHP Extension Community Library) to install MongoDB, the MongoDB Database driver for PHP.
 # When this section of the Dockerfile runs, you will see a lot of downloading and compiling of source code into binary
 # libraries. Everything is done for us, but it will take a minute or two.
@@ -67,18 +63,11 @@ RUN mkdir resolver
 COPY resolver /var/www/resolver/
 RUN find /var/www/resolver/* -type f -print0 | xargs -0 dos2unix
 
-# Copy the digital ink toolkit application and convert from Windows to Linux format
-RUN mkdir digitallink_toolkit
-COPY digitallink_toolkit /var/www/digitallink_toolkit/
-RUN find /var/www/digitallink_toolkit/* -type f -print0 | xargs -0 dos2unix
-
 # Copy the config file. Note that this file is stored outside the directories
 # used by the web server so cannot be accessed publically. The public directories
 # are defined in Apache config file  "docker_config/gs1resolver.conf"
 RUN mkdir config
 COPY config /var/www/config/
-
-
 
 # Now we need to set the internal digitallink toolkit servers running whenever a container is run from
 # this image. These will be used as a pool by Resolver to decode the Digital Links using node.js.

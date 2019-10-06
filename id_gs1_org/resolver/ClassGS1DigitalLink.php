@@ -8,8 +8,12 @@
 
 class ClassGS1DigitalLink
 {
+    private $gs1dl_toolkit_server_domain;
+
     public function __construct()
     {
+        $ini = parse_ini_file('/var/www/config/gs1resolver.ini');
+        $this->gs1dl_toolkit_server_domain = $ini['gs1dl_toolkit_server_domain'];
     }
 
 
@@ -19,26 +23,31 @@ class ClassGS1DigitalLink
         return $response;
     }
 
-
+    /**
+     * @param $uri
+     * @return bool|string
+     */
     private function executeURL($uri)
     {
-        $errorOccured = false;
+        $errorOccurred = false;
         $curlErrorMessage = '';
+        $jsonResponse = '';
         $curl = curl_init();
 
         if (!$curl)
         {
             error_log('ERROR: Could not set up CURL to access digital link service!');
-            $errorOccured = true;
+            $errorOccurred = true;
         }
         else
         {
-            //choose a random port number between 3000 and 3009
-            $calldlURL = "http://127.0.0.1:" . rand(3000, 3009) . $uri;
-            // Set the file URL to fetch through cURL
-            file_put_contents('php://stderr', $calldlURL . PHP_EOL);
+            //set digital link toolkit domain and choose a random port number between 3000 and 3009
+            $callURL = $this->gs1dl_toolkit_server_domain . ":" . rand(3000, 3009) . $uri;
 
-            curl_setopt($curl, CURLOPT_URL, $calldlURL);
+            // Set the file URL to fetch through cURL
+            file_put_contents('php://stderr', $callURL . PHP_EOL);
+
+            curl_setopt($curl, CURLOPT_URL, $callURL);
 
             // Fail the cURL request if response code = 400 (like 404 errors)
             curl_setopt($curl, CURLOPT_FAILONERROR, true);
@@ -64,60 +73,19 @@ class ClassGS1DigitalLink
             // But take the opportunity to start the digital link servers
             if (curl_errno($curl))
             {
-                $errorOccured = true;
+                $errorOccurred = true;
                 $curlErrorMessage = curl_error($curl);
             }
             // close cURL resource to free up system resources
             curl_close($curl);
         }
-        if($errorOccured)
+        if($errorOccurred)
         {
-            file_put_contents('php://stderr', "WARNING: Digital Link server on $calldlURL error: " . $curlErrorMessage . PHP_EOL);
-            $jsonResponse = $this->decodeDigitalLinkURL_usingCLI($uri, true);
-            $this->startDLWebServers();
-            //$jsonResponse = $this->executeURL($uri);
+            file_put_contents('php://stderr', "WARNING: Digital Link server on $callURL error: " . $curlErrorMessage . PHP_EOL);
+            $jsonResponse = '';
         }
         //Return the result
         return $jsonResponse;
     }
 
-
-    public function decodeDigitalLinkURL_usingCLI($url, $returnJSONFlag)
-    {
-        file_put_contents('php://stderr', "WARNING: Calling slower CLI version of Digital Link service" .  PHP_EOL);
-        $cmd = "node /var/www/digitallink_toolkit/cli.js \"$url\"";
-        $response =$this->executeCLI($cmd);
-        if($returnJSONFlag)
-        {
-            return $response;
-        }
-        return json_decode($response);
-    }
-
-
-    private function startDLWebServers()
-    {
-        file_put_contents('php://stderr', "UPDATE: Starting Digital Link Toolkit Servers" .  PHP_EOL);
-        $cmd = "/bin/bash /var/www/digitallink_toolkit/digilink_toolkit_servers_start.sh > /dev/null 2>/dev/null &";
-        $response = $this->executeCLI($cmd);
-        file_put_contents('php://stderr', "$response" . PHP_EOL);
-        file_put_contents('php://stderr', "UPDATE: Digital Link Toolkit Servers running" .  PHP_EOL);
-    }
-
-
-
-    private function executeCLI($cmd)
-    {
-        file_put_contents('php://stderr', "Digital Link COMMAND: $cmd" . PHP_EOL);
-
-        $output = shell_exec($cmd);
-        file_put_contents('php://stderr', "Digital Link  OUTPUT: $output" . PHP_EOL);
-
-        if($output === null)
-        {
-            return '{}';
-        }
-        file_put_contents('php://stderr', 'OUTPUT IS: ' . print_r($output, true) .  PHP_EOL);
-        return $output;
-    }
 }
