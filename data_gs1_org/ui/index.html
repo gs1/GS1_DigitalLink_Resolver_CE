@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>GS1 URI Resolver</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="styles/mainstyles.css" />
     <script src="resolver.js"></script>
     <style>
@@ -12,43 +13,53 @@
             width: 100%;
             border: 1px solid #ddd;
         }
+        .centered_table {
 
-        th, td {
-            text-align: left;
-            padding: 16px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-left: -450px;
+            margin-top: -200px;
         }
 
-        tr:nth-child(even) {
-            background-color: #f2f2f2
-        }
     </style>
 </head>
 <body>
-<img src="gs1resolverlogo593x311.png" height="311" width="593" alt="GS1 Resolver Logo"/>
-<table id="table_login">
+<table class="centered_table">
     <tr>
-        <td colspan="2" id="resolver_ui_app_version"></td>
+        <td>
+            <img src="GS1_Digital_Link_Resolver_Web_Banner_Large_Rectangle_336x280px_2016-02-12.png" height="280" width="336" alt="GS1 Resolver Logo"/>
+        </td>
+        <td>
+            <table style="border: 5px solid #f26334; border-spacing: 36px" id="table_login">
+                <tr>
+                    <td colspan="2" id="resolver_ui_app_version"></td>
+                </tr>
+                <tr>
+                    <td>E-mail:</td>
+                    <td><input type="text" size="40" id="email"></td>
+                </tr>
+                <tr>
+                    <td>Password:</td>
+                    <td><input type="password" size="40" id="password"></td>
+                </tr>
+                <tr>
+                    <td>&nbsp&nbsp;</td>
+                    <td><input type="button" onclick="GS1URI_HOMEPAGE.Login()" value="Login to your account"></td>
+                </tr>
+            </table>
+            <table id="tableGreetings">
+                <tr>
+                    <td colspan="2" id="td_message"></td>
+                </tr>
+            </table>
+            <table class="tableMainMenu" id="table_menu">
+            </table>
+        </td>
     </tr>
-    <tr>
-        <td>E-mail:</td>
-        <td><input type="text" size="40" id="email"></td>
-    </tr>
-    <tr>
-        <td>Password:</td>
-        <td><input type="password" size="40" id="password"></td>
-    </tr>
-    <tr>
-        <td>&nbsp&nbsp;</td>
-        <td><input type="button" onclick="GS1URI_HOMEPAGE.Login()" value="Login to your account"></td>
-    </tr>
-    </table>
-    <table id="tableGreetings">
-        <tr>
-            <td colspan="2" id="td_message"></td>
-        </tr>
-    </table>
-    <table class="tableMainMenu" id="table_menu">
-    </table>
+</table>
+
+
     <img id="wait_animation" src="wait.gif" style="visibility: hidden">
 </body>
 </html>

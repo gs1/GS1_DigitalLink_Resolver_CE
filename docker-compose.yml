@@ -2,7 +2,7 @@ version: "3.5"
 
 services:
   gs1resolver_dataentry_db:
-    build: './gs1resolver-dataentry-db'
+    build: './gs1resolver_dataentry_db'
     container_name: gs1resolver_dataentry_db
     volumes:
       - gs1resolver_datentry_volume:/gs1resolver_data
@@ -11,14 +11,11 @@ services:
       - gs1resolver_network
 
   gs1resolver_document_db:
-    image: mongo:4.2-bionic
+    build: './gs1resolver_document_db'
     container_name: gs1resolver_document_db
     restart: always
     volumes:
       - gs1resolver_document_volume:/data/db
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: gs1resolver
-      MONGO_INITDB_ROOT_PASSWORD: gs1resolver
     networks:
       - gs1resolver_network
 

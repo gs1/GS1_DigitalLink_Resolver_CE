@@ -1,5 +1,5 @@
 //constant values which can be altered to suit any particular implementation
-const welcome_message = "Welcome to the GS1 Resolver Data Entry Application v0.9.22 - EARLY ACCESS";
+const welcome_message = "Welcome to the GS1 Resolver Data Entry Application";
 const api_url = "/api/api.php";
 
 //page variables available to all functions
@@ -498,6 +498,10 @@ class GS1URI_HOMEPAGE
         else if(accountSession.session_id === "DB CONN FAILED")
         {
             td_message_text.innerHTML = "Sorry, we can't get a connection to the SQL database at this time.<br />Please try again later or contact your administrator for this service";
+        }
+        else if(accountSession.firstname === undefined)
+        {
+            td_message_text.innerHTML = "Sorry, we could not log you in.<br />Please check your account details and try again";
         }
         else
         {

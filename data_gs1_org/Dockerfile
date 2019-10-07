@@ -149,10 +149,10 @@ RUN chmod -R 755 /var/www/*
 
 # curl --header "Content-Type: application/json" --request POST --data '{ "command": "build", "build_auth_key": "ohf78qhrnhmrq8grnc97gc9wg7fmc79gfc9" }' https://www.example.com/api/api.php
 # NB: The build_auth_key value in either the Healthcheck or the external calling task must match the one in config/api.ini file!
-# HEALTHCHECK --interval=60s --timeout=3s --retries=3 CMD curl --header "Content-Type: application/json" --request POST --data '{ "command": "build", "build_auth_key": "ohf78qhrnhmrq8grnc97gc9wg7fmc79gfc9" }' http://localhost/api/api.php || exit 1
+HEALTHCHECK --interval=60s --timeout=3s --retries=3 CMD curl --header "Content-Type: application/json" --request POST --data '{ "command": "build", "build_auth_key": "ohf78qhrnhmrq8grnc97gc9wg7fmc79gfc9" }' http://localhost/api/api.php || exit 1
 
 # Here's a conventional healthcheck you can use instead that just makes sure the application is running OK:
-HEALTHCHECK --interval=60s --timeout=3s --retries=3 CMD curl http://localhost/api/api.php || exit 1
+# HEALTHCHECK --interval=60s --timeout=3s --retries=3 CMD curl http://localhost/api/api.php || exit 1
 
 # Finally set the apache webserver running.
 CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
