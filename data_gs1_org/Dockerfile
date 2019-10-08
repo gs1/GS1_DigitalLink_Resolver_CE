@@ -82,7 +82,7 @@ RUN locale-gen en_US.UTF-8 en_GB.UTF-8 de_DE.UTF-8 es_ES.UTF-8 fr_FR.UTF-8 it_IT
 
 # Configure apache's localhost name, so it doesn't throw a warning constantly about not having a host name.
 RUN a2enmod rewrite expires
-RUN echo "ServerName localhost" | tee /etc/apache2/conf-available/servername.conf
+RUN echo "ServerName dataentry-web-server" | tee /etc/apache2/conf-available/servername.conf
 RUN a2enconf servername
 
 # Configure apache's virtual host for the our applications 'api' and 'ui' (as well as web root)
@@ -92,7 +92,8 @@ RUN a2dissite 000-default
 RUN a2ensite resolver_ui_api.conf
 
 # Open port 80 on the container
-EXPOSE 80
+# Rmove the comment if running this container alone (not part of docker-compose)
+# EXPOSE 80
 
 # Set the working directory for Docker to start copying files from this project into the container
 WORKDIR /var/www/

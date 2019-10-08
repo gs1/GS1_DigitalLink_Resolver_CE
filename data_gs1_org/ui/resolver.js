@@ -102,7 +102,11 @@ class GS1URI_DASHBOARD
                 tr.appendChild(tdDates);
 
                 let tdActive = document.createElement("td");
-                if (uriListEntry.active === 1)
+                if(uriListEntry.flagged_for_deletion === 1)
+                {
+                    tdActive.innerText = "Deleted";
+                }
+                else if (uriListEntry.active === 1)
                 {
                     if (uriListEntry.api_builder_processed === 0)
                     {
@@ -334,14 +338,14 @@ class GS1URI_ADMIN
 
                             if (fieldUpdateable)
                             {
-                                if(key.includes("flag"))
+                                if (key.includes("flag"))
                                 {
                                     //This is a 1 or 0 value flag variable, so we'll use a radio button instead
                                     let radioPropItem = document.createElement('input');
                                     radioPropItem.type = "checkbox";
                                     radioPropItem.name = "flag_radio_group";
                                     radioPropItem.id = key + "_" + primaryKeyId;
-                                    if(item[key] === 1)
+                                    if (item[key] === 1)
                                     {
                                         radioPropItem.checked = true;
                                     }
@@ -407,9 +411,9 @@ class GS1URI_ADMIN
                     try
                     {
                         let textObjectName = keyName + "_" + primaryKeyValue;
-                        if(textObjectName.includes("flag"))
+                        if (textObjectName.includes("flag"))
                         {
-                            if(document.getElementById(textObjectName).checked)
+                            if (document.getElementById(textObjectName).checked)
                             {
                                 apiCommand[keyName] = 1;
                             }
@@ -495,17 +499,17 @@ class GS1URI_HOMEPAGE
         {
             td_message_text.innerHTML = "Sorry, we could not log you in.<br />Please check your account details and try again";
         }
-        else if(accountSession.session_id === "DB CONN FAILED")
+        else if (accountSession.session_id === "DB CONN FAILED")
         {
             td_message_text.innerHTML = "Sorry, we can't get a connection to the SQL database at this time.<br />Please try again later or contact your administrator for this service";
         }
-        else if(accountSession.firstname === undefined)
+        else if (accountSession.firstname === undefined)
         {
             td_message_text.innerHTML = "Sorry, we could not log you in.<br />Please check your account details and try again";
         }
         else
         {
-            td_message_text.innerHTML = "Welcome, " + accountSession.firstname + " " + accountSession.surname;
+            td_message_text.innerHTML = "<b>Welcome, " + accountSession.firstname + " " + accountSession.surname + "</b>";
             td_message_text.innerHTML += "<br />You last logged into this system at " + accountSession.last_login_datetime;
             sessionStorage.setItem("session", JSON.stringify(accountSession));
             page_resolverEndpointURL = accountSession.resolver_endpoint_url;
@@ -521,7 +525,7 @@ class GS1URI_HOMEPAGE
 
 
         let tableMenu = document.getElementById("table_menu");
-        tableMenu.innerHTML = "<tr><td>MAIN MENU</td></tr>";
+        tableMenu.innerHTML = '<tr><td style="background-color: #f26334; color: white">MAIN MENU</td></tr>';
 
         //Link to the product dashboard
         let tr0 = document.createElement("tr");
@@ -698,7 +702,7 @@ class GS1URI_EDITURI
             gs1_key_value: text_gs1_key_value.value,
             item_description: text_item_description.value
         };
-        
+
         if (checkbox_include_in_sitemap.checked)
         {
             apiRequest.include_in_sitemap = "1";
@@ -751,12 +755,6 @@ class GS1URI_EDITURI
         xhr.addEventListener("load", GS1URI_EDITURI.SaveRequestURI_Response, false);
         xhr.open("POST", api_url);
         xhr.send(fd);
-
-        //Now the request is added to the save queue, we can also press the 'new_uri_button' if it exists
-        if(document.getElementById("new_uri_button") !== null)
-        {
-            GS1URI_EDITURI.SaveNewDestinationURI();
-        }
     }
 
     static SaveRequestURI_Response(evt)
@@ -796,12 +794,6 @@ class GS1URI_EDITURI
 
         //Now save the change
         GS1URI_EDITURI.SaveRequestURI();
-    }
-
-
-    static DeleteURI()
-    {
-        alert("Not yet implemented");
     }
 
 
@@ -1065,7 +1057,6 @@ class GS1URI_EDITURI
     }
 
 
-
     static GetMimeTypesList()
     {
         let jsonMimeTypesListFromStorage = sessionStorage.getItem("mimetypes");
@@ -1139,8 +1130,11 @@ class GS1URI_EDITURI
     {
         let spanStatus = document.getElementById("text_status");
 
-
-        if (requestUriEntry.active === 1)
+        if (requestUriEntry.flagged_for_deletion === 1)
+        {
+            spanStatus.innerText = "Flagged for deletion";
+        }
+        else if (requestUriEntry.active === 1)
         {
             page_active_A_suspended_S = "A";
             if (requestUriEntry.api_builder_processed === 0)
@@ -1242,10 +1236,13 @@ class GS1URI_EDITURI
 
     static BackToDashboard()
     {
-        GS1URI_EDITURI.SaveRequestURI();
+        if(document.getElementById("select_gs1_key_code") !== null)
+        {
+            GS1URI_EDITURI.SaveRequestURI();
+        }
         window.location = "dashboard.html";
     }
-    
+
     static GetResponseUriData()
     {
         let apiRequest = {
@@ -1280,7 +1277,7 @@ class GS1URI_EDITURI
             {
                 //if there is a change in any of the three attributes 'linktype', 'language' or 'context', create a new header which acts to
                 //display the destinations in nested groups of context within language within linktype:
-                if(responseUriEntry.linktype !== currentLinkType)
+                if (responseUriEntry.linktype !== currentLinkType)
                 {
                     let trHeadLinkType = document.createElement("tr");
                     let tdHeadLinkType = document.createElement("td");
@@ -1291,7 +1288,7 @@ class GS1URI_EDITURI
                     currentLinkType = responseUriEntry.linktype;
                 }
 
-                if(responseUriEntry.language !== currentLanguage)
+                if (responseUriEntry.language !== currentLanguage)
                 {
                     let trHeadLanguage = document.createElement("tr");
                     let tdHeadLanguage = document.createElement("td");
@@ -1302,7 +1299,7 @@ class GS1URI_EDITURI
                     currentLanguage = responseUriEntry.language;
                 }
 
-                if(responseUriEntry.context !== currentContext)
+                if (responseUriEntry.context !== currentContext)
                 {
                     let trHeadContext = document.createElement("tr");
                     let tdHeadContext = document.createElement("td");
@@ -1313,294 +1310,293 @@ class GS1URI_EDITURI
                     currentContext = responseUriEntry.context;
                 }
 
-            let tr = document.createElement("tr");
+                let tr = document.createElement("tr");
 
-            let tdLinkType = document.createElement("td");
-            let tdFriendlyName = document.createElement("td");
-            let tdLanguage = document.createElement("td");
-            let tdDestinationURI = document.createElement("td");
-            let tdMIMEType = document.createElement("td");
-            let tdContext = document.createElement("td");
-            let tdFRQS = document.createElement("td");
-            let tdActive = document.createElement("td");
-            let tdTasks = document.createElement("td");
+                let tdLinkType = document.createElement("td");
+                let tdFriendlyName = document.createElement("td");
+                let tdLanguage = document.createElement("td");
+                let tdDestinationURI = document.createElement("td");
+                let tdMIMEType = document.createElement("td");
+                let tdContext = document.createElement("td");
+                let tdFRQS = document.createElement("td");
+                let tdActive = document.createElement("td");
+                let tdTasks = document.createElement("td");
 
-            let tdDefaultLinkType = document.createElement("td");
-            let tdDefaultLanguage = document.createElement("td");
-            let tdDefaultMIMEType = document.createElement("td");
-            let tdDefaultContext = document.createElement("td");
-
-
-
-            //First display the list of available attributes and set the 'selected'
-            //name to the one being used by this response uri entry.
-            let selectLinkType = document.createElement("select");
-            selectLinkType.id = "selectLinkType_" + responseUriEntry.uri_response_id;
-            selectLinkType.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
-
-            page_linkTypesList.forEach(
-                function (linkTypeEntry)
-                {
-                    let thisOption = document.createElement("option");
-                    thisOption.value = linkTypeEntry.linktype_reference_url;
-                    thisOption.text = "(" + linkTypeEntry.applicable_gs1_key_code + ") " + linkTypeEntry.linktype_name;
-                    thisOption.label = "(" + linkTypeEntry.applicable_gs1_key_code + ") " + linkTypeEntry.linktype_reference_url;
-                    selectLinkType.appendChild(thisOption);
-                });
-            selectLinkType.value = responseUriEntry.linktype;
-            tdLinkType.appendChild(selectLinkType);
-
-            //Set up the default linktype checkbox button
-            let checkboxDefaultLinkType = document.createElement("input");
-            checkboxDefaultLinkType.id = "checkboxDefaultLinkType_" + responseUriEntry.uri_response_id;
-            checkboxDefaultLinkType.type = "checkbox";
-            checkboxDefaultLinkType.name = "group_default_linktype_" + responseUriEntry.uri_request_id;
-            checkboxDefaultLinkType.checked = responseUriEntry.default_linktype === 1;
-            checkboxDefaultLinkType.onchange = function ()
-            {
-                GS1URI_EDITURI.CheckLinkTypeDefaultsIntegrity(this);
-            };
-            tdDefaultLinkType.appendChild(checkboxDefaultLinkType);
-
-            //Now display the friendly link name
-            let textFriendlyName = document.createElement("input");
-            textFriendlyName.type = "text";
-            textFriendlyName.id = "textFriendlyName_" + responseUriEntry.uri_response_id;
-            textFriendlyName.size = 40;
-            textFriendlyName.value = responseUriEntry.friendly_link_name;
-            textFriendlyName.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
-            tdFriendlyName.appendChild(textFriendlyName);
-            tr.appendChild(tdFriendlyName);
-
-            //Now set up the MIME types select box
-            let selectMimeType = document.createElement("select");
-            selectMimeType.id = "selectMimeType_" + responseUriEntry.uri_response_id;
-            selectMimeType.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
-
-            page_MimeTypesList.forEach(
-                function (mimeTypeEntry)
-                {
-                    let thisOption = document.createElement("option");
-                    thisOption.value = mimeTypeEntry.mime_type_value;
-                    thisOption.text = "(" + mimeTypeEntry.description + ") " + mimeTypeEntry.mime_type_value;
-                    thisOption.label = "(" + mimeTypeEntry.description + ") " + mimeTypeEntry.mime_type_value;
-                    selectMimeType.appendChild(thisOption);
-                });
-            selectMimeType.value = responseUriEntry.mime_type;
-            tdMIMEType.appendChild(selectMimeType);
+                let tdDefaultLinkType = document.createElement("td");
+                let tdDefaultLanguage = document.createElement("td");
+                let tdDefaultMIMEType = document.createElement("td");
+                let tdDefaultContext = document.createElement("td");
 
 
-            let checkboxDefaultMIMEType = document.createElement("input");
-            checkboxDefaultMIMEType.id = "checkboxDefaultMIMEType_" + responseUriEntry.uri_response_id;
-            checkboxDefaultMIMEType.type = "radio";
-            checkboxDefaultMIMEType.name = "group_default_" + window.btoa(responseUriEntry.linktype) +
-                                                              window.btoa(responseUriEntry.language) +
-                                                              window.btoa(responseUriEntry.context);
-            checkboxDefaultMIMEType.checked = responseUriEntry.default_mime_type === 1;
-            tdDefaultMIMEType.appendChild(checkboxDefaultMIMEType);
+                //First display the list of available attributes and set the 'selected'
+                //name to the one being used by this response uri entry.
+                let selectLinkType = document.createElement("select");
+                selectLinkType.id = "selectLinkType_" + responseUriEntry.uri_response_id;
+                selectLinkType.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
 
-
-            //Now display the destination URL
-            let textDestinationURI = document.createElement("input");
-            textDestinationURI.type = "text";
-            textDestinationURI.id = "textDestinationURI_" + responseUriEntry.uri_response_id;
-            textDestinationURI.size = 80;
-            textDestinationURI.value = responseUriEntry.destination_uri;
-            textDestinationURI.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
-            tdDestinationURI.appendChild(textDestinationURI);
-
-
-            //Now set up the Language select box
-            let selectLanguage = document.createElement("select");
-            selectLanguage.id = "selectLanguage_" + responseUriEntry.uri_response_id;
-            selectLanguage.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
-
-            for (let lang in
-                page_ianaLanguagesList)
-            {
-                if (page_ianaLanguagesList.hasOwnProperty(lang))
-                {
-                    let thisOption = document.createElement("option");
-                    thisOption.value = lang;
-                    if (page_ianaLanguagesList[lang].name === page_ianaLanguagesList[lang].nativeName)
+                page_linkTypesList.forEach(
+                    function (linkTypeEntry)
                     {
-                        thisOption.text = lang + " - " + page_ianaLanguagesList[lang].name;
-                        thisOption.label = lang + " - " + page_ianaLanguagesList[lang].name
-                    }
-                    else
+                        let thisOption = document.createElement("option");
+                        thisOption.value = linkTypeEntry.linktype_reference_url;
+                        thisOption.text = "(" + linkTypeEntry.applicable_gs1_key_code + ") " + linkTypeEntry.linktype_name;
+                        thisOption.label = "(" + linkTypeEntry.applicable_gs1_key_code + ") " + linkTypeEntry.linktype_reference_url;
+                        selectLinkType.appendChild(thisOption);
+                    });
+                selectLinkType.value = responseUriEntry.linktype;
+                tdLinkType.appendChild(selectLinkType);
+
+                //Set up the default linktype checkbox button
+                let checkboxDefaultLinkType = document.createElement("input");
+                checkboxDefaultLinkType.id = "checkboxDefaultLinkType_" + responseUriEntry.uri_response_id;
+                checkboxDefaultLinkType.type = "checkbox";
+                checkboxDefaultLinkType.name = "group_default_linktype_" + responseUriEntry.uri_request_id;
+                checkboxDefaultLinkType.checked = responseUriEntry.default_linktype === 1;
+                checkboxDefaultLinkType.onchange = function ()
+                {
+                    GS1URI_EDITURI.CheckLinkTypeDefaultsIntegrity(this);
+                };
+                tdDefaultLinkType.appendChild(checkboxDefaultLinkType);
+
+                //Now display the friendly link name
+                let textFriendlyName = document.createElement("input");
+                textFriendlyName.type = "text";
+                textFriendlyName.id = "textFriendlyName_" + responseUriEntry.uri_response_id;
+                textFriendlyName.size = 40;
+                textFriendlyName.value = responseUriEntry.friendly_link_name;
+                textFriendlyName.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
+                tdFriendlyName.appendChild(textFriendlyName);
+                tr.appendChild(tdFriendlyName);
+
+                //Now set up the MIME types select box
+                let selectMimeType = document.createElement("select");
+                selectMimeType.id = "selectMimeType_" + responseUriEntry.uri_response_id;
+                selectMimeType.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
+
+                page_MimeTypesList.forEach(
+                    function (mimeTypeEntry)
                     {
-                        thisOption.text = lang + " - " + page_ianaLanguagesList[lang].name + " (" + page_ianaLanguagesList[lang].nativeName + ")";
-                        thisOption.label = lang + " - " + page_ianaLanguagesList[lang].name + " (" + page_ianaLanguagesList[lang].nativeName + ")";
+                        let thisOption = document.createElement("option");
+                        thisOption.value = mimeTypeEntry.mime_type_value;
+                        thisOption.text = "(" + mimeTypeEntry.description + ") " + mimeTypeEntry.mime_type_value;
+                        thisOption.label = "(" + mimeTypeEntry.description + ") " + mimeTypeEntry.mime_type_value;
+                        selectMimeType.appendChild(thisOption);
+                    });
+                selectMimeType.value = responseUriEntry.mime_type;
+                tdMIMEType.appendChild(selectMimeType);
+
+
+                let checkboxDefaultMIMEType = document.createElement("input");
+                checkboxDefaultMIMEType.id = "checkboxDefaultMIMEType_" + responseUriEntry.uri_response_id;
+                checkboxDefaultMIMEType.type = "radio";
+                checkboxDefaultMIMEType.name = "group_default_" + window.btoa(responseUriEntry.linktype) +
+                    window.btoa(responseUriEntry.language) +
+                    window.btoa(responseUriEntry.context);
+                checkboxDefaultMIMEType.checked = responseUriEntry.default_mime_type === 1;
+                tdDefaultMIMEType.appendChild(checkboxDefaultMIMEType);
+
+
+                //Now display the destination URL
+                let textDestinationURI = document.createElement("input");
+                textDestinationURI.type = "text";
+                textDestinationURI.id = "textDestinationURI_" + responseUriEntry.uri_response_id;
+                textDestinationURI.size = 80;
+                textDestinationURI.value = responseUriEntry.destination_uri;
+                textDestinationURI.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
+                tdDestinationURI.appendChild(textDestinationURI);
+
+
+                //Now set up the Language select box
+                let selectLanguage = document.createElement("select");
+                selectLanguage.id = "selectLanguage_" + responseUriEntry.uri_response_id;
+                selectLanguage.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
+
+                for (let lang in
+                    page_ianaLanguagesList)
+                {
+                    if (page_ianaLanguagesList.hasOwnProperty(lang))
+                    {
+                        let thisOption = document.createElement("option");
+                        thisOption.value = lang;
+                        if (page_ianaLanguagesList[lang].name === page_ianaLanguagesList[lang].nativeName)
+                        {
+                            thisOption.text = lang + " - " + page_ianaLanguagesList[lang].name;
+                            thisOption.label = lang + " - " + page_ianaLanguagesList[lang].name
+                        }
+                        else
+                        {
+                            thisOption.text = lang + " - " + page_ianaLanguagesList[lang].name + " (" + page_ianaLanguagesList[lang].nativeName + ")";
+                            thisOption.label = lang + " - " + page_ianaLanguagesList[lang].name + " (" + page_ianaLanguagesList[lang].nativeName + ")";
+                        }
+                        selectLanguage.appendChild(thisOption);
                     }
-                    selectLanguage.appendChild(thisOption);
                 }
-            }
-            selectLanguage.value = responseUriEntry.iana_language;
-            tdLanguage.appendChild(selectLanguage);
+                selectLanguage.value = responseUriEntry.iana_language;
+                tdLanguage.appendChild(selectLanguage);
 
-            let checkboxDefaultLanguage = document.createElement("input");
-            checkboxDefaultLanguage.id = "checkboxDefaultLanguage_" + responseUriEntry.uri_response_id;
-            checkboxDefaultLanguage.type = "radio";
-            checkboxDefaultLanguage.name = "group_default_" + window.btoa(responseUriEntry.linktype);
-            checkboxDefaultLanguage.checked = responseUriEntry.default_iana_language === 1;
-            tdDefaultLanguage.appendChild(checkboxDefaultLanguage);
+                let radioDefaultLanguage = document.createElement("input");
+                radioDefaultLanguage.id = "radioDefaultLanguage_" + responseUriEntry.uri_response_id;
+                radioDefaultLanguage.type = "radio";
+                radioDefaultLanguage.name = "group_default_" + window.btoa(responseUriEntry.linktype);
+                radioDefaultLanguage.checked = responseUriEntry.default_iana_language === 1;
+                tdDefaultLanguage.appendChild(radioDefaultLanguage);
 
 
-            //Now set up the Contexts select box
-            let selectContext = document.createElement("select");
-            selectContext.id = "selectContext_" + responseUriEntry.uri_response_id;
-            selectContext.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
+                //Now set up the Contexts select box
+                let selectContext = document.createElement("select");
+                selectContext.id = "selectContext_" + responseUriEntry.uri_response_id;
+                selectContext.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
 
-            page_ContextsList.forEach(
-                function (contextEntry)
+                page_ContextsList.forEach(
+                    function (contextEntry)
+                    {
+                        let thisOption = document.createElement("option");
+                        thisOption.value = contextEntry.context_value;
+                        thisOption.text = "(" + contextEntry.description + ") " + contextEntry.context_value;
+                        thisOption.label = "(" + contextEntry.description + ") " + contextEntry.context_value;
+                        selectContext.appendChild(thisOption);
+                    });
+                selectContext.value = responseUriEntry.context;
+                tdContext.appendChild(selectContext);
+
+                let checkboxDefaultContext = document.createElement("input");
+                checkboxDefaultContext.id = "checkboxDefaultContext_" + responseUriEntry.uri_response_id;
+                checkboxDefaultContext.type = "radio";
+                checkboxDefaultContext.name = "group_default_" + window.btoa(responseUriEntry.linktype) +
+                    window.btoa(responseUriEntry.language);
+                checkboxDefaultContext.checked = responseUriEntry.default_context === 1;
+                tdDefaultContext.appendChild(checkboxDefaultContext);
+
+                //Now set a check button to denote whether querystings in the request are to be forwarded in the response
+                let checkBoxFRQS = document.createElement("input");
+                checkBoxFRQS.id = "checkboxFRQS_" + responseUriEntry.uri_response_id;
+                checkBoxFRQS.type = "checkbox";
+                checkBoxFRQS.checked = responseUriEntry.forward_request_querystrings === 1;
+                checkBoxFRQS.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
+                tdFRQS.appendChild(checkBoxFRQS);
+
+                //Now set a check button to denote if entry is active or not
+                let checkBoxActive = document.createElement("input");
+                checkBoxActive.id = "checkboxActive_" + responseUriEntry.uri_response_id;
+                checkBoxActive.type = "checkbox";
+                checkBoxActive.checked = responseUriEntry.forward_request_querystrings === 1;
+                checkBoxActive.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
+                tdActive.appendChild(checkBoxActive);
+
+                //Now set the savebutton
+                let saveButton = document.createElement("button");
+                saveButton.value = "Save";
+                saveButton.innerText = "Save";
+                saveButton.id = "save_button_" + responseUriEntry.uri_response_id;
+                saveButton.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
+                saveButton.onclick = function ()
                 {
-                    let thisOption = document.createElement("option");
-                    thisOption.value = contextEntry.context_value;
-                    thisOption.text = "(" + contextEntry.description + ") " + contextEntry.context_value;
-                    thisOption.label = "(" + contextEntry.description + ") " + contextEntry.context_value;
-                    selectContext.appendChild(thisOption);
-                });
-            selectContext.value = responseUriEntry.context;
-            tdContext.appendChild(selectContext);
+                    GS1URI_EDITURI.SaveChangesToResponse(this.getAttribute("uri_response_id"));
+                };
+                tdTasks.appendChild(saveButton);
 
-            let checkboxDefaultContext = document.createElement("input");
-            checkboxDefaultContext.id = "checkboxDefaultContext_" + responseUriEntry.uri_response_id;
-            checkboxDefaultContext.type = "radio";
-            checkboxDefaultContext.name = "group_default_" + window.btoa(responseUriEntry.linktype) +
-                                                             window.btoa(responseUriEntry.language);
-            checkboxDefaultContext.checked = responseUriEntry.default_context === 1;
-            tdDefaultContext.appendChild(checkboxDefaultContext);
+                //Now set the delete button
+                let deleteButton = document.createElement("button");
+                deleteButton.value = "Delete";
+                deleteButton.id = "delete_button_" + responseUriEntry.uri_response_id;
+                deleteButton.innerText = "Delete";
+                deleteButton.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
+                deleteButton.onclick = function ()
+                {
+                    GS1URI_EDITURI.DeleteDestinationURI(deleteButton.getAttribute("uri_response_id"));
+                };
+                tdTasks.appendChild(deleteButton);
 
-            //Now set a check button to denote whether querystings in the request are to be forwarded in the response
-            let checkBoxFRQS = document.createElement("input");
-            checkBoxFRQS.id = "checkboxFRQS_" + responseUriEntry.uri_response_id;
-            checkBoxFRQS.type = "checkbox";
-            checkBoxFRQS.checked = responseUriEntry.forward_request_querystrings === 1;
-            checkBoxFRQS.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
-            tdFRQS.appendChild(checkBoxFRQS);
+                //build the table row in the desired order
+                let tr1 = document.createElement('tr');
+                tr1.setAttribute('style', "background-color: #ffffff;");
+                let tdTitle1 = document.createElement('td');
+                tdTitle1.innerText = "Link Type";
+                tr1.appendChild(tdTitle1);
+                tr1.appendChild(tdLinkType);
+                tr1.appendChild(tdDefaultLinkType);
+                tableResponse.appendChild(tr1);
 
-            //Now set a check button to denote if entry is active or not
-            let checkBoxActive = document.createElement("input");
-            checkBoxActive.id = "checkboxActive_" + responseUriEntry.uri_response_id;
-            checkBoxActive.type = "checkbox";
-            checkBoxActive.checked = responseUriEntry.forward_request_querystrings === 1;
-            checkBoxActive.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
-            tdActive.appendChild(checkBoxActive);
+                let tr2 = document.createElement('tr');
+                tr2.setAttribute('style', "background-color: #ffffff;");
+                let tdTitle2 = document.createElement('td');
+                tdTitle2.innerText = "Friendly Name";
+                tdFriendlyName.setAttribute("colspan", "2");
+                tr2.appendChild(tdTitle2);
+                tr2.appendChild(tdFriendlyName);
+                tableResponse.appendChild(tr2);
 
-            //Now set the savebutton
-            let saveButton = document.createElement("button");
-            saveButton.value = "Save";
-            saveButton.innerText = "Save";
-            saveButton.id = "save_button_"+ responseUriEntry.uri_response_id;
-            saveButton.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
-            saveButton.onclick = function ()
-            {
-                GS1URI_EDITURI.SaveChangesToResponse(this.getAttribute("uri_response_id"));
-            };
-            tdTasks.appendChild(saveButton);
+                let tr3 = document.createElement('tr');
+                tr3.setAttribute('style', "background-color: #ffffff;");
+                let tdTitle3 = document.createElement('td');
+                tdTitle3.innerText = "Destination URL";
+                tdDestinationURI.setAttribute("colspan", "2");
+                tr3.appendChild(tdTitle3);
+                tr3.appendChild(tdDestinationURI);
+                tableResponse.appendChild(tr3);
 
-            //Now set the delete button
-            let deleteButton = document.createElement("button");
-            deleteButton.value = "Delete";
-            deleteButton.id = "delete_button_"+ responseUriEntry.uri_response_id;
-            deleteButton.innerText = "Delete";
-            deleteButton.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
-            deleteButton.onclick = function ()
-            {
-                GS1URI_EDITURI.DeleteDestinationURI(deleteButton.getAttribute("uri_response_id"));
-            };
-            tdTasks.appendChild(deleteButton);
+                let tr3Lang = document.createElement('tr');
+                tr3Lang.setAttribute('style', "background-color: #ffffff;");
+                let tdTitle3a = document.createElement('td');
+                tdTitle3a.innerText = "Language";
+                tr3Lang.appendChild(tdTitle3a);
+                tr3Lang.appendChild(tdLanguage);
+                tr3Lang.appendChild(tdDefaultLanguage);
+                tableResponse.appendChild(tr3Lang);
 
-            //build the table row in the desired order
-            let tr1 = document.createElement('tr');
-            tr1.setAttribute('style', "background-color: #ffffff;");
-            let tdTitle1 = document.createElement('td');
-            tdTitle1.innerText = "Link Type";
-            tr1.appendChild(tdTitle1);
-            tr1.appendChild(tdLinkType);
-            tr1.appendChild(tdDefaultLinkType);
-            tableResponse.appendChild(tr1);
+                let tr4 = document.createElement('tr');
+                tr4.setAttribute('style', "background-color: #ffffff;");
+                let tdTitle4 = document.createElement('td');
+                tdTitle4.innerText = "Document Type";
+                tr4.appendChild(tdTitle4);
+                tr4.appendChild(tdMIMEType);
+                tr4.appendChild(tdDefaultMIMEType);
+                tableResponse.appendChild(tr4);
 
-            let tr2 = document.createElement('tr');
-            tr2.setAttribute('style', "background-color: #ffffff;");
-            let tdTitle2 = document.createElement('td');
-            tdTitle2.innerText = "Friendly Name";
-            tdFriendlyName.setAttribute("colspan", "2");
-            tr2.appendChild(tdTitle2);
-            tr2.appendChild(tdFriendlyName);
-            tableResponse.appendChild(tr2);
+                let tr5 = document.createElement('tr');
+                tr5.setAttribute('style', "background-color: #ffffff;");
+                let tdTitle5 = document.createElement('td');
+                tdTitle5.innerText = "Context";
+                tr5.appendChild(tdTitle5);
+                tr5.appendChild(tdContext);
+                tr5.appendChild(tdDefaultContext);
+                tableResponse.appendChild(tr5);
 
-            let tr3 = document.createElement('tr');
-            tr3.setAttribute('style', "background-color: #ffffff;");
-            let tdTitle3 = document.createElement('td');
-            tdTitle3.innerText = "Destination URL";
-            tdDestinationURI.setAttribute("colspan", "2");
-            tr3.appendChild(tdTitle3);
-            tr3.appendChild(tdDestinationURI);
-            tableResponse.appendChild(tr3);
+                let tr6 = document.createElement('tr');
+                tr6.setAttribute('style', "background-color: #ffffff;");
+                let tdTitle6 = document.createElement('td');
+                tdTitle6.innerText = "Forward Query Strings?";
+                tdFRQS.setAttribute("colspan", "2");
+                tr6.appendChild(tdTitle6);
+                tr6.appendChild(tdFRQS);
+                tableResponse.appendChild(tr6);
 
-            let tr3Lang = document.createElement('tr');
-            tr3Lang.setAttribute('style', "background-color: #ffffff;");
-            let tdTitle3a = document.createElement('td');
-            tdTitle3a.innerText = "Language";
-            tr3Lang.appendChild(tdTitle3a);
-            tr3Lang.appendChild(tdLanguage);
-            tr3Lang.appendChild(tdDefaultLanguage);
-            tableResponse.appendChild(tr3Lang);
+                let tr7 = document.createElement('tr');
+                tr7.setAttribute('style', "background-color: #ffffff;");
+                let tdTitle7 = document.createElement('td');
+                tdTitle7.innerText = "Make Active?";
+                tdActive.setAttribute("colspan", "2");
+                tr7.appendChild(tdTitle7);
+                tr7.appendChild(tdActive);
+                tableResponse.appendChild(tr7);
 
-            let tr4 = document.createElement('tr');
-            tr4.setAttribute('style', "background-color: #ffffff;");
-            let tdTitle4 = document.createElement('td');
-            tdTitle4.innerText = "Document Type";
-            tr4.appendChild(tdTitle4);
-            tr4.appendChild(tdMIMEType);
-            tr4.appendChild(tdDefaultMIMEType);
-            tableResponse.appendChild(tr4);
+                let tr8 = document.createElement('tr');
+                tr8.setAttribute('style', "background-color: #ffffff; ");
+                let tdTitle8 = document.createElement('td');
+                tdTitle8.innerText = "Tasks";
+                tdTasks.setAttribute("colspan", "2");
+                tr8.appendChild(tdTitle8);
+                tr8.appendChild(tdTasks);
+                tableResponse.appendChild(tr8);
 
-            let tr5 = document.createElement('tr');
-            tr5.setAttribute('style', "background-color: #ffffff;");
-            let tdTitle5 = document.createElement('td');
-            tdTitle5.innerText = "Context";
-            tr5.appendChild(tdTitle5);
-            tr5.appendChild(tdContext);
-            tr5.appendChild(tdDefaultContext);
-            tableResponse.appendChild(tr5);
-
-            let tr6 = document.createElement('tr');
-            tr6.setAttribute('style', "background-color: #ffffff;");
-            let tdTitle6 = document.createElement('td');
-            tdTitle6.innerText = "Forward Query Strings?";
-            tdFRQS.setAttribute("colspan", "2");
-            tr6.appendChild(tdTitle6);
-            tr6.appendChild(tdFRQS);
-            tableResponse.appendChild(tr6);
-
-            let tr7 = document.createElement('tr');
-            tr7.setAttribute('style', "background-color: #ffffff;");
-            let tdTitle7 = document.createElement('td');
-            tdTitle7.innerText = "Make Active?";
-            tdActive.setAttribute("colspan", "2");
-            tr7.appendChild(tdTitle7);
-            tr7.appendChild(tdActive);
-            tableResponse.appendChild(tr7);
-
-            let tr8 = document.createElement('tr');
-            tr8.setAttribute('style', "background-color: #ffffff; ");
-            let tdTitle8 = document.createElement('td');
-            tdTitle8.innerText = "Tasks";
-            tdTasks.setAttribute("colspan", "2");
-            tr8.appendChild(tdTitle8);
-            tr8.appendChild(tdTasks);
-            tableResponse.appendChild(tr8);
-
-            let tr9 = document.createElement('tr');
-            tr9.setAttribute('style', "background-color: aliceblue; padding: 5px");
-            let tdTitle9 = document.createElement('td');
-            tdTitle9.innerHTML = "&nbsp;";
-            tr9.appendChild(tdTitle9);
-            tr9.appendChild(tdTitle9);
-            tableResponse.appendChild(tr9);
-        });
+                let tr9 = document.createElement('tr');
+                tr9.setAttribute('style', "background-color: aliceblue; padding: 5px");
+                let tdTitle9 = document.createElement('td');
+                tdTitle9.innerHTML = "&nbsp;";
+                tr9.appendChild(tdTitle9);
+                tr9.appendChild(tdTitle9);
+                tableResponse.appendChild(tr9);
+            });
     }
 
 
@@ -1610,9 +1606,9 @@ class GS1URI_EDITURI
         //extracting the 'uri_response_id' attribute value from each one, and using that
         //to save the response line to the API.
         let selectLinkTypeList = document.getElementsByTagName("select");
-        for(let i=0; i < selectLinkTypeList.length; i++)
+        for (let i = 0; i < selectLinkTypeList.length; i++)
         {
-            if(selectLinkTypeList[i].id.startsWith("selectLinkType_"))
+            if (selectLinkTypeList[i].id.startsWith("selectLinkType_"))
             {
                 GS1URI_EDITURI.SaveChangesToResponse(selectLinkTypeList[i].getAttribute("uri_response_id"));
             }
@@ -1670,7 +1666,7 @@ class GS1URI_EDITURI
         let checkboxNewLinkTypeDefault = document.createElement("input");
         checkboxNewLinkTypeDefault.id = "checkboxNewLinkTypeDefault";
         checkboxNewLinkTypeDefault.type = "checkbox";
-        checkboxNewLinkTypeDefault.checked = false;
+        checkboxNewLinkTypeDefault.checked = true;
         checkboxNewLinkTypeDefault.name = "group_checkbox_default_linktype";
         checkboxNewLinkTypeDefault.onchange = function ()
         {
@@ -1716,7 +1712,7 @@ class GS1URI_EDITURI
                     thisOption.text = lang + " - " + page_ianaLanguagesList[lang].name + " (" + page_ianaLanguagesList[lang].nativeName + ")";
                     thisOption.label = lang + " - " + page_ianaLanguagesList[lang].name + " (" + page_ianaLanguagesList[lang].nativeName + ")";
                 }
-                if(typeof page_ianaLanguagesList[lang].default !== "undefined")
+                if (typeof page_ianaLanguagesList[lang].default !== "undefined")
                 {
                     thisOption.selected = true;
                 }
@@ -1728,7 +1724,7 @@ class GS1URI_EDITURI
         let radioNewDefaultLanguage = document.createElement("input");
         radioNewDefaultLanguage.id = "checkNewDefaultLanguage";
         radioNewDefaultLanguage.type = "radio";
-        radioNewDefaultLanguage.checked = false;
+        radioNewDefaultLanguage.checked = true;
         radioNewDefaultLanguage.name = "group_default_new_language";
         radioNewDefaultLanguage.onchange = function ()
         {
@@ -1749,7 +1745,7 @@ class GS1URI_EDITURI
                 thisOption.value = mimeTypeEntry.mime_type_value;
                 thisOption.text = "(" + mimeTypeEntry.description + ") " + mimeTypeEntry.mime_type_value;
                 thisOption.label = "(" + mimeTypeEntry.description + ") " + mimeTypeEntry.mime_type_value;
-                if(mimeTypeEntry.default_mime_type_flag === 1)
+                if (mimeTypeEntry.default_mime_type_flag === 1)
                 {
                     thisOption.selected = true;
                 }
@@ -1761,7 +1757,7 @@ class GS1URI_EDITURI
         let radioNewDefaultMIMEType = document.createElement("input");
         radioNewDefaultMIMEType.id = "radioNewDefaultMIMEType";
         radioNewDefaultMIMEType.type = "radio";
-        radioNewDefaultMIMEType.checked = false;
+        radioNewDefaultMIMEType.checked = true;
         radioNewDefaultMIMEType.name = "group_default_new_mime_type";
         radioNewDefaultMIMEType.onchange = function ()
         {
@@ -1781,7 +1777,7 @@ class GS1URI_EDITURI
                 thisOption.value = contextEntry.context_value;
                 thisOption.text = "(" + contextEntry.description + ") " + contextEntry.context_value;
                 thisOption.label = "(" + contextEntry.description + ") " + contextEntry.context_value;
-                if(contextEntry.default_context_flag === 1)
+                if (contextEntry.default_context_flag === 1)
                 {
                     thisOption.selected = true;
                 }
@@ -1911,11 +1907,12 @@ class GS1URI_EDITURI
         //Count the number of controls until we find the control that called this function
         let controls = document.getElementsByTagName("input");
         let controlIndex = 0;
-        for (let i = 0, iLen = controls.length; i < iLen; i++) {
+        for (let i = 0, iLen = controls.length; i < iLen; i++)
+        {
             let control = controls[i];
-            if(control.type === "checkbox" && control.name === checkboxControl.name)
+            if (control.type === "checkbox" && control.name === checkboxControl.name)
             {
-                if(control === checkboxControl)
+                if (control === checkboxControl)
                 {
                     //control.checked = !checkboxControl.checked;
                     break; // <-- this stops the for() loop
@@ -1935,9 +1932,9 @@ class GS1URI_EDITURI
         for (let s = 0, sLen = selects.length; s < sLen; s++)
         {
             let select = selects[s];
-            if(select.id.includes('selectLinkType'))
+            if (select.id.includes('selectLinkType'))
             {
-                if(checkboxLinkTypeCount === controlIndex)
+                if (checkboxLinkTypeCount === controlIndex)
                 {
                     linkTypeValueWantedAsDefaultLinkType = select.value;
                 }
@@ -1958,12 +1955,12 @@ class GS1URI_EDITURI
         let defaultLinkTypeFlag = document.getElementById("checkboxDefaultLinkType_" + uriResponseId).checked;
         let defaultContextFlag = document.getElementById("checkboxDefaultContext_" + uriResponseId).checked;
         let defaultMIMETypeFlag = document.getElementById("checkboxDefaultMIMEType_" + uriResponseId).checked;
-        let defaultLanguageFlag = document.getElementById("checkboxDefaultLanguage_" + uriResponseId).checked;
+        let defaultLanguageFlag = document.getElementById("radioDefaultLanguage_" + uriResponseId).checked;
         let frqsFlag = document.getElementById("checkboxFRQS_" + uriResponseId).checked;
         let activeFlag = document.getElementById("checkboxActive_" + uriResponseId).checked;
 
         let uriDestination = document.getElementById("textDestinationURI_" + uriResponseId).value;
-                if (uriDestination.includes("%20"))
+        if (uriDestination.includes("%20"))
         {
             if (confirm("The URL escape character code '%20' (for space) was found in a destination URI which is not allowed by the resolver. " +
                 "However, I can convert all '%20' characters to '+' which will still work. Click OK for me to do this now. (Note, I cannot save this URI if you choose 'Cancel')"))
@@ -2031,16 +2028,16 @@ class GS1URI_EDITURI
         }
         if (document.getElementById("textNewDestinationURI").value.length < 10)
         {
-            alert("Destination '" + document.getElementById("new_destination").value + "' is a bit short! Longer please!");
+            alert("Destination '" + document.getElementById("textNewDestinationURI").value + "' is a bit short! Longer please and make sure you include 'http://' or 'https://' as needed!");
             return;
         }
 
-        if(document.getElementById("selectNewLanguage").checked)
+        if (document.getElementById("selectNewLanguage").checked)
         {
             defaultLanguageFlag = 1;
         }
 
-        if (document.getElementById("checkNewDefaultMIMEType").checked)
+        if (document.getElementById("radioNewDefaultMIMEType").checked)
         {
             defaultMIMETypeFlag = 1;
         }
@@ -2050,7 +2047,7 @@ class GS1URI_EDITURI
             defaultContextFlag = 1;
         }
 
-        if (document.getElementById("radioNewLinkTypeDefault").checked)
+        if (document.getElementById("checkboxNewLinkTypeDefault").checked)
         {
             defaultLinkTypeFlag = 1;
         }
@@ -2079,7 +2076,7 @@ class GS1URI_EDITURI
             linktype: document.getElementById("selectNewLinkType").value,
             destination_uri: document.getElementById("textNewDestinationURI").value,
             friendly_link_name: document.getElementById("textNewFriendlyName").value,
-            mime_type:  document.getElementById("selectNewMimeType").value,
+            mime_type: document.getElementById("selectNewMimeType").value,
             context: document.getElementById("selectNewContext").value,
             forward_request_querystrings: frqsFlag,
             default_iana_language: defaultLanguageFlag,
@@ -2108,6 +2105,33 @@ class GS1URI_EDITURI
         GS1URI_EDITURI.GetResponseUriData();
     }
 
+    static DeleteRequestEntry()
+    {
+        if (confirm("DO YOU WISH TO DELETE THIS ENTIRE ENTRY? This is an irreversible act!"))
+        {
+            let apiRequest = {
+                command: "delete_uri_request",
+                session_id: page_session.session_id,
+                uri_request_id: GS1URI_COMMON.getQueryStringValue("uri"),
+            };
+            let fd = new FormData();
+            fd.append("resolver", JSON.stringify(apiRequest));
+            let xhr = new XMLHttpRequest();
+            xhr.addEventListener("load", GS1URI_EDITURI.DeleteRequestEntry_Response, false);
+            xhr.open("POST", api_url);
+            xhr.send(fd);
+        }
+    }
+
+    static DeleteRequestEntry_Response(evt)
+    {
+        let serviceResponse = GS1URI_COMMON.GetAJAXResponse(evt.target.responseText);
+        document.getElementById("message").innerText = serviceResponse.STATUS;
+        let divHideOnEntryDeletion = document.getElementById("divHideOnEntryDeletion");
+        divHideOnEntryDeletion.innerHTML ='<img src="GS1_Symbol_Trashcan_RGB_2015-04-16.jpg">';
+    }
+
+
 
     static DeleteDestinationURI(uriResponseId)
     {
@@ -2116,38 +2140,32 @@ class GS1URI_EDITURI
         let confirmMessage = "";
         let radioCount = 0;
 
-        //count the number of radio buttons starting with "radio-_default":
+        //count the number of radio buttons starting with "radioDefaultLanguage__default":
         let inputElements = document.getElementsByTagName("input");
-        for(let i=0; i < inputElements.length; i++)
+        for (let i = 0; i < inputElements.length; i++)
         {
-            if(inputElements[i].id.startsWith("radio_default"))
+            if (inputElements[i].id.startsWith("radioDefaultLanguage_"))
             {
                 radioCount++;
             }
         }
 
-        if(radioCount === 1)
+        if (radioCount === 1)
         {
             //Allow deletion but suspend entry
             suspendEntry = true;
-            confirmMessage = "Are you sure you wish to delete this only Destination URI? If yes, the entry will be suspended and no longer accessed at id.gs1.org";
-        }
-        else if(document.getElementById("radio_default_" + uriResponseId).checked)
-        {
-            //Refuse deletion and state reason (no destinations have default checked, or the destination being deleted is the only checked)
-            allowDelete = false;
-            confirmMessage = "Please choose another destination entry to be the default before you delete this entry";
+            confirmMessage = "Are you sure you wish to delete this only Destination URI? If yes, the entry will be suspended and no longer accessed at this resolver";
         }
         else
         {
             confirmMessage = "Are you sure you wish to delete this Destination URI?";
         }
 
-        if(allowDelete)
+        if (allowDelete)
         {
             if (confirm(confirmMessage))
             {
-                if(suspendEntry)
+                if (suspendEntry)
                 {
                     page_active_A_suspended_S = "S";
                     GS1URI_EDITURI.SaveRequestURI();
@@ -2697,7 +2715,7 @@ class GS1URI_ACCOUNTS
 
         }
 
-        if(newPassword1 !== "")
+        if (newPassword1 !== "")
         {
             if (newPassword2 === newPassword1)
             {
@@ -2767,7 +2785,7 @@ class GS1URI_COMMON
         {
             page_session = JSON.parse(sessionStorage.getItem("session"));
         }
-        catch(err)
+        catch (err)
         {
             page_session = null;
         }
@@ -2780,7 +2798,7 @@ class GS1URI_COMMON
         {
             result = JSON.parse(responseText);
         }
-        catch(err)
+        catch (err)
         {
             alert("Error from API: " + responseText);
         }

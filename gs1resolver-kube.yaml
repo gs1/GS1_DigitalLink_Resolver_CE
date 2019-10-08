@@ -1,0 +1,23 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gs1resolver
+  labels:
+    app: web
+spec:
+  containers:
+    - name: dataentry-sql-server
+      image: gs1_digitallink_resolver_ce_dataentry-sql-server:latest
+    - name: id-mongo-server
+      image: gs1_digitallink_resolver_ce_id-mongo-server:latest
+    - name: gs1dl-toolkit-server
+      image: gs1_digitallink_resolver_ce_gs1dl-toolkit-server:latest
+    - name: dataentry-web-server
+      image: gs1_digitallink_resolver_ce_dataentry-web-server:latest
+    - name: id-web-server
+      image: gs1_digitallink_resolver_ce_id-web-server:latest
+      ports:
+        - containerPort: 88
+
+

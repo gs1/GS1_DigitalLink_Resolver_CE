@@ -38,7 +38,7 @@ ENV MSSQL_DUMP_DIR=/gs1resolver_data/dump
 ENV MSSQL_AGENT_ENABLED=true
 
 # Copy the script and convert it to unix format
-RUN apt-get update -y && apt-get upgrade -y && apt-get install -y dos2unix
+RUN apt-get update -y && apt-get dist-upgrade -y && apt-get install -y dos2unix
 COPY gs1resolver_dataentry_db_build_script.sql /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql
 RUN dos2unix /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql
 

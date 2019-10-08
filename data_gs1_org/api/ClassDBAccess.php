@@ -559,7 +559,33 @@ class ClassDBAccess
         return $result;
     }
 
+    /**
+     * @param $sessionId
+     * @param $responseId
+     * @return array
+     */
+    public function DeleteURIRequest($sessionId, $responseId) : array
+    {
+        if($this->CheckSessionActive($sessionId))
+        {
+            $sql = "EXEC [gs1resolver_dataentry_db].[delete_uri_request] $responseId";
+            $success = $this->DBExec($sql);
+            if($success)
+            {
+                $result['STATUS'] = 'Request Entry has been marked for deletion and will be removed in a few minutes';
+            }
+            else
+            {
+                $result['STATUS'] = 'Database Error deleting request entry: ' . print_r(sqlsrv_errors(), true);
+            }
+        }
+        else
+        {
+            $result['STATUS'] = 'Session Not Active';
+        }
 
+        return $result;
+    }
     /**
      * @param $sessionId
      * @param $responseId
@@ -569,7 +595,7 @@ class ClassDBAccess
     {
         if($this->CheckSessionActive($sessionId))
         {
-            $sql = "EXEC delete_uri_response($responseId)";
+            $sql = "EXEC [gs1resolver_dataentry_db].[delete_uri_response] $responseId";
             $success = $this->DBExec($sql);
             if($success)
             {

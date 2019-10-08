@@ -17,4 +17,4 @@ ENV MONGO_INITDB_ROOT_USERNAME=gs1resolver
 ENV MONGO_INITDB_ROOT_PASSWORD=gs1resolver
 
 # Update and upgrade repositories as needed:
-RUN apt-get update -y && apt-get upgrade -y
+RUN apt-get update -y && apt-get dist-upgrade -y

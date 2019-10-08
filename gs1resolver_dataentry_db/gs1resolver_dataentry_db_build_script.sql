@@ -134,6 +134,9 @@ GO
 /****** Object:  StoredProcedure [gs1resolver_dataentry_db].[change_password]    Script Date: 03/10/2019 14:08:25 ******/
 DROP PROCEDURE [gs1resolver_dataentry_db].[change_password]
 GO
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[delete_uri_request]    Script Date: 03/10/2019 14:08:25 ******/
+DROP PROCEDURE [gs1resolver_dataentry_db].[delete_uri_request]
+GO
 /****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_SetToRequireRebuild]    Script Date: 03/10/2019 14:08:25 ******/
 DROP PROCEDURE [gs1resolver_dataentry_db].[BUILD_SetToRequireRebuild]
 GO
@@ -1491,6 +1494,30 @@ BEGIN
 
 END
 GO
+
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[delete_uri_request]    Script Date: 08/10/2019 15:48:17 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE PROCEDURE [gs1resolver_dataentry_db].[delete_uri_request]
+@var_uri_request_id int
+AS
+BEGIN
+
+    SET  XACT_ABORT  ON
+
+    SET  NOCOUNT  ON
+
+    UPDATE gs1resolver_dataentry_db.uri_requests
+    SET flagged_for_deletion = 1
+    WHERE uri_request_id = @var_uri_request_id
+
+END
+GO
+
 /****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_contexts_item]    Script Date: 03/10/2019 14:08:27 ******/
 SET ANSI_NULLS ON
 GO
@@ -2545,6 +2572,7 @@ BEGIN
         r.web_uri_suffix_4,
         r.include_in_sitemap,
         r.active,
+        r.flagged_for_deletion,
         r.api_builder_processed
     FROM
         gs1resolver_dataentry_db.uri_requests  AS r
@@ -2617,6 +2645,7 @@ BEGIN
                r.web_uri_suffix_4,
                r.include_in_sitemap,
                r.active,
+               r.flagged_for_deletion,
                r.api_builder_processed
     INTO #temp_get_request_uris
     FROM
@@ -2645,6 +2674,7 @@ BEGIN
     web_uri_suffix_4,
     include_in_sitemap,
     active,
+    flagged_for_deletion,
     api_builder_processed
     FROM #temp_get_request_uris
     WHERE rownum >= @first_line_number

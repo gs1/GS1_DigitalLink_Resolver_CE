@@ -398,6 +398,13 @@ if(isset($resolver))
         $result = $classDBAccess->DeleteURIResponse($sessionId, $responseId);
         echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
+    elseif ($resolver->command === 'delete_uri_request')
+    {
+        $sessionId = $resolver->session_id;
+        $uriRequestId = $resolver->uri_request_id;
+        $result = $classDBAccess->DeleteURIRequest($sessionId, $uriRequestId);
+        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
     elseif ($resolver->command === 'new_uri_request')
     {
         $sessionId = $resolver->session_id;

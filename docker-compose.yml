@@ -1,59 +1,57 @@
-version: "3.5"
+version: "3.6"
 
 services:
-  gs1resolver_dataentry_db:
+  dataentry-sql-server:
     build: './gs1resolver_dataentry_db'
-    container_name: gs1resolver_dataentry_db
+    container_name: dataentry-sql-server
     volumes:
-      - gs1resolver_datentry_volume:/gs1resolver_data
+      - gs1resolver-dataentry-volume:/gs1resolver_data
     restart: always
     networks:
-      - gs1resolver_network
+      - gs1-resolver-network
 
-  gs1resolver_document_db:
+  id-mongo-server:
     build: './gs1resolver_document_db'
-    container_name: gs1resolver_document_db
+    container_name: id-mongo-server
     restart: always
     volumes:
-      - gs1resolver_document_volume:/data/db
+      - gs1resolver-document-volume:/data/db
     networks:
-      - gs1resolver_network
+      - gs1-resolver-network
 
-  gs1dl_toolkit_server:
-    build: './dl_toolkit_server'
-    container_name: gs1dl_toolkit_server
+  gs1dl-toolkit-server:
+    build: './dl_toolkit_Server'
+    container_name: gs1dl-toolkit-server
     restart: always
     networks:
-      - gs1resolver_network
+      - gs1-resolver-network
 
-  data_gs1_org:
+  dataentry-web-server:
     build: './data_gs1_org'
-    container_name: data_gs1_org
+    container_name: dataentry-web-server
     depends_on:
-      - gs1resolver_dataentry_db
-      - gs1resolver_document_db
-      - gs1dl_toolkit_server
+      - dataentry-sql-server
+      - id-mongo-server
+      - gs1dl-toolkit-server
     restart: always
-    ports:
-      - "8080:80"
     networks:
-      - gs1resolver_network
+      - gs1-resolver-network
 
-  id_gs1_org:
+  id-web-server:
     build: './id_gs1_org'
-    container_name: id_gs1_org
+    container_name: id-web-server
     depends_on:
-      - gs1resolver_document_db
+      - id-mongo-server
     restart: always
     ports:
-      - "9090:80"
+      - "80:80"
     networks:
-      - gs1resolver_network
+      - gs1-resolver-network
 
 volumes:
-  gs1resolver_datentry_volume: {}
-  gs1resolver_document_volume: {}
+  gs1resolver-dataentry-volume: {}
+  gs1resolver-document-volume: {}
 
 networks:
-  gs1resolver_network:
-    name: gs1resolver_network
+  gs1-resolver-network:
+    name: gs1-resolver-network

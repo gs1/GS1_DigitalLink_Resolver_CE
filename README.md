@@ -36,9 +36,9 @@ container, creating the database and some example data described in the file dat
 * To clse the service down, go back to the first terminal /powershell window and press Ctrl-C. This will shut the service down. 
 
 ## Useful Docker commands:
-docker exec -it gs1resolver_dataentry_db  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU -i /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql
+docker exec -it dataentry-sql-server  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU -i /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql
 
-docker exec -it gs1resolver_dataentry_db  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU
+docker exec -it dataentry-sql-server  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU
 
 docker exec -it data_gs1_org tail -f -n50 /var/log/apache2/error.log
 

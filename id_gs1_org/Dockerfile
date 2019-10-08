@@ -39,9 +39,13 @@ RUN apt-get install -y locales
 RUN locale-gen en_US.UTF-8 en_GB.UTF-8 de_DE.UTF-8 es_ES.UTF-8 fr_FR.UTF-8 it_IT.UTF-8 km_KH sv_SE.UTF-8 fi_FI.UTF-8
 
 # Configure apache's localhost name, so it doesn't throw a warning constantly about not having a host name.
-RUN a2enmod rewrite expires
-RUN echo "ServerName localhost" | tee /etc/apache2/conf-available/servername.conf
+RUN echo "ServerName id-mongo-server" | tee /etc/apache2/conf-available/servername.conf
 RUN a2enconf servername
+
+# Enable apache's rewrite, proxy and headers modules
+RUN a2enmod rewrite expires
+RUN a2enmod proxy_http
+RUN a2enmod headers
 
 # Configure apache's virtual host for the resolver
 # by copying and enabling our own version of the apache config file: gs1resolver.conf
