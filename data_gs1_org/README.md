@@ -15,6 +15,8 @@ Here are the various modules in their respective folders:
 </table>
 
 This application saves data entered via a Web interface in an SQL database where it can be stored safely and accurately. A process task then checks, every minute, for changes to the data in the database, and uses those changes to build BSON (think: JSON!) documents which are then stored in a MongoDB document database for lightning retrieval by the separate GS1 Resolver application.
+The container built by the Dockerfile for this project can be used away from all the other containers in the repositor. 
+You can alter config settings to point to SQL and Mongo servers on cloud providers or on-premise databases rather than just the ones built into this overall repository.
 
 ![architecture](README_Assets/architecture.png "Architecture")
 
@@ -30,7 +32,8 @@ This group of applications is not a mandatory part of the GS1 Resolver service
 
 An alternative solution is to have your applications talk directly to the API application, and not use the Data Entry Web application. The API was designed from first principles to work with Product LifeCycle Management tools and Product Information Management applications. The simple syntax of the API means that you could use it to copy in your data in a controlled manner.
 
-## Preparing for Installation
+## Preparing for Installation if are using this project independently and are NOT using docker-compose to build the overall repository.
+#### (Otherwise, scroll down to the section 'Using the data entry screens')
 You are strongly advised to use containerisation to build this application. Docker images and the containers instantiated from them
 are easy to support, scale up, scale-out, and are supported by all major cloud computing platforms. 
 They have been tested on Kuberbetes clusters on cloud provider <i>Digital Ocean</i>, and Container Web Apps on <i>Microsoft Azure</i>.
@@ -68,7 +71,9 @@ Make sure that you maintain the syntax-correctness of the JSON format.
 3. Type this command (including that full stop (period) at the end): <pre>docker build -t gs1resolver_ui_api .</pre>
 4. If this is the first time you have built the image of this repository, it will take several minutes to download code and run all the commands. If you are rebuilding after a first run, it will be pretty quick.
 5. From this image, we can create a container (an instance of the image we have just built, running as a virtual machine):<pre>docker run -d -p 8080:80 --name gs1resolver_ui_api gs1resolver_ui_api</pre>
-6. Let's try it! Open up a Web browser and go to this address: <pre>http://localhost:8080/api/test.php</pre>If your database connection strings are working, this page will let you know all is well and you should see these messages in your browser window.
+6. We must also build the 'slave' service supporting this container:<pre>docker build -t gs1dl-toolkit-server ../dl_toolkit_server</pre>
+7. ...and set it running:<pre>docker run -d -p 3000:3000 -p 3001:3001 -p 3002:3002 -p 3000:3003 -p 3004:3004 -p 3005:3005 -p 3006:3006 -p 3007:3007 -p 3008:3008 -p 3009:3009 --name gs1dl-toolkit-server gs1dl-toolkit-server</pre>
+8. Let's try it! Open up a Web browser and go to this address: <pre>http://localhost:8080/api/test.php</pre>If your database connection strings are working, this page will let you know all is well and you should see these messages in your browser window.
  <pre>
   SQL Server Database connected OK - logging in as sansa.stark@gs1westeros.com with password Winteriscoming...
       
@@ -79,9 +84,9 @@ Make sure that you maintain the syntax-correctness of the JSON format.
   System Test completed
       </pre>
  If not, review the errors and correct the connection strings in the repository's config/api.ini file. See below for info on stopping the container, adjusting files, and rebuilding the image. We'll continue as if all was well, but you can jump down the page to the Troubleshooting section.
-7. The SQL Server script that you ran to create the database also added a test account that you can use to login now. Take your browser to <pre>http://localhost:8080/ui</pre>
+9. The SQL Server script that you ran to create the database also added a test account that you can use to login now. Take your browser to <pre>http://localhost:8080/ui</pre>
 ...and login using fake email address <pre>sansa.starkw@gs1westeros.com</pre> with this exact password: <pre>Winteriscoming</pre> This account has global administrator capability, which we'll find useful later. What is important is that your instance of this application is working.
-8. To shut down the container, we need to interrupt the docker run command line (press Ctrl-C to exit to terminal prompt - the container will remain running). <pre>docker container stop gs1resolver_ui_api</pre> After a few seconds the container will shut down and return you to the terminal prompt.
+10. To shut down the container, we need to interrupt the docker run command line (press Ctrl-C to exit to terminal prompt - the container will remain running). <pre>docker container stop gs1resolver_ui_api</pre> After a few seconds the container will shut down and return you to the terminal prompt.
 
 ## Troubleshooting
 If you saw errors when you tried the test page at <pre>http://localhost:8080/api/test.php</pre> then we need to find out what happened. Hopefully, the errors are caused by these issues:
@@ -111,6 +116,8 @@ There are several ways to run a BUILD task:
  
 ## Using the data entry screens
 When you executed the SQL script, some test data was included for you to play with and get a sense of how everything works.
+So, first open a web browser and head to <pre>http://localhost:8080/ui/</pre> so you are ready to login with one of the accounts below.
+
 There are four test accounts, belonging to the fictional territory of GS1 Westeros, with two associated members: the Iron Islands and Castle Black in the North.
 * Note that we have no connection with <i>Games Of Thrones</i>, our choice of this data was to make getting to know the resolver a little more approachable!
 <table>

@@ -16,7 +16,8 @@ Here are the various elements of the application in their respective folders:
 
 This repository covers applications inside an instance of an Rn web server in the id.gs1.org blue lozenge.
 
-## Preparing for Installation
+## Preparing for Installation if are using this project independently and are NOT using docker-compose to build the overall repository.
+#### (Otherwise, scroll down to the section 'The Resolver Document Format')
 1. You are strongly advised to use containerisation to build this application. Docker images and the containers instantiated from them are easy to support, scale up, scale-out, and are supported by all major cloud computing platforms. This project has been tested on Kuberbetes clusters on cloud provider <i>Digital Ocean</i>, and Container Web Apps on <i>Microsoft Azure</i>.
 2. Before you build the resolver, make sure that you have built and started running the gs1resolver_ui_api project first, and that its BUILD() 
 function is operating successfully, copying entries from the test database into your MongoDB database successfully.
