@@ -574,7 +574,7 @@ function buildLinkHeader($resolverDocument, $uri, $queryString)
                                             if (gettype($mimeTypeDocument) === 'object')
                                             {
                                                 //DEBUG: file_put_contents('php://stderr', '$mimeTypeDocument =============> ' . print_r($mimeTypeDocument, true) . PHP_EOL);
-                                                $linkHeader = '<' . qualityAssureOutgoingLink($mimeTypeDocument->link, $queryString) . '>; rel="' . $responseKey . '"; type="' . $mimeTypeKey . '"; hreflang="' . $langKey . '"; title="' . $mimeTypeDocument->title . '", ';
+                                                $linkHeader = '<' . qualityAssureOutgoingLink($mimeTypeDocument->link, $queryString) . '>; rel="' . $linkTypeKey . '"; type="' . $mimeTypeKey . '"; hreflang="' . $langKey . '"; title="' . $mimeTypeDocument->title . '", ';
                                                 $linkHeaderArray[$counter] = $linkHeader;
                                                 if ($resolverDocument[$uri]->responses->defaultlink === $responseKey)
                                                 {
