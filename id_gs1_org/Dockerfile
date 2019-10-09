@@ -16,9 +16,17 @@ ENV TZ=Europe/London
 # Install utilities we'll be using, which we'll use to pull various applications from the internet as part of the install.
 # In addition we install dos2unix which just makes sure the text and script files are in native linux format. We'll
 # use that utility later when copyiing files into the container.
-RUN apt-get -y update
-RUN apt-get -y install apt-utils
-RUN apt-get -y install curl dos2unix apt-transport-https libssl-dev pkg-config zlib1g-dev libicu-dev g++ dos2unix tzdata
+RUN apt-get -y update && apt-get -y install apt-utils \
+                                            curl \
+                                            dos2unix \
+                                            apt-transport-https \
+                                            libssl-dev \
+                                            pkg-config \
+                                            zlib1g-dev \
+                                            libicu-dev \
+                                            g++ \
+                                            dos2unix \
+                                            tzdata
 
 # Now we'll use PECL (PHP Extension Community Library) to install MongoDB, the MongoDB Database driver for PHP.
 # When this section of the Dockerfile runs, you will see a lot of downloading and compiling of source code into binary
@@ -39,7 +47,7 @@ RUN apt-get install -y locales
 RUN locale-gen en_US.UTF-8 en_GB.UTF-8 de_DE.UTF-8 es_ES.UTF-8 fr_FR.UTF-8 it_IT.UTF-8 km_KH sv_SE.UTF-8 fi_FI.UTF-8
 
 # Configure apache's localhost name, so it doesn't throw a warning constantly about not having a host name.
-RUN echo "ServerName id-mongo-server" | tee /etc/apache2/conf-available/servername.conf
+RUN echo "ServerName id-web-server" | tee /etc/apache2/conf-available/servername.conf
 RUN a2enconf servername
 
 # Enable apache's rewrite, proxy and headers modules

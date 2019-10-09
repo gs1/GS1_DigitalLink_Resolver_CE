@@ -442,8 +442,6 @@ function get_linktype_subdocument($resolverDocument, $uri, $dbLinkValue) : objec
         $dbLinkValue = $resolverDocument[$uri]->responses->default_linktype;
         $responseRecordLinkType = $resolverDocument[$uri]->responses->linktype->{$dbLinkValue};
     }
-
-    //DEBUG: file_put_contents('php://stderr', "get_linktype_subdocument() " . print_r($responseRecordLinkType, true) . PHP_EOL);
     return $responseRecordLinkType;
 }
 
@@ -457,11 +455,8 @@ function get_lang_subdocument($responseRecordLinkType, $ianaLanguageRequired) : 
     else
     {
         file_put_contents('php://stderr', "DECISION: No matching language for '$ianaLanguageRequired' so using the default language: '$responseRecordLinkType->default_lang' ". PHP_EOL);
-        $ianaLanguageRequired = $responseRecordLinkType->{$responseRecordLinkType->default_lang};
     }
-    $responseRecordLang = $responseRecordLinkType->lang->{$ianaLanguageRequired};
-    //DEBUG: file_put_contents('php://stderr', "get_lang_subdocument() " . print_r($responseRecordLang, true) . PHP_EOL);
-
+    $responseRecordLang = $responseRecordLinkType->lang->{$responseRecordLinkType->default_lang};
     return $responseRecordLang;
 }
 
@@ -475,10 +470,8 @@ function get_context_subdocument($responseRecordLang, $contextRequired) : object
     else
     {
         file_put_contents('php://stderr', "DECISION: No matching context for '$contextRequired' so using the default context: '$responseRecordLang->default_context' ". PHP_EOL);
-        $contextRequired = $responseRecordLang->default_context;
     }
-    $responseRecordContext = $responseRecordLang->context->{$contextRequired};
-    //DEBUG: file_put_contents('php://stderr', "get_context_subdocument() " . print_r($responseRecordContext, true) . PHP_EOL);
+    $responseRecordContext = $responseRecordLang->context->{$responseRecordLang->default_context};
     return $responseRecordContext;
 }
 
@@ -492,11 +485,8 @@ function get_mimetype_subdocument($responseRecordContext, $mimeTypeRequired) : o
     else
     {
         file_put_contents('php://stderr', "DECISION: No matching MIME type for '$mimeTypeRequired' so using the default MIME type: '$responseRecordContext->default_mime_type' ". PHP_EOL);
-        $mimeTypeRequired = $responseRecordContext->default_mime_type;
     }
-    $responseRecordMimeType = $responseRecordContext->mime_type->{$mimeTypeRequired};
-    //DEBUG: file_put_contents('php://stderr', "get_mimetype_subdocument() === " . json_encode($responseRecordContext->mime_type) . PHP_EOL);
-
+    $responseRecordMimeType = $responseRecordContext->mime_type->{$responseRecordContext->default_mime_type};
     return $responseRecordMimeType;
 }
 
