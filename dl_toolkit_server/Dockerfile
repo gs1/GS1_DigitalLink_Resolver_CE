@@ -31,16 +31,16 @@ RUN find /gs1dl/* -type f -print0 | xargs -0 dos2unix
 # This is an internal server supporting id_gs1_org so ONLY expose the 10 port numbers
 # ahould you want this container available on a different network or exposed to the internet
 # (so NOT recommended!)
-# EXPOSE 3000/tcp
-# EXPOSE 3001/tcp
-# EXPOSE 3002/tcp
-# EXPOSE 3003/tcp
-# EXPOSE 3004/tcp
-# EXPOSE 3005/tcp
-# EXPOSE 3006/tcp
-# EXPOSE 3007/tcp
-# EXPOSE 3008/tcp
-# EXPOSE 3009/tcp
+EXPOSE 3000/tcp
+EXPOSE 3001/tcp
+EXPOSE 3002/tcp
+EXPOSE 3003/tcp
+EXPOSE 3004/tcp
+EXPOSE 3005/tcp
+EXPOSE 3006/tcp
+EXPOSE 3007/tcp
+EXPOSE 3008/tcp
+EXPOSE 3009/tcp
 
 # Finally set the server running
 CMD ["/bin/ash", "/gs1dl/digilink_toolkit_servers_start.sh"]
