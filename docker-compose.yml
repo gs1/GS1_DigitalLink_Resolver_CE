@@ -44,7 +44,7 @@ services:
       - id-mongo-server
     restart: always
     ports:
-      - "80:80"
+      - "8080:80"
     networks:
       - gs1-resolver-network
 
