@@ -455,8 +455,16 @@ function get_lang_subdocument($responseRecordLinkType, $ianaLanguageRequired) : 
     else
     {
         file_put_contents('php://stderr', "DECISION: No matching language for '$ianaLanguageRequired' so using the default language: '$responseRecordLinkType->default_lang' ". PHP_EOL);
+        $ianaLanguageRequired = $responseRecordLinkType->default_lang;
     }
-    $responseRecordLang = $responseRecordLinkType->lang->{$responseRecordLinkType->default_lang};
+    $responseRecordLang = $responseRecordLinkType->lang->{$ianaLanguageRequired};
+    if($responseRecordLang === null)
+    {
+        //Use the first lang it can find!
+        $responseAsArray = (array)$responseRecordLinkType;
+        file_put_contents('php://stderr', "DECISION: NULL language sub-document! So returning first language found". PHP_EOL);
+        $responseRecordLang = current($responseAsArray['lang']);
+    }
     return $responseRecordLang;
 }
 
@@ -470,8 +478,16 @@ function get_context_subdocument($responseRecordLang, $contextRequired) : object
     else
     {
         file_put_contents('php://stderr', "DECISION: No matching context for '$contextRequired' so using the default context: '$responseRecordLang->default_context' ". PHP_EOL);
+        $contextRequired = $responseRecordLang->default_context;
     }
-    $responseRecordContext = $responseRecordLang->context->{$responseRecordLang->default_context};
+    $responseRecordContext = $responseRecordLang->context->{$contextRequired};
+    if($responseRecordContext === null)
+    {
+        //Use the first context it can find!
+        $responseAsArray = (array)$responseRecordLang;
+        file_put_contents('php://stderr', "DECISION: NULL context sub-document! So returning first context found". PHP_EOL);
+        $responseRecordContext = current($responseAsArray['context']);
+    }
     return $responseRecordContext;
 }
 
@@ -485,8 +501,16 @@ function get_mimetype_subdocument($responseRecordContext, $mimeTypeRequired) : o
     else
     {
         file_put_contents('php://stderr', "DECISION: No matching MIME type for '$mimeTypeRequired' so using the default MIME type: '$responseRecordContext->default_mime_type' ". PHP_EOL);
+        $mimeTypeRequired = $responseRecordContext->default_mime_type;
     }
-    $responseRecordMimeType = $responseRecordContext->mime_type->{$responseRecordContext->default_mime_type};
+    $responseRecordMimeType = $responseRecordContext->mime_type->{$mimeTypeRequired};
+    if($responseRecordMimeType === null)
+    {
+        //Use the first MIME-type it can find!
+        $responseAsArray = (array)$responseRecordContext;
+        file_put_contents('php://stderr', "DECISION: NULL MIME-type sub-document! So returning first MIME-type found". PHP_EOL);
+        $responseRecordMimeType = current($responseAsArray['mime_type']);
+    }
     return $responseRecordMimeType;
 }
 
