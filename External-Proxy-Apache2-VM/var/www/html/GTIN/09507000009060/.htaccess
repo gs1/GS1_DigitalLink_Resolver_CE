@@ -1,0 +1,3 @@
+RewriteRule ser/(.+)  https://gs1.tn.gg/gtin/09507000009060/ser/$1 [R=302]
+RewriteRule SER/(.+)  https://gs1.tn.gg/gtin/09507000009060/ser/$1 [R=302]
+

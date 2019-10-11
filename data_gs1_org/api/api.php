@@ -23,6 +23,8 @@ header('Access-Control-Allow-Origin: *');
 //or from simple raw input in JSON format such as:
 // { command: "my_api_command", parameter1name: "parameter1value", ... }
 
+$result = array();
+
 if(isset($_POST['resolver']))
 {
     $resolver = json_decode($_POST['resolver']);
@@ -45,13 +47,12 @@ if(isset($resolver))
 {
     if(!isset($resolver->command))
     {
-        echo '{"STATUS": "No command found in request!"}';
+        $result['STATUS'] = 'No command found in request!';
     }
-
-    if ($resolver->command === 'version')
+    elseif ($resolver->command === 'version')
     {
         //Alter this as desired for end user clients to understand which version they are using:
-        echo $result = '{"apiversion: 1.0}';
+        $result['apiversion'] = '1.0';
     }
     elseif ($resolver->command === 'get_gs1_key_components_list')
     {
@@ -62,13 +63,11 @@ if(isset($resolver))
         else
         {
             $gs1KeyCode = '';
-
         }
         $response = $classDBAccess->GetGS1KeyComponentsList($gs1KeyCode);
         $result['data_list'] = $response;
         $result['primary_key']['key_name'] = 'gs1_key_component_id';
         $result['api_update_command'] = 'update_gs1_key_components_list';
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'get_iana_languages_list')
     {
@@ -77,7 +76,6 @@ if(isset($resolver))
         $result['data_list'] = $ianaLanguageList;
         $result['primary_key']['key_name'] = '';
         $result['api_update_command'] = '';
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'get_linktypes_list')
     {
@@ -85,7 +83,6 @@ if(isset($resolver))
         $result['data_list'] = $response;
         $result['primary_key']['key_name'] = 'linktype_id';
         $result['api_update_command'] = 'update_linktypes_list';
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'get_contexts_list')
     {
@@ -93,7 +90,6 @@ if(isset($resolver))
         $result['data_list'] = $response;
         $result['primary_key']['key_name'] = 'context_id';
         $result['api_update_command'] = 'update_contexts_list';
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'get_mime_types_list')
     {
@@ -101,86 +97,73 @@ if(isset($resolver))
         $result['data_list'] = $response;
         $result['primary_key']['key_name'] = 'mime_type_id';
         $result['api_update_command'] = 'update_mime_types_list';
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'get_gs1_key_codes_list')
     {
         $result['data_list'] = $classGS1Keys->getGS1KeyCodesList();
         $result['primary_key']['key_name'] = 'gs1_key_code_id';
-        $result['api_update_command'] = ''; //No updating possible as each GS1 Key is denoted by a class in this application
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $result['api_update_command'] = ''; //No updating possible as each GS1 Key is denoted by a class in this app
     }
     elseif ($resolver->command === 'get_gs1_mo_list')
     {
         $sessionId = $resolver->session_id;
-        $requestUriData = $classDBAccess->GetGS1MOList($sessionId);
-        echo json_encode($requestUriData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $result = $classDBAccess->GetGS1MOList($sessionId);
     }
     elseif ($resolver->command === 'check_gs1_key_value_integrity')
     {
         $sessionId = $resolver->session_id;
         $gs1KeyCode = $resolver->gs1_key_code;
         $gs1KeyValue = $resolver->gs1_key_value;
-        echo json_encode($classGS1Keys->testIntegrity($gs1KeyCode, $gs1KeyValue), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $result = $classGS1Keys->testIntegrity($gs1KeyCode, $gs1KeyValue);
     }
     elseif ($resolver->command === 'get_member_list')
     {
         $sessionId = $resolver->session_id;
         $gs1MOPrimaryGln = $resolver->gs1_mo_primary_gln;
-        $requestUriData = $classDBAccess->GetMemberListForGS1MO($sessionId, $gs1MOPrimaryGln);
-        echo json_encode($requestUriData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $result = $classDBAccess->GetMemberListForGS1MO($sessionId, $gs1MOPrimaryGln);
     }
     elseif ($resolver->command === 'get_account_details')
     {
         $sessionId = $resolver->session_id;
         $accountId = $resolver->account_id;
-        $accountData = $classDBAccess->GetAccountDetails($sessionId, $accountId);
-        echo json_encode($accountData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $result = $classDBAccess->GetAccountDetails($sessionId, $accountId);
     }
     elseif ($resolver->command === 'get_account_list')
     {
         $sessionId = $resolver->session_id;
         $memberPrimaryGln = $resolver->member_primary_gln;
-        $requestUriData = $classDBAccess->GetAccountListForMember($sessionId, $memberPrimaryGln);
-        echo json_encode($requestUriData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $result = $classDBAccess->GetAccountListForMember($sessionId, $memberPrimaryGln);
     }
     elseif ($resolver->command === 'get_uri_status')
     {
         $sessionId = $resolver->session_id;
         $uriRequestId = $resolver->uri_request_id;
-        $requestUriData = $classDBAccess->GetRequestURIStatus($sessionId, $uriRequestId);
-        echo json_encode($requestUriData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $result = $classDBAccess->GetRequestURIStatus($sessionId, $uriRequestId);
     }
     elseif ($resolver->command === 'get_uri_list')
     {
         $sessionId = $resolver->session_id;
         $firstLineNumber = $resolver->first_line_number;
         $maxNumberOfLines = $resolver->max_number_of_lines;
-        $requestUriData = $classDBAccess->GetRequestURIs($sessionId, $firstLineNumber, $maxNumberOfLines);
-        echo json_encode($requestUriData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $result = $classDBAccess->GetRequestURIs($sessionId, $firstLineNumber, $maxNumberOfLines);
     }
     elseif ($resolver->command === 'get_request_uri_data')
     {
         $sessionId = $resolver->session_id;
         $uri_request_id = $resolver->uri_request_id;
-        $requestUriData = $classDBAccess->GetRequestURIForEdit($sessionId, $uri_request_id);
-        echo json_encode($requestUriData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $result = $classDBAccess->GetRequestURIForEdit($sessionId, $uri_request_id);
     }
     elseif ($resolver->command === 'get_response_uri_data')
     {
         $sessionId = $resolver->session_id;
         $uri_request_id = $resolver->uri_request_id;
-        $responseUriData = $classDBAccess->GetResponseURIsForEdit($sessionId, $uri_request_id);
-        echo json_encode($responseUriData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $result = $classDBAccess->GetResponseURIsForEdit($sessionId, $uri_request_id);
     }
     elseif ($resolver->command === 'login')
     {
-        $accountSession  = $classDBAccess->LoginAccount($resolver->email, $resolver->password);
+        $result  = $classDBAccess->LoginAccount($resolver->email, $resolver->password);
         $ini = parse_ini_file('/var/www/config/api.ini');
-        $accountSession['resolver_endpoint_url'] = $ini['resolver_endpoint_url'];
-
-        //DEBUG: $classDBAccess->logThis( 'API.PHP $accountSession: ' . print_r($accountSession, true));
-        echo json_encode($accountSession, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $result['resolver_endpoint_url'] = $ini['resolver_endpoint_url'];
     }
     elseif ($resolver->command === 'update_gs1_key_components_list')
     {
@@ -194,13 +177,14 @@ if(isset($resolver))
 
         if($primaryKeyValue === 'NEW')
         {
-            $result = $classDBAccess->SaveNewGS1KeyComponent($sessionId, $gs1KeyCode, $componentOrder, $componentUriId, $componentName, $acceptedFormats);
+            $result = $classDBAccess->SaveNewGS1KeyComponent($sessionId, $gs1KeyCode, $componentOrder, $componentUriId,
+                $componentName, $acceptedFormats);
         }
         else
         {
-            $result = $classDBAccess->UpdateGS1KeyComponentsList($sessionId, $primaryKeyValue, $gs1KeyCode, $componentOrder, $componentUriId, $componentName, $acceptedFormats);
+            $result = $classDBAccess->UpdateGS1KeyComponentsList($sessionId, $primaryKeyValue, $gs1KeyCode,
+                $componentOrder, $componentUriId, $componentName, $acceptedFormats);
         }
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'update_linktypes_list')
     {
@@ -211,13 +195,14 @@ if(isset($resolver))
         $applicableGS1KeyCode = $resolver->applicable_gs1_key_code;
         if($primaryKeyValue === 'NEW')
         {
-            $result = $classDBAccess->SaveNewLinkType($sessionId, $linkTypeName, $linkTypeReferenceUrl, $applicableGS1KeyCode);
+            $result = $classDBAccess->SaveNewLinkType($sessionId, $linkTypeName, $linkTypeReferenceUrl,
+                $applicableGS1KeyCode);
         }
         else
         {
-            $result = $classDBAccess->UpdatelinkTypesList($sessionId, $primaryKeyValue, $linkTypeName, $linkTypeReferenceUrl, $applicableGS1KeyCode);
+            $result = $classDBAccess->UpdatelinkTypesList($sessionId, $primaryKeyValue, $linkTypeName,
+                $linkTypeReferenceUrl, $applicableGS1KeyCode);
         }
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'update_contexts_list')
     {
@@ -228,13 +213,14 @@ if(isset($resolver))
         $defaultContextFlag = $resolver->default_context_flag;
         if($primaryKeyValue === 'NEW')
         {
-            $result = $classDBAccess->SaveNewContext($sessionId, $contextValue, $contextDescription, $defaultContextFlag);
+            $result = $classDBAccess->SaveNewContext($sessionId, $contextValue, $contextDescription,
+                $defaultContextFlag);
         }
         else
         {
-            $result = $classDBAccess->UpdateContextsList($sessionId, $primaryKeyValue, $contextValue, $contextDescription, $defaultContextFlag);
+            $result = $classDBAccess->UpdateContextsList($sessionId, $primaryKeyValue, $contextValue,
+                $contextDescription, $defaultContextFlag);
         }
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'update_mime_types_list')
     {
@@ -245,13 +231,14 @@ if(isset($resolver))
         $defaultMimeTypeFlag = $resolver->default_mime_type_flag;
         if($primaryKeyValue === 'NEW')
         {
-            $result = $classDBAccess->SaveNewMimeType($sessionId, $mime_typeValue, $mime_typeDescription, $defaultMimeTypeFlag);
+            $result = $classDBAccess->SaveNewMimeType($sessionId, $mime_typeValue, $mime_typeDescription,
+                $defaultMimeTypeFlag);
         }
         else
         {
-            $result = $classDBAccess->UpdateMimeTypesList($sessionId, $primaryKeyValue, $mime_typeValue, $mime_typeDescription, $defaultMimeTypeFlag);
+            $result = $classDBAccess->UpdateMimeTypesList($sessionId, $primaryKeyValue, $mime_typeValue,
+                $mime_typeDescription, $defaultMimeTypeFlag);
         }
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'save_existing_uri_response')
     {
@@ -270,8 +257,9 @@ if(isset($resolver))
         $activeFlag = interpretFlagValue($resolver->active);
         $fwqsFlag = interpretFlagValue($resolver->forward_request_querystrings);
 
-        $result = $classDBAccess->SaveExistingUriResponse($sessionId, $responseId, $ianaLanguage, $linkType, $context, $mimeType, $destinationURI, $friendlyLinkName, $fwqsFlag, $activeFlag, $defaultLinkTypeFlag, $defaultIanaLanguageFlag, $defaultContextFlag, $defaultMimeTypeFlag);
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $result = $classDBAccess->SaveExistingUriResponse($sessionId, $responseId, $ianaLanguage, $linkType, $context,
+            $mimeType, $destinationURI, $friendlyLinkName, $fwqsFlag, $activeFlag, $defaultLinkTypeFlag,
+            $defaultIanaLanguageFlag, $defaultContextFlag, $defaultMimeTypeFlag);
     }
     elseif ($resolver->command === 'save_existing_uri_request')
     {
@@ -298,17 +286,14 @@ if(isset($resolver))
 
         if($resultArray['result_code'] === 0)
         {
-            $result = $classDBAccess->SaveExistingURIRequest($sessionId, $requestId, $gs1KeyCode, $gs1KeyValue, $itemDescription,
-                $uriPrefix1, $uriSuffix1, $uriPrefix2, $uriSuffix2, $uriPrefix3, $uriSuffix3,
+            $result = $classDBAccess->SaveExistingURIRequest($sessionId, $requestId, $gs1KeyCode, $gs1KeyValue,
+                $itemDescription, $uriPrefix1, $uriSuffix1, $uriPrefix2, $uriSuffix2, $uriPrefix3, $uriSuffix3,
                 $uriPrefix4, $uriSuffix4, $includeInSitemap, $activeFlag);
         }
         else
         {
             $result['STATUS'] = 'NOT SAVED - ' . $resultArray['result_message'];
         }
-
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-
     }
     elseif ($resolver->command === 'search_uri_requests')
     {
@@ -316,7 +301,6 @@ if(isset($resolver))
         $gs1KeyValue = $resolver->gs1_key_value;
         $itemDescription = $resolver->item_description;
         $result = $classDBAccess->SearchURIRequests($sessionId, $gs1KeyValue, $itemDescription);
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'save_new_gs1mo')
     {
@@ -324,7 +308,6 @@ if(isset($resolver))
         $member_name = $resolver->organisation_name;
         $gs1mo_primary_gln = $resolver->gs1_mo_primary_gln;
         $result = $classDBAccess->SaveNewGS1MO($sessionId, $member_name, $gs1mo_primary_gln);
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'save_account')
     {
@@ -348,8 +331,8 @@ if(isset($resolver))
         $varType = gettype($resolver->active);
         $activeFlag = interpretFlagValue($resolver->active);
 
-        $result = $classDBAccess->SaveAccountDetails($sessionId, $accountId, $firstName, $surname, $loginEmail, $password, $newPassword, $accountNotes, $administrator, $activeFlag, $memberPrimaryGLN);
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $result = $classDBAccess->SaveAccountDetails($sessionId, $accountId, $firstName, $surname, $loginEmail,
+            $password, $newPassword, $accountNotes, $administrator, $activeFlag, $memberPrimaryGLN);
     }
     elseif ($resolver->command === 'save_new_member')
     {
@@ -361,8 +344,8 @@ if(isset($resolver))
         $activeFlag = interpretFlagValue($resolver->active);
         $member_logo_url = $resolver->member_logo_url;
 
-        $result = $classDBAccess->SaveNewMember($sessionId, $member_name, $member_primary_gln, $gs1mo_primary_gln, $notes, $activeFlag, $member_logo_url);
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $result = $classDBAccess->SaveNewMember($sessionId, $member_name, $member_primary_gln, $gs1mo_primary_gln,
+            $notes, $activeFlag, $member_logo_url);
     }
     elseif ($resolver->command === 'save_new_uri_response')
     {
@@ -384,32 +367,29 @@ if(isset($resolver))
         $activeFlag = interpretFlagValue($resolver->active);
         $fwqsFlag = interpretFlagValue($resolver->forward_request_querystrings);
 
-        $result = $classDBAccess->SaveNewUriResponse($sessionId, $requestId, $linkType, $ianaLanguage, $context, $mimeType, $friendlyLinkName, $destinationURI, $fwqsFlag, $activeFlag, $defaultLinkTypeFlag, $defaultIanaLanguageFlag, $defaultContextFlag, $defaultMimeTypeFlag);
+        $result = $classDBAccess->SaveNewUriResponse($sessionId, $requestId, $linkType, $ianaLanguage, $context,
+            $mimeType, $friendlyLinkName, $destinationURI, $fwqsFlag, $activeFlag, $defaultLinkTypeFlag,
+            $defaultIanaLanguageFlag, $defaultContextFlag, $defaultMimeTypeFlag);
 
         //Combine the two status outputs
         $result['STATUS'] .= $result2['STATUS'];
-
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'delete_uri_response')
     {
         $sessionId = $resolver->session_id;
         $responseId = $resolver->uri_response_id;
         $result = $classDBAccess->DeleteURIResponse($sessionId, $responseId);
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'delete_uri_request')
     {
         $sessionId = $resolver->session_id;
         $uriRequestId = $resolver->uri_request_id;
         $result = $classDBAccess->DeleteURIRequest($sessionId, $uriRequestId);
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'new_uri_request')
     {
         $sessionId = $resolver->session_id;
         $result = $classDBAccess->CreateNewURIRequest($sessionId);
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'build')
     {
@@ -423,7 +403,6 @@ if(isset($resolver))
         {
             $result['STATUS'] = "Incorrect auth key - build not allowed";
         }
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'check')
     {
@@ -437,13 +416,11 @@ if(isset($resolver))
         {
             $result['STATUS'] = "Incorrect auth key - check not allowed";
         }
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'mongodb_test')
     {
         $mongoDB = new ClassMongoDB();
         $result = $mongoDB->testMongoDBAccess();
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     elseif ($resolver->command === 'serverinfo')
     {
@@ -458,23 +435,27 @@ if(isset($resolver))
         $result['server_uptime'] = $classMetrics->api_server_uptime();
         $result['kernel_version'] = $classMetrics->api_kernel_version();
         $result['process_count'] = $classMetrics->api_number_processes();
-
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
     else
     {
         $result['STATUS'] = "ERROR: Unknown Command '$resolver->command'";
-        echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 }
 else
 {
-    echo '{"STATUS": "Welcome to the GS1 Resolver UI API on machine-id ' . gethostname() . '}';
+    $result['STATUS'] = 'Welcome to the GS1 Resolver UI API on machine-id ' . gethostname() ;
 }
 
+echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+//Uncomment to watch the API in action through the log (but comment in production for security reasons):
+#file_put_contents('php://stderr', 'API DEBUG: ' . print_r($result, true) . PHP_EOL);
+
+
+
 /**
- * This function is used to take any incoming variable that is a flag, and return a uniform response of 1 for true or 0 for false
- * which is used with the SQL database which stores such flag values as tinyints with values 1 or 0.
+ * This function is used to take any incoming variable that is a flag, and return a uniform response of 1 for true or
+ * 0 for false which is used with the SQL database which stores such flag values as tinyints with values 1 or 0.
  * @param $incomingFlag
  * @return int
  */
@@ -482,7 +463,8 @@ function interpretFlagValue($incomingFlag) : int
 {
     $varType = gettype($incomingFlag);
     $outgoingFlag = 0;
-    if($varType === 'string' && ($incomingFlag === '1' || strtolower($incomingFlag) === 'true' || strtolower($incomingFlag) === 'yes' || strtolower($incomingFlag) === 'y'))
+    if($varType === 'string' && ($incomingFlag === '1' || strtolower($incomingFlag) === 'true' ||
+            strtolower($incomingFlag) === 'yes' || strtolower($incomingFlag) === 'y'))
     {
         $outgoingFlag = 1;
     }

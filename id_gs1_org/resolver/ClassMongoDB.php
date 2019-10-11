@@ -36,7 +36,15 @@ class ClassMongoDB
         $id = '/' . $gs1Key . '/' . $this->formatGS1Value($gs1Key, $gs1Value);
 
         //Search and retrieve the document
-        $result = $collection->findOne(['_id' => $id]);
+        try
+        {
+            $result = $collection->findOne(['_id' => $id]);
+        }
+        catch (MongoDB\Driver\Exception\ConnectionTimeoutException $cte)
+        {
+            file_put_contents('php://stderr', "Error calling MongodDB: " . print_r($cte, true). PHP_EOL);
+            return json_decode('{"Error", "MongoDB Database Connection Failed. Please contact the Resolver administrator - error log on server for details"}');
+        }
 
         //Return the complete document as a result
         file_put_contents('php://stderr', "JSON version of MongoDB URI record: " . json_encode($result). PHP_EOL);
@@ -53,7 +61,15 @@ class ClassMongoDB
         $collection = $this->mongoDbClient->gs1resolver->wellknown;
 
         //Search and retrieve the document
-        $result = $collection->findOne(['_id' =>'gs1resolver.json']);
+        try
+        {
+            $result = $collection->findOne(['_id' => 'gs1resolver.json']);
+        }
+        catch (MongoDB\Driver\Exception\ConnectionTimeoutException $cte)
+        {
+            file_put_contents('php://stderr', "Error calling MongodDB: " . print_r($cte, true). PHP_EOL);
+            return json_decode('{"Error", "MongoDB Database Connection Failed. Please contact the Resolver administrator - error log on server for details"}');
+        }
 
         //Return the complete document as a result
         file_put_contents('php://stderr', "JSON version of Well-Known record: " . json_encode($result). PHP_EOL);
@@ -82,7 +98,15 @@ class ClassMongoDB
         {
             $id = '/' . $gs1Key . '/' . $gs1Value;
             file_put_contents('php://stderr', "Searching MongoDB GCP record: $id" . PHP_EOL);
-            $result = $collection->findOne(['_id' => $id]);
+            try
+            {
+                $result = $collection->findOne(['_id' => $id]);
+            }
+            catch (MongoDB\Driver\Exception\ConnectionTimeoutException $cte)
+            {
+                file_put_contents('php://stderr', "Error calling MongodDB: " . print_r($cte, true). PHP_EOL);
+                return json_decode('{"Error", "MongoDB Database Connection Failed. Please contact the Resolver administrator - error log on server for details"}');
+            }
             if($result === null && $searchCharsLength > 3)
             {
                 $searchCharsLength--;

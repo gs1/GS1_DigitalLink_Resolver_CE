@@ -407,9 +407,11 @@ if ($interstitialPageToBeSentFlag)
     {
         header('Content-Type: application/json');
         echo json_encode($resolverDocument, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        file_put_contents('php://stderr', 'DECISION:linktype=all and accept-header=json so sent JSON resolver record' . PHP_EOL);
     }
     else
     {
+        file_put_contents('php://stderr', 'DECISION:linktype=all and NOT accept-header=json so sent HTML interstitial page' . PHP_EOL);
         echo buildInterstitialPage($gs1Key, $gs1Value, $resolverDocument, $uri, $queryString);
     }
 }
@@ -441,6 +443,13 @@ function get_linktype_subdocument($resolverDocument, $uri, $dbLinkValue) : objec
         file_put_contents('php://stderr', "DECISION: The requested linkType '$dbLinkValue' is unavailable so using the default which is: " . $resolverDocument[$uri]->responses->default_linktype . PHP_EOL);
         $dbLinkValue = $resolverDocument[$uri]->responses->default_linktype;
         $responseRecordLinkType = $resolverDocument[$uri]->responses->linktype->{$dbLinkValue};
+    }
+    if($responseRecordLinkType === null)
+    {
+        //Use the first linktype it can find!
+        $responseAsArray = (array) $resolverDocument[$uri]->responses->linktype;
+        file_put_contents('php://stderr', "DECISION: NULL linktype sub-document! So returning first linktype found". PHP_EOL);
+        $responseRecordLinkType = current($responseAsArray);
     }
     return $responseRecordLinkType;
 }

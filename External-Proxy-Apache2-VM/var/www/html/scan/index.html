@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        .special div
+        {
+            border : 2px solid #f00;
+            margin : -2px;
+        }
+    </style>
+    <meta charset="UTF-8">
+    <title>GTIN Scanner</title>
+    <script src="js/quagga.min.js" type="text/javascript"></script>
+    <script src="js/gs1scanapp.js" type="text/javascript"></script>
+</head>
+<body>
+<label for="imageFile"><img style="width: 100%; height: auto" src="gs1_barcode_scanner.gif" width="595" height="664" alt="Tap here to turn on your camera and photo a GTIN barcode"></label>
+<input onchange="processImage()" id="imageFile" type="file" accept="image/*" style="visibility:hidden;" capture="camera"></td>
+<h3 id="divResult"></h3>
+</body>
+</html>

@@ -33,13 +33,6 @@ CREATE USER dataentry_user WITH PASSWORD='feorfhgofgq348ryfwfAHGAU',  DEFAULT_LA
 GRANT EXECUTE TO dataentry_user
 GO
 
-/******************************************************** END OF SECTION TO CHECK BASED ON SQL SERVER IMPLEMENTATION ************/
-
-
-/* The rest of this script should be run as-is - you may get warnings where tables or procedures are dropped when they
-   don't exist, just ignore them. The 'DROP' statements are there in case you are running this script to rebuild the database
-*/
-
 
 /****** Object:  StoredProcedure [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_value]    Script Date: 03/10/2019 14:08:25 ******/
 DROP PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_value]
@@ -410,20 +403,20 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [gs1resolver_dataentry_db].[accounts](
-	[account_id] [int] IDENTITY(30,1) NOT NULL,
-	[member_primary_gln] [nchar](13) NOT NULL,
-	[firstname] [nvarchar](25) NULL,
-	[surname] [nvarchar](45) NULL,
-	[login_password] [nvarchar](100) NOT NULL,
-	[login_email] [nvarchar](100) NOT NULL,
-	[account_notes] [nvarchar](1024) NULL,
-	[last_login_datetime] [datetime2](0) NULL,
-	[administrator] [nchar](1) NULL,
-	[active] [smallint] NULL,
- CONSTRAINT [PK_accounts_account_id] PRIMARY KEY CLUSTERED 
-(
-	[account_id] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+                                                      [account_id] [int] IDENTITY(30,1) NOT NULL,
+                                                      [member_primary_gln] [nchar](13) NOT NULL,
+                                                      [firstname] [nvarchar](25) NULL,
+                                                      [surname] [nvarchar](45) NULL,
+                                                      [login_password] [nvarchar](100) NOT NULL,
+                                                      [login_email] [nvarchar](100) NOT NULL,
+                                                      [account_notes] [nvarchar](1024) NULL,
+                                                      [last_login_datetime] [datetime2](0) NULL,
+                                                      [administrator] [nchar](1) NULL,
+                                                      [active] [smallint] NULL,
+                                                      CONSTRAINT [PK_accounts_account_id] PRIMARY KEY CLUSTERED
+                                                          (
+                                                           [account_id] ASC
+                                                              )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 /****** Object:  Table [gs1resolver_dataentry_db].[audit_log]    Script Date: 03/10/2019 14:08:25 ******/
@@ -432,14 +425,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [gs1resolver_dataentry_db].[audit_log](
-	[logEntryId] [bigint] IDENTITY(1,1) NOT NULL,
-	[logTimestamp] [datetime] NOT NULL,
-	[apiHostMachineId] [nvarchar](50) NOT NULL,
-	[logMessage] [nvarchar](max) NOT NULL,
- CONSTRAINT [PK_audit_log] PRIMARY KEY CLUSTERED 
-(
-	[logEntryId] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+                                                       [logEntryId] [bigint] IDENTITY(1,1) NOT NULL,
+                                                       [logTimestamp] [datetime] NOT NULL,
+                                                       [apiHostMachineId] [nvarchar](50) NOT NULL,
+                                                       [logMessage] [nvarchar](max) NOT NULL,
+                                                       CONSTRAINT [PK_audit_log] PRIMARY KEY CLUSTERED
+                                                           (
+                                                            [logEntryId] ASC
+                                                               )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
 /****** Object:  Table [gs1resolver_dataentry_db].[gcp_resolves]    Script Date: 03/10/2019 14:08:25 ******/
@@ -448,17 +441,17 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [gs1resolver_dataentry_db].[gcp_resolves](
-	[gcp_resolve_id] [int] IDENTITY(1,1) NOT NULL,
-	[member_primary_gln] [nchar](13) NOT NULL,
-	[gs1_key_code] [nvarchar](20) NOT NULL,
-	[gs1_gcp_value] [nvarchar](45) NOT NULL,
-	[resolve_url_format] [nvarchar](255) NOT NULL,
-	[notes] [nvarchar](255) NULL,
-	[api_builder_processed] [smallint] NOT NULL,
- CONSTRAINT [PK_gcp_resolves] PRIMARY KEY CLUSTERED 
-(
-	[gcp_resolve_id] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+                                                          [gcp_resolve_id] [int] IDENTITY(1,1) NOT NULL,
+                                                          [member_primary_gln] [nchar](13) NOT NULL,
+                                                          [gs1_key_code] [nvarchar](20) NOT NULL,
+                                                          [gs1_gcp_value] [nvarchar](45) NOT NULL,
+                                                          [resolve_url_format] [nvarchar](255) NOT NULL,
+                                                          [notes] [nvarchar](255) NULL,
+                                                          [api_builder_processed] [smallint] NOT NULL,
+                                                          CONSTRAINT [PK_gcp_resolves] PRIMARY KEY CLUSTERED
+                                                              (
+                                                               [gcp_resolve_id] ASC
+                                                                  )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 /****** Object:  Table [gs1resolver_dataentry_db].[gs1_mos]    Script Date: 03/10/2019 14:08:25 ******/
@@ -467,12 +460,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [gs1resolver_dataentry_db].[gs1_mos](
-	[gs1_mo_primary_gln] [nchar](13) NOT NULL,
-	[organisation_name] [nvarchar](45) NOT NULL,
- CONSTRAINT [PK_gs1_mos_gs1_mo_primary_gln] PRIMARY KEY CLUSTERED 
-(
-	[gs1_mo_primary_gln] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+                                                     [gs1_mo_primary_gln] [nchar](13) NOT NULL,
+                                                     [organisation_name] [nvarchar](45) NOT NULL,
+                                                     CONSTRAINT [PK_gs1_mos_gs1_mo_primary_gln] PRIMARY KEY CLUSTERED
+                                                         (
+                                                          [gs1_mo_primary_gln] ASC
+                                                             )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 /****** Object:  Table [gs1resolver_dataentry_db].[list_contexts]    Script Date: 03/10/2019 14:08:25 ******/
@@ -481,14 +474,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [gs1resolver_dataentry_db].[list_contexts](
-	[context_id] [int] IDENTITY(1,1) NOT NULL,
-	[context_value] [nvarchar](30) NOT NULL,
-	[description] [nvarchar](100) NULL,
-	[default_context_flag] [bit] NOT NULL,
- CONSTRAINT [PK_list_contexts_context_id] PRIMARY KEY CLUSTERED 
-(
-	[context_id] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+                                                           [context_id] [int] IDENTITY(1,1) NOT NULL,
+                                                           [context_value] [nvarchar](30) NOT NULL,
+                                                           [description] [nvarchar](100) NULL,
+                                                           [default_context_flag] [bit] NOT NULL,
+                                                           CONSTRAINT [PK_list_contexts_context_id] PRIMARY KEY CLUSTERED
+                                                               (
+                                                                [context_id] ASC
+                                                                   )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 /****** Object:  Table [gs1resolver_dataentry_db].[list_gs1_key_components]    Script Date: 03/10/2019 14:08:25 ******/
@@ -497,16 +490,16 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [gs1resolver_dataentry_db].[list_gs1_key_components](
-	[gs1_key_component_id] [int] IDENTITY(9,1) NOT NULL,
-	[gs1_key_code] [nvarchar](20) NOT NULL,
-	[component_order] [smallint] NOT NULL,
-	[component_uri_id] [nvarchar](10) NULL,
-	[component_name] [nvarchar](45) NULL,
-	[accepted_formats] [nvarchar](100) NULL,
- CONSTRAINT [PK_list_alpha_components_alpha_component_id] PRIMARY KEY CLUSTERED 
-(
-	[gs1_key_component_id] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+                                                                     [gs1_key_component_id] [int] IDENTITY(9,1) NOT NULL,
+                                                                     [gs1_key_code] [nvarchar](20) NOT NULL,
+                                                                     [component_order] [smallint] NOT NULL,
+                                                                     [component_uri_id] [nvarchar](10) NULL,
+                                                                     [component_name] [nvarchar](45) NULL,
+                                                                     [accepted_formats] [nvarchar](100) NULL,
+                                                                     CONSTRAINT [PK_list_alpha_components_alpha_component_id] PRIMARY KEY CLUSTERED
+                                                                         (
+                                                                          [gs1_key_component_id] ASC
+                                                                             )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 /****** Object:  Table [gs1resolver_dataentry_db].[list_linktypes]    Script Date: 03/10/2019 14:08:25 ******/
@@ -515,16 +508,16 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [gs1resolver_dataentry_db].[list_linktypes](
-	[linktype_id] [int] IDENTITY(29,1) NOT NULL,
-	[locale] [nvarchar](5) NOT NULL,
-	[linktype_name] [nvarchar](50) NOT NULL,
-	[linktype_reference_url] [nvarchar](255) NOT NULL,
-	[applicable_gs1_key_code] [nvarchar](10) NOT NULL,
-	[description] [nvarchar](1024) NOT NULL,
- CONSTRAINT [PK_list_attributes_attribute_id] PRIMARY KEY CLUSTERED 
-(
-	[linktype_id] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+                                                            [linktype_id] [int] IDENTITY(29,1) NOT NULL,
+                                                            [locale] [nvarchar](5) NOT NULL,
+                                                            [linktype_name] [nvarchar](50) NOT NULL,
+                                                            [linktype_reference_url] [nvarchar](255) NOT NULL,
+                                                            [applicable_gs1_key_code] [nvarchar](10) NOT NULL,
+                                                            [description] [nvarchar](1024) NOT NULL,
+                                                            CONSTRAINT [PK_list_attributes_attribute_id] PRIMARY KEY CLUSTERED
+                                                                (
+                                                                 [linktype_id] ASC
+                                                                    )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 /****** Object:  Table [gs1resolver_dataentry_db].[list_mime_types]    Script Date: 03/10/2019 14:08:25 ******/
@@ -533,14 +526,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [gs1resolver_dataentry_db].[list_mime_types](
-	[mime_type_id] [int] IDENTITY(1,1) NOT NULL,
-	[mime_type_value] [nvarchar](30) NOT NULL,
-	[description] [nvarchar](100) NULL,
-	[default_mime_type_flag] [bit] NOT NULL,
- CONSTRAINT [PK_list_mime_types_mime_type_id] PRIMARY KEY CLUSTERED 
-(
-	[mime_type_id] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+                                                             [mime_type_id] [int] IDENTITY(1,1) NOT NULL,
+                                                             [mime_type_value] [nvarchar](30) NOT NULL,
+                                                             [description] [nvarchar](100) NULL,
+                                                             [default_mime_type_flag] [bit] NOT NULL,
+                                                             CONSTRAINT [PK_list_mime_types_mime_type_id] PRIMARY KEY CLUSTERED
+                                                                 (
+                                                                  [mime_type_id] ASC
+                                                                     )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 /****** Object:  Table [gs1resolver_dataentry_db].[members]    Script Date: 03/10/2019 14:08:25 ******/
@@ -549,16 +542,16 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [gs1resolver_dataentry_db].[members](
-	[member_primary_gln] [nchar](13) NOT NULL,
-	[gs1_mo_primary_gln] [nchar](13) NULL,
-	[member_name] [nvarchar](255) NULL,
-	[notes] [nvarchar](1024) NULL,
-	[active] [smallint] NULL,
-	[member_logo_url] [nvarchar](max) NULL,
- CONSTRAINT [PK_members_member_primary_gln] PRIMARY KEY CLUSTERED 
-(
-	[member_primary_gln] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+                                                     [member_primary_gln] [nchar](13) NOT NULL,
+                                                     [gs1_mo_primary_gln] [nchar](13) NULL,
+                                                     [member_name] [nvarchar](255) NULL,
+                                                     [notes] [nvarchar](1024) NULL,
+                                                     [active] [smallint] NULL,
+                                                     [member_logo_url] [nvarchar](max) NULL,
+                                                     CONSTRAINT [PK_members_member_primary_gln] PRIMARY KEY CLUSTERED
+                                                         (
+                                                          [member_primary_gln] ASC
+                                                             )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
 /****** Object:  Table [gs1resolver_dataentry_db].[sessions]    Script Date: 03/10/2019 14:08:25 ******/
@@ -567,14 +560,14 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [gs1resolver_dataentry_db].[sessions](
-	[session_id] [nchar](50) NOT NULL,
-	[account_id] [int] NOT NULL,
-	[datetime_created] [datetime2](0) NOT NULL,
-	[member_primary_gln] [nchar](13) NOT NULL,
- CONSTRAINT [PK_sessions_session_id] PRIMARY KEY CLUSTERED 
-(
-	[session_id] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+                                                      [session_id] [nchar](50) NOT NULL,
+                                                      [account_id] [int] NOT NULL,
+                                                      [datetime_created] [datetime2](0) NOT NULL,
+                                                      [member_primary_gln] [nchar](13) NOT NULL,
+                                                      CONSTRAINT [PK_sessions_session_id] PRIMARY KEY CLUSTERED
+                                                          (
+                                                           [session_id] ASC
+                                                              )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 /****** Object:  Table [gs1resolver_dataentry_db].[uri_requests]    Script Date: 03/10/2019 14:08:25 ******/
@@ -583,29 +576,29 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [gs1resolver_dataentry_db].[uri_requests](
-	[uri_request_id] [int] IDENTITY(1,1) NOT NULL,
-	[member_primary_gln] [nchar](13) NOT NULL,
-	[gs1_key_code] [nvarchar](20) NOT NULL,
-	[gs1_key_value] [nvarchar](45) NOT NULL,
-	[item_description] [nvarchar](200) NOT NULL,
-	[date_inserted] [datetime2](0) NOT NULL,
-	[date_last_updated] [datetime2](0) NOT NULL,
-	[web_uri_prefix_1] [nvarchar](10) NOT NULL,
-	[web_uri_suffix_1] [nvarchar](45) NOT NULL,
-	[web_uri_prefix_2] [nvarchar](10) NOT NULL,
-	[web_uri_suffix_2] [nvarchar](45) NOT NULL,
-	[web_uri_prefix_3] [nvarchar](10) NOT NULL,
-	[web_uri_suffix_3] [nvarchar](45) NOT NULL,
-	[web_uri_prefix_4] [nvarchar](10) NOT NULL,
-	[web_uri_suffix_4] [nvarchar](45) NOT NULL,
-	[include_in_sitemap] [bit] NOT NULL,
-	[active] [bit] NOT NULL,
-	[api_builder_processed] [bit] NOT NULL,
-	[flagged_for_deletion] [bit] NOT NULL,
- CONSTRAINT [PK_uri_requests_uri_request_id] PRIMARY KEY CLUSTERED 
-(
-	[uri_request_id] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+                                                          [uri_request_id] [int] IDENTITY(1,1) NOT NULL,
+                                                          [member_primary_gln] [nchar](13) NOT NULL,
+                                                          [gs1_key_code] [nvarchar](20) NOT NULL,
+                                                          [gs1_key_value] [nvarchar](45) NOT NULL,
+                                                          [item_description] [nvarchar](200) NOT NULL,
+                                                          [date_inserted] [datetime2](0) NOT NULL,
+                                                          [date_last_updated] [datetime2](0) NOT NULL,
+                                                          [web_uri_prefix_1] [nvarchar](10) NOT NULL,
+                                                          [web_uri_suffix_1] [nvarchar](45) NOT NULL,
+                                                          [web_uri_prefix_2] [nvarchar](10) NOT NULL,
+                                                          [web_uri_suffix_2] [nvarchar](45) NOT NULL,
+                                                          [web_uri_prefix_3] [nvarchar](10) NOT NULL,
+                                                          [web_uri_suffix_3] [nvarchar](45) NOT NULL,
+                                                          [web_uri_prefix_4] [nvarchar](10) NOT NULL,
+                                                          [web_uri_suffix_4] [nvarchar](45) NOT NULL,
+                                                          [include_in_sitemap] [bit] NOT NULL,
+                                                          [active] [bit] NOT NULL,
+                                                          [api_builder_processed] [bit] NOT NULL,
+                                                          [flagged_for_deletion] [bit] NOT NULL,
+                                                          CONSTRAINT [PK_uri_requests_uri_request_id] PRIMARY KEY CLUSTERED
+                                                              (
+                                                               [uri_request_id] ASC
+                                                                  )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 /****** Object:  Table [gs1resolver_dataentry_db].[uri_response_health_checks]    Script Date: 03/10/2019 14:08:25 ******/
@@ -614,16 +607,16 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [gs1resolver_dataentry_db].[uri_response_health_checks](
-	[uri_response_id] [int] NOT NULL,
-	[health_status] [nchar](1) NOT NULL,
-	[attempt_count_since_last_green] [smallint] NOT NULL,
-	[HTTP_code] [int] NOT NULL,
-	[error_response] [nvarchar](255) NOT NULL,
-	[latest_test_datetime] [nvarchar](45) NOT NULL,
- CONSTRAINT [PK_uri_response_health_checks] PRIMARY KEY CLUSTERED 
-(
-	[uri_response_id] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+                                                                        [uri_response_id] [int] NOT NULL,
+                                                                        [health_status] [nchar](1) NOT NULL,
+                                                                        [attempt_count_since_last_green] [smallint] NOT NULL,
+                                                                        [HTTP_code] [int] NOT NULL,
+                                                                        [error_response] [nvarchar](255) NOT NULL,
+                                                                        [latest_test_datetime] [nvarchar](45) NOT NULL,
+                                                                        CONSTRAINT [PK_uri_response_health_checks] PRIMARY KEY CLUSTERED
+                                                                            (
+                                                                             [uri_response_id] ASC
+                                                                                )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 /****** Object:  Table [gs1resolver_dataentry_db].[uri_responses]    Script Date: 03/10/2019 14:08:25 ******/
@@ -632,41 +625,41 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [gs1resolver_dataentry_db].[uri_responses](
-	[uri_response_id] [int] IDENTITY(1,1) NOT NULL,
-	[uri_request_id] [int] NOT NULL,
-	[linktype] [nvarchar](100) NOT NULL,
-	[iana_language] [nchar](2) NOT NULL,
-	[context] [nvarchar](100) NOT NULL,
-	[mime_type] [nvarchar](45) NOT NULL,
-	[friendly_link_name] [nvarchar](45) NOT NULL,
-	[destination_uri] [nvarchar](255) NOT NULL,
-	[default_linktype] [bit] NOT NULL,
-	[default_iana_language] [bit] NOT NULL,
-	[default_context] [bit] NOT NULL,
-	[default_mime_type] [bit] NOT NULL,
-	[forward_request_querystrings] [bit] NOT NULL,
-	[active] [bit] NOT NULL,
- CONSTRAINT [PK_uri_responses_uri_response_id] PRIMARY KEY CLUSTERED 
-(
-	[uri_response_id] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
+                                                           [uri_response_id] [int] IDENTITY(1,1) NOT NULL,
+                                                           [uri_request_id] [int] NOT NULL,
+                                                           [linktype] [nvarchar](100) NOT NULL,
+                                                           [iana_language] [nchar](2) NOT NULL,
+                                                           [context] [nvarchar](100) NOT NULL,
+                                                           [mime_type] [nvarchar](45) NOT NULL,
+                                                           [friendly_link_name] [nvarchar](45) NOT NULL,
+                                                           [destination_uri] [nvarchar](255) NOT NULL,
+                                                           [default_linktype] [bit] NOT NULL,
+                                                           [default_iana_language] [bit] NOT NULL,
+                                                           [default_context] [bit] NOT NULL,
+                                                           [default_mime_type] [bit] NOT NULL,
+                                                           [forward_request_querystrings] [bit] NOT NULL,
+                                                           [active] [bit] NOT NULL,
+                                                           CONSTRAINT [PK_uri_responses_uri_response_id] PRIMARY KEY CLUSTERED
+                                                               (
+                                                                [uri_response_id] ASC
+                                                                   )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-SET IDENTITY_INSERT [gs1resolver_dataentry_db].[accounts] ON 
+SET IDENTITY_INSERT [gs1resolver_dataentry_db].[accounts] ON
 
 INSERT [gs1resolver_dataentry_db].[accounts] ([account_id], [member_primary_gln], [firstname], [surname], [login_password], [login_email], [account_notes], [last_login_datetime], [administrator], [active]) VALUES (1, N'7878787878787', N'Sansa', N'Stark', N'6F0E30DCB10808362901D783C65AD092', N'sansa.stark@gs1westeros.com', N'Test Global Account', CAST(N'2019-10-03T12:08:11.0000000' AS DateTime2), N'G', 1)
 INSERT [gs1resolver_dataentry_db].[accounts] ([account_id], [member_primary_gln], [firstname], [surname], [login_password], [login_email], [account_notes], [last_login_datetime], [administrator], [active]) VALUES (2, N'4564564564567', N'Sam', N'Tarly', N'6F0E30DCB10808362901D783C65AD092', N'samwell.tarly@castleblack.com', N'Test Ordinary Account', CAST(N'2019-08-01T00:00:00.0000000' AS DateTime2), N'N', 1)
 INSERT [gs1resolver_dataentry_db].[accounts] ([account_id], [member_primary_gln], [firstname], [surname], [login_password], [login_email], [account_notes], [last_login_datetime], [administrator], [active]) VALUES (3, N'1234512345876', N'Yara', N'Greyjoy', N'6F0E30DCB10808362901D783C65AD092', N'yara.greyjoy@ironislands.com', N'Test Member Account', CAST(N'2019-08-15T12:47:08.0000000' AS DateTime2), N'M', 1)
 INSERT [gs1resolver_dataentry_db].[accounts] ([account_id], [member_primary_gln], [firstname], [surname], [login_password], [login_email], [account_notes], [last_login_datetime], [administrator], [active]) VALUES (4, N'4564564564567', N'Jon', N'Snow', N'6F0E30DCB10808362901D783C65AD092', N'jon.snow@castleblack.com', N'Test Member Account', CAST(N'2019-08-15T12:47:08.0000000' AS DateTime2), N'M', 1)
 SET IDENTITY_INSERT [gs1resolver_dataentry_db].[accounts] OFF
-SET IDENTITY_INSERT [gs1resolver_dataentry_db].[gcp_resolves] ON 
+SET IDENTITY_INSERT [gs1resolver_dataentry_db].[gcp_resolves] ON
 
 INSERT [gs1resolver_dataentry_db].[gcp_resolves] ([gcp_resolve_id], [member_primary_gln], [gs1_key_code], [gs1_gcp_value], [resolve_url_format], [notes], [api_builder_processed]) VALUES (1, N'9898989898989', N'gtin', N'0505476', N'https://lansley.com/experimental{URI}', N'Example using the {URI} variable which contains the URL received by the GS1 Resolver, starting with ''/'' character', 1)
 INSERT [gs1resolver_dataentry_db].[gcp_resolves] ([gcp_resolve_id], [member_primary_gln], [gs1_key_code], [gs1_gcp_value], [resolve_url_format], [notes], [api_builder_processed]) VALUES (2, N'9898989898989', N'gtin', N'05054781', N'https://lansley.com/experimental?dlinfo={DL}', N'Example using {DL} variable which is replaced by A URL-encoded JSON document with all digital link parameters. In this example, a name """dlinfo""" has been used for the end server to read', 1)
 INSERT [gs1resolver_dataentry_db].[gcp_resolves] ([gcp_resolve_id], [member_primary_gln], [gs1_key_code], [gs1_gcp_value], [resolve_url_format], [notes], [api_builder_processed]) VALUES (3, N'9898989898989', N'gtin', N'057123', N'https://lansley.com/experimental{URI}?digitallinkdata={DL}', N'Example using both {URI} and {DL} variables. Note how there is a ? before the chosen querystring variable name to avoid syntax errors if other querystrings are present on the inbound request', 1)
 SET IDENTITY_INSERT [gs1resolver_dataentry_db].[gcp_resolves] OFF
 INSERT [gs1resolver_dataentry_db].[gs1_mos] ([gs1_mo_primary_gln], [organisation_name]) VALUES (N'9898989898989', N'GS1 Westeros')
-SET IDENTITY_INSERT [gs1resolver_dataentry_db].[list_contexts] ON 
+SET IDENTITY_INSERT [gs1resolver_dataentry_db].[list_contexts] ON
 
 INSERT [gs1resolver_dataentry_db].[list_contexts] ([context_id], [context_value], [description], [default_context_flag]) VALUES (0, N'xx', N'(Not Used)', 0)
 INSERT [gs1resolver_dataentry_db].[list_contexts] ([context_id], [context_value], [description], [default_context_flag]) VALUES (1, N'ac', N'Ascension Island', 0)
@@ -922,7 +915,7 @@ INSERT [gs1resolver_dataentry_db].[list_contexts] ([context_id], [context_value]
 INSERT [gs1resolver_dataentry_db].[list_contexts] ([context_id], [context_value], [description], [default_context_flag]) VALUES (249, N'zm', N'Zambia', 0)
 INSERT [gs1resolver_dataentry_db].[list_contexts] ([context_id], [context_value], [description], [default_context_flag]) VALUES (250, N'zw', N'Zimbabwe', 0)
 SET IDENTITY_INSERT [gs1resolver_dataentry_db].[list_contexts] OFF
-SET IDENTITY_INSERT [gs1resolver_dataentry_db].[list_gs1_key_components] ON 
+SET IDENTITY_INSERT [gs1resolver_dataentry_db].[list_gs1_key_components] ON
 
 INSERT [gs1resolver_dataentry_db].[list_gs1_key_components] ([gs1_key_component_id], [gs1_key_code], [component_order], [component_uri_id], [component_name], [accepted_formats]) VALUES (1, N'gtin', 1, N'cpv', N'Consumer Product Variant', N'1*20XCHAR')
 INSERT [gs1resolver_dataentry_db].[list_gs1_key_components] ([gs1_key_component_id], [gs1_key_code], [component_order], [component_uri_id], [component_name], [accepted_formats]) VALUES (2, N'gtin', 2, N'lot', N'Batch or Lot identifier', N'1*20XCHAR')
@@ -933,7 +926,7 @@ INSERT [gs1resolver_dataentry_db].[list_gs1_key_components] ([gs1_key_component_
 INSERT [gs1resolver_dataentry_db].[list_gs1_key_components] ([gs1_key_component_id], [gs1_key_code], [component_order], [component_uri_id], [component_name], [accepted_formats]) VALUES (7, N'cpid', 1, N'cpsn', N'CPID Serial Number!', N'1*12DIGIT')
 INSERT [gs1resolver_dataentry_db].[list_gs1_key_components] ([gs1_key_component_id], [gs1_key_code], [component_order], [component_uri_id], [component_name], [accepted_formats]) VALUES (8, N'gln', 1, N'glnx', N'GLNX NUmber', N'1*20XCHAR')
 SET IDENTITY_INSERT [gs1resolver_dataentry_db].[list_gs1_key_components] OFF
-SET IDENTITY_INSERT [gs1resolver_dataentry_db].[list_linktypes] ON 
+SET IDENTITY_INSERT [gs1resolver_dataentry_db].[list_linktypes] ON
 
 INSERT [gs1resolver_dataentry_db].[list_linktypes] ([linktype_id], [locale], [linktype_name], [linktype_reference_url], [applicable_gs1_key_code], [description]) VALUES (1, N'en-GB', N'Traceability information', N'https://gs1.org/voc/traceability', N'gtin', N'A link to traceability information about the product.')
 INSERT [gs1resolver_dataentry_db].[list_linktypes] ([linktype_id], [locale], [linktype_name], [linktype_reference_url], [applicable_gs1_key_code], [description]) VALUES (2, N'en-GB', N'Recipe website', N'https://gs1.org/voc/recipeInfo', N'gtin', N'A link to a recipe website for the product.')
@@ -971,7 +964,7 @@ INSERT [gs1resolver_dataentry_db].[list_linktypes] ([linktype_id], [locale], [li
 INSERT [gs1resolver_dataentry_db].[list_linktypes] ([linktype_id], [locale], [linktype_name], [linktype_reference_url], [applicable_gs1_key_code], [description]) VALUES (34, N'en-GB', N'Leave a review', N'https://gs1.org/voc/leaveReview', N'gtin', N'A link through which a review can be added.')
 INSERT [gs1resolver_dataentry_db].[list_linktypes] ([linktype_id], [locale], [linktype_name], [linktype_reference_url], [applicable_gs1_key_code], [description]) VALUES (35, N'en-GB', N'Allergen information', N'https://gs1.org/voc/allergenInfo', N'gtin', N'A document describing the allergens in the product.')
 SET IDENTITY_INSERT [gs1resolver_dataentry_db].[list_linktypes] OFF
-SET IDENTITY_INSERT [gs1resolver_dataentry_db].[list_mime_types] ON 
+SET IDENTITY_INSERT [gs1resolver_dataentry_db].[list_mime_types] ON
 
 INSERT [gs1resolver_dataentry_db].[list_mime_types] ([mime_type_id], [mime_type_value], [description], [default_mime_type_flag]) VALUES (1, N'text/html', N'HTML web page', 1)
 INSERT [gs1resolver_dataentry_db].[list_mime_types] ([mime_type_id], [mime_type_value], [description], [default_mime_type_flag]) VALUES (2, N'text/csv', N'CSV data file', 0)
@@ -987,7 +980,7 @@ INSERT [gs1resolver_dataentry_db].[members] ([member_primary_gln], [gs1_mo_prima
 INSERT [gs1resolver_dataentry_db].[members] ([member_primary_gln], [gs1_mo_primary_gln], [member_name], [notes], [active], [member_logo_url]) VALUES (N'4564564564567', N'9898989898989', N'Castle Black Security', N'(Test Member)', 1, N'data:image/png;base64,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')
 INSERT [gs1resolver_dataentry_db].[members] ([member_primary_gln], [gs1_mo_primary_gln], [member_name], [notes], [active], [member_logo_url]) VALUES (N'7878787878787', N'9898989898989', N'GS1 Westeros Ltd', N'(Test Member)', 1, N'data:image/png;base64,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')
 INSERT [gs1resolver_dataentry_db].[sessions] ([session_id], [account_id], [datetime_created], [member_primary_gln]) VALUES (N'w8d5yzphpqkaa286uqs6j2hg1e6j61ywbg8gt4pna84bu52h0v', 1, CAST(N'2019-10-03T12:48:47.0000000' AS DateTime2), N'7878787878787')
-SET IDENTITY_INSERT [gs1resolver_dataentry_db].[uri_requests] ON 
+SET IDENTITY_INSERT [gs1resolver_dataentry_db].[uri_requests] ON
 
 INSERT [gs1resolver_dataentry_db].[uri_requests] ([uri_request_id], [member_primary_gln], [gs1_key_code], [gs1_key_value], [item_description], [date_inserted], [date_last_updated], [web_uri_prefix_1], [web_uri_suffix_1], [web_uri_prefix_2], [web_uri_suffix_2], [web_uri_prefix_3], [web_uri_suffix_3], [web_uri_prefix_4], [web_uri_suffix_4], [include_in_sitemap], [active], [api_builder_processed], [flagged_for_deletion]) VALUES (1, N'7878787878787', N'gtin', N'07625695556149', N'[]R1MxIEdsb2JhbCBPZmZpY2U=', CAST(N'2019-07-26T12:09:45.0000000' AS DateTime2), CAST(N'2019-09-04T13:46:08.0000000' AS DateTime2), N'', N'', N'', N'', N'', N'', N'', N'', 0, 1, 0, 0)
 INSERT [gs1resolver_dataentry_db].[uri_requests] ([uri_request_id], [member_primary_gln], [gs1_key_code], [gs1_key_value], [item_description], [date_inserted], [date_last_updated], [web_uri_prefix_1], [web_uri_suffix_1], [web_uri_prefix_2], [web_uri_suffix_2], [web_uri_prefix_3], [web_uri_suffix_3], [web_uri_prefix_4], [web_uri_suffix_4], [include_in_sitemap], [active], [api_builder_processed], [flagged_for_deletion]) VALUES (2, N'1234512345876', N'gtin', N'5017353502285', N'[]SXJvbiBBeGU=', CAST(N'2019-08-15T12:31:57.0000000' AS DateTime2), CAST(N'2019-08-15T13:09:49.0000000' AS DateTime2), N'', N'', N'', N'', N'', N'', N'', N'', 1, 0, 0, 0)
@@ -996,7 +989,7 @@ INSERT [gs1resolver_dataentry_db].[uri_response_health_checks] ([uri_response_id
 INSERT [gs1resolver_dataentry_db].[uri_response_health_checks] ([uri_response_id], [health_status], [attempt_count_since_last_green], [HTTP_code], [error_response], [latest_test_datetime]) VALUES (2, N'G', 0, 200, N'OK - 0', N'Sep 20 2019  7:48AM')
 INSERT [gs1resolver_dataentry_db].[uri_response_health_checks] ([uri_response_id], [health_status], [attempt_count_since_last_green], [HTTP_code], [error_response], [latest_test_datetime]) VALUES (3, N'G', 0, 200, N'OK - 0', N'Sep 20 2019  7:48AM')
 INSERT [gs1resolver_dataentry_db].[uri_response_health_checks] ([uri_response_id], [health_status], [attempt_count_since_last_green], [HTTP_code], [error_response], [latest_test_datetime]) VALUES (44767777, N'G', 0, 200, N'OK - 0', N'Sep 20 2019  7:48AM')
-SET IDENTITY_INSERT [gs1resolver_dataentry_db].[uri_responses] ON 
+SET IDENTITY_INSERT [gs1resolver_dataentry_db].[uri_responses] ON
 
 INSERT [gs1resolver_dataentry_db].[uri_responses] ([uri_response_id], [uri_request_id], [linktype], [iana_language], [context], [mime_type], [friendly_link_name], [destination_uri], [default_linktype], [default_iana_language], [default_context], [default_mime_type], [forward_request_querystrings], [active]) VALUES (1, 1, N'https://gs1.org/voc/pip', N'en', N'gb', N'text/html', N'[]RGVzY3JpcHRpb24gKEdTMSBHTyBIb21lIFBhZ2Up', N'https://www.gs1.org', 1, 0, 0, 0, 1, 1)
 INSERT [gs1resolver_dataentry_db].[uri_responses] ([uri_response_id], [uri_request_id], [linktype], [iana_language], [context], [mime_type], [friendly_link_name], [destination_uri], [default_linktype], [default_iana_language], [default_context], [default_mime_type], [forward_request_querystrings], [active]) VALUES (2, 1, N'https://gs1.org/voc/epil', N'en', N'fr', N'application/pdf', N'[]R1MxIEdsb2JhbCBPZmZpY2UgRkFR', N'https://www.gs1.org/docs/media_centre/gs1_pr_060614_epcis_cbv_FAQ.pdf', 1, 0, 1, 1, 1, 1)
@@ -1007,32 +1000,32 @@ SET ANSI_PADDING ON
 GO
 /****** Object:  Index [IX_gcp_resolves]    Script Date: 03/10/2019 14:08:27 ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_gcp_resolves] ON [gs1resolver_dataentry_db].[gcp_resolves]
-(
-	[gs1_key_code] ASC,
-	[gs1_gcp_value] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+    (
+     [gs1_key_code] ASC,
+     [gs1_gcp_value] ASC
+        )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
 GO
 SET ANSI_PADDING ON
 GO
 /****** Object:  Index [IX_list_contexts_value]    Script Date: 03/10/2019 14:08:27 ******/
 CREATE NONCLUSTERED INDEX [IX_list_contexts_value] ON [gs1resolver_dataentry_db].[list_contexts]
-(
-	[context_value] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+    (
+     [context_value] ASC
+        )WITH (STATISTICS_NORECOMPUTE = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
 GO
 SET ANSI_PADDING ON
 GO
 /****** Object:  Index [member_primary_gln]    Script Date: 03/10/2019 14:08:27 ******/
 CREATE NONCLUSTERED INDEX [member_primary_gln] ON [gs1resolver_dataentry_db].[uri_requests]
-(
-	[member_primary_gln] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+    (
+     [member_primary_gln] ASC
+        )WITH (STATISTICS_NORECOMPUTE = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
 GO
 /****** Object:  Index [uri_request_id_idx]    Script Date: 03/10/2019 14:08:27 ******/
 CREATE NONCLUSTERED INDEX [uri_request_id_idx] ON [gs1resolver_dataentry_db].[uri_responses]
-(
-	[uri_request_id] ASC
-)WITH (STATISTICS_NORECOMPUTE = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
+    (
+     [uri_request_id] ASC
+        )WITH (STATISTICS_NORECOMPUTE = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
 GO
 ALTER TABLE [gs1resolver_dataentry_db].[accounts] ADD  DEFAULT (NULL) FOR [firstname]
 GO
@@ -1800,8 +1793,8 @@ BEGIN
 
     SET  NOCOUNT  ON
 
-	DELETE FROM gs1resolver_dataentry_db.uri_responses
-	WHERE uri_request_id = @var_uri_request_id
+    DELETE FROM gs1resolver_dataentry_db.uri_responses
+    WHERE uri_request_id = @var_uri_request_id
 
     DELETE FROM gs1resolver_dataentry_db.uri_requests
     WHERE uri_request_id = @var_uri_request_id
@@ -1917,34 +1910,34 @@ BEGIN
     record and tart rebuilding it.
     */
     SELECT DISTINCT TOP (@var_max_rows_to_return)
-		[gs1_key_code],
-		[gs1_key_value]
+    [gs1_key_code],
+    [gs1_key_value]
     INTO #temp_gs1_key_codes_values
     FROM [uri_requests]
     WHERE api_builder_processed = 0
 
     SELECT
-		r.uri_request_id,
-		r.member_primary_gln,
-		r.gs1_key_code,
-		r.gs1_key_value,
-		r.item_description,
-		r.date_inserted,
-		r.date_last_updated,
-		r.web_uri_prefix_1,
-		r.web_uri_suffix_1,
-		r.web_uri_prefix_2,
-		r.web_uri_suffix_2,
-		r.web_uri_prefix_3,
-		r.web_uri_suffix_3,
-		r.web_uri_prefix_4,
-		r.web_uri_suffix_4,
-		r.include_in_sitemap,
-		r.active,
-		r.flagged_for_deletion
+        r.uri_request_id,
+        r.member_primary_gln,
+        r.gs1_key_code,
+        r.gs1_key_value,
+        r.item_description,
+        r.date_inserted,
+        r.date_last_updated,
+        r.web_uri_prefix_1,
+        r.web_uri_suffix_1,
+        r.web_uri_prefix_2,
+        r.web_uri_suffix_2,
+        r.web_uri_prefix_3,
+        r.web_uri_suffix_3,
+        r.web_uri_prefix_4,
+        r.web_uri_suffix_4,
+        r.include_in_sitemap,
+        r.active,
+        r.flagged_for_deletion
     FROM [gs1resolver_dataentry_db].[uri_requests] r
              INNER JOIN #temp_gs1_key_codes_values t ON r.gs1_key_code = t.gs1_key_code AND r.gs1_key_value = t.gs1_key_value
-	ORDER BY r.gs1_key_code, r.gs1_key_value
+    ORDER BY r.gs1_key_code, r.gs1_key_value
 
     DROP TABLE #temp_gs1_key_codes_values
 END
@@ -2005,7 +1998,7 @@ CREATE PROCEDURE [gs1resolver_dataentry_db].[BUILD_SetToRequireRebuild]
 (
     -- Add the parameters for the stored procedure here
     @var_gs1_key_code nvarchar(20),
-	@var_gs1_key_value nvarchar(45)
+    @var_gs1_key_value nvarchar(45)
 )
 AS
 BEGIN
@@ -2014,10 +2007,10 @@ BEGIN
     SET NOCOUNT ON
 
     -- Insert statements for procedure here
-	UPDATE gs1resolver_dataentry_db.uri_requests
-	SET api_builder_processed = 0
-	WHERE gs1_key_code = @var_gs1_key_code
-	AND gs1_key_value = @var_gs1_key_value
+    UPDATE gs1resolver_dataentry_db.uri_requests
+    SET api_builder_processed = 0
+    WHERE gs1_key_code = @var_gs1_key_code
+      AND gs1_key_value = @var_gs1_key_value
 
 END
 GO
@@ -2688,7 +2681,8 @@ GO
 
 
 CREATE PROCEDURE [gs1resolver_dataentry_db].[get_response_uris_for_request]
-@var_uri_request_id int
+    @var_session_id nchar(50),
+    @var_uri_request_id int
 AS
 BEGIN
 
@@ -2711,8 +2705,11 @@ BEGIN
         [default_mime_type],
         [forward_request_querystrings],
         res.[active]
-    FROM [gs1resolver_dataentry_db].[uri_responses] res INNER JOIN [gs1resolver_dataentry_db].[uri_requests] req ON req.uri_request_id = res.uri_request_id
+    FROM [gs1resolver_dataentry_db].[uri_responses] res
+             INNER JOIN [gs1resolver_dataentry_db].[uri_requests] req ON req.uri_request_id = res.uri_request_id
+             INNER JOIN [gs1resolver_dataentry_db].[sessions] ses ON req.member_primary_gln = ses.member_primary_gln
     WHERE req.uri_request_id = @var_uri_request_id
+      AND ses.session_id = @var_session_id
     ORDER BY [linktype], [iana_language], [context], [mime_type]
 
 
@@ -3391,5 +3388,3 @@ BEGIN
 
 END
 GO
-
-

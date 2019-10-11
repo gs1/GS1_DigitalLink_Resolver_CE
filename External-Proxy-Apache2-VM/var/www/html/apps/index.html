@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width initial-scale=1.0">
+  <title>Apps and more</title>
+<!--  <link rel="stylesheet" href="https://cloud.typography.com/6247692/752844/css/fonts.css" /> -->
+  <link rel="stylesheet" href="https://id.gs1.org/styles/mainstyles.css" />
+  <style type="text/css">
+    p.createdFor {
+     text-align:right;
+     font-style: italic;
+    }
+
+  </style>
+
+</head>
+<body>
+  <div id="corporateHead">
+    <img src="https://id.gs1.org/gs1logo.png" alt="GS1 Logo" id="logo" />
+    <p id="strapline">The Global Language of Business</p>
+  </div>
+
+  <header>
+    <h1>Apps and more</h1>
+  </header>
+    <p>This page currently provides a jump off point for demo apps. These are <strong>not</strong> anything like production-ready applications but are useful at this stage in the process to point to available demos.</p>
+
+  <main>
+  <section id="oneD"><h2>*UPDATED SEPT 2019* GS1 Resolver Barcode scanner</h2>
+    <p>The <a href="/apps/GS1ResolverClient.apk">GS1 Resolver Barcode Scanner App</a> is a fully featured reference app for demonstrating the GS1 Digital Link standard, and is for Android devices. It scans product GTINs and looks up information, if available, on GS1's global ID resolver at id.gs1.org
+       using the compatible GS1 Digital Link format: 
+<br/>
+<br/>
+     <code>https://id.gs1.org/gtin/{13-or-14-digit-gtin}/{optional digital link attributes in URI format}?{querystrings}</code><br /><br />
+	Using an onscreen 'Information Type' selector, you can choose from a range of 'Link Types' of information for the product, such as 'Product Description', 'Related video', and 'Recipe website' which are found in the GS1 Resolver's '.well-known' link at <a href="https://id.gs1.org/.well-known/gs1resolver.json">https://id.gs1.org/.well-known/gs1resolver.json</a> 
+         If that information type is found when you scan the product, the app immediately redirects you to an appropriate third-pary page owned
+           by that GTIN's member licensee, or else shows you a product information and links page from id.gs1.org itself.</p>
+    For Data matrix barcodes, this app searches for and extracts these elements where they are present:
+    <ul><li>GTIN (01)</li>
+    <li>Expiry date (17)</li>
+    <li>Batch/lot number (10)</li>
+    <li>Serial number (21)</li></ul>
+    <p>This information is used to form a URI of the following form:<br /><br />
+      <code>https://id.gs1.org/gtin/{gtin}/lot/{lot}/ser/{ser}?expiryDate={expiry date}</code>
+    <p>You can use the app to try out 1D Barcodes, Data Matrix barcodes, and QR Codes containing links in GS1 Digital Link format. Try these samples: <a href="https://philarcher.org/gs1/2019/qrSamples/">https://philarcher.org/gs1/2019/qrSamples/</a></p>
+    <p class="createdFor">Created for demonstrations for and by GS1 Member Organisations. Requires the android operating system on your mobile phone only at this time. <i>For demonstration purposes only</i></p>
+  </section>
+<hr />
+
+  <section id="hcScanner"><h2>*UPDATED SEPT 2019* GS1 Resolver 2019 edition scanner</h2>
+    <p>The <a href="/apps/gs1resolver2019.apk">GS1 Resolver 2019 edition scanner</a> is an updated app for Android devices that scans a GS1 DataMatrix (as well as 1D barcodes). 
+    The updated app asks the resolver for available linktypes and has been updated to include the Norewegian language option. The app follows several user stories for both healthcare and supermarket products. 
+    For Data matrix barcodes, this app searches for and extracts these elements where they are present:
+    <ul><li>GTIN (01)</li>
+    <li>Expiry date (17)</li>
+    <li>Batch/lot number (10)</li>
+    <li>Serial number (21)</li></ul>
+    <p>This information is used to form a URI of the following form:<br /><br />
+      <code>https://id.gs1.org/gtin/{gtin}/lot/{lot}/ser/{ser}?expiryDate={expiry date}</code>
+      <p>You can test the app using Data Matrix images at <a href="https://philarcher.org/gs1/2019/brusselsdemos/">https://philarcher.org/gs1/2019/brusselsdemos/</a>
+    <p class="createdFor">Created for January and February 2019 events in Brussels, and updated for demonstration ebvents in Autumn 2019 - and is to be used for demonstration purposes only.</p>
+  </section>
+
+<hr />
+
+  <section id="hcScanner"><h2>GS1 DataMatrix scanner</h2>
+    <p>The <a href="/apps/gs1healthcarescanner.apk">Healthcare demo</a> is an app for Android devices that scans a GS1 DataMatrix. It extracts the elements usually found in the Data Matrix code string:
+    <li>(01) GTIN</li>
+    <li>Expiry date (17)</li>
+    <li>Batch/lot number (10)</li>
+    <li>Serial number (21)</li></ul>
+    <p>This information is used to form a URI of the following form:<br /><br />
+      <code>https://id.gs1.org/gtin/{gtin}/lot/{lot}/ser/{ser}?expiryDate={expiry date}</code><br /><br />
+    <p>For the demo, the server will either redirect to a pharmaceutical manufacturer's product description page (the demo was created in association with GSK) or will perform an FDA GUDID lookup live using their API.
+       You can test the app on the Data Matrix images at <a href="https://id.gs1.org/apps/hctestimages">https://id.gs1.org/apps/hctestimages</a>
+    <p class="createdFor">Created for the April 2018 Global Healthcare conference in Bogotá.</p>
+  </section>
+
+</body></html>

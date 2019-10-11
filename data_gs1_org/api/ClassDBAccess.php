@@ -9,7 +9,7 @@
 class ClassDBAccess
 {
     private $db;
-    public function __construct() 
+    public function __construct()
     {
         $ini = parse_ini_file('/var/www/config/api.ini');
         $servername = $ini['mssql_server_name'];
@@ -24,7 +24,8 @@ class ClassDBAccess
         if (!$this->db)
         {
             $error =  sqlsrv_errors();
-            echo '<p>SQL SERVER Database Connection Failed. Error for technical help below</p><textarea rows="20" cols="40">' . json_encode($error) . '</textarea>';
+            echo '{"Error", "SQL SERVER Database Connection Failed. Please contact the APIs administrator - error log on server for details"}';
+            file_put_contents('php://stderr', 'Error connecting to SQL DB: ' . print_r($error, true) . PHP_EOL);
             die();
         }
     }
@@ -680,7 +681,7 @@ class ClassDBAccess
         $result = array();
         if($this->CheckSessionActive($sessionId))
         {
-            $sql = "EXEC [gs1resolver_dataentry_db].[get_response_uris_for_request]  $uriRequestId";
+            $sql = "EXEC [gs1resolver_dataentry_db].[get_response_uris_for_request] '$sessionId', $uriRequestId";
             $result = $this->DBSelect($sql);
         }
 
@@ -1229,7 +1230,7 @@ class ClassDBAccess
         }
         return $result;
     }
-    
+
 
 
     /**
