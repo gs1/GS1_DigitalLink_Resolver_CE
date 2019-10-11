@@ -54,7 +54,7 @@ connection the build-from-scratch will take 10-15 minutes.
 6. Once completed, type this to start everything up:<pre>docker-compose up</pre>As everything starts up, lots of text will once again flow up the terminal window.
 Let it settle down.
 7. Now open a second terminal / powershell window! At the new command prompt, type this command, which will run a program inside the SQL Server 
-container, creating the database and some example data described in the file data_gs1_org/README.md <pre>docker exec -it gs1resolver_dataentry_db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU -i  /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql</pre>
+container, creating the database and some example data described in the file data_gs1_org/README.md <pre>docker exec -it  dataentry-sql-server  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU -i  /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql</pre>
 8. Now take a browser and head to this web address: http://localhost:8080/ui and login as one of the test accounts described in:
  [date_gs1_org/README.md](data_gs1_org/README.md)
 9. To close the service down, go back to the first terminal /powershell window and press Ctrl-C. This will shut the service down. 
