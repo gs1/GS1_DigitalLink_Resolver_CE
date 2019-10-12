@@ -46,14 +46,14 @@ If you are using linux, follow install instructions here: https://docs.docker.co
 2. Git Pull the repository onto your computer.
 3. Open a terminal prompt (Mac and Linux) or PowerShell (Windows 10) and change directory to the one at the 'root' of this repository, so you can see
 the file <b>docker-compose.yml</b> in the current folder.
-4. Type this command:<pre>docker-compose config</pre>, which should simply list the docker-compose.yml without error, and then type this xommand <pre>docker info</pre>
-which will cause docker to check that all is well with the service and give some starts. If you're not seeing any errors then we're good to go.
-5. Make sure you have a good internet connection, and then type this command:<pre>docker-compose build</pre> which will cause Docker to build the complete end-to-end docker service.
+4. Type this command:<pre>docker-compose config</pre>...which should simply list the docker-compose.yml without error, and then type this xommand <pre>docker info</pre>
+which will cause docker to check that all is well with the service and give some run-time statistics. If you're not seeing any errors then we're good to go.
+5. Make sure you have a good internet connection, and then type this command:<pre>docker-compose build</pre> which will cause Docker to build the complete end-to-end G1 Resolver service.
 This will take quite a while with lots of text flowing up the terminal window as downloading and compiling of the service takes place. Even on a high speed
 connection the build-from-scratch will take 10-15 minutes.
 6. Once completed, type this to start everything up:<pre>docker-compose up</pre>As everything starts up, lots of text will once again flow up the terminal window.
 Let it settle down.
-7. Now open a second terminal / powershell window! At the new command prompt, type this command, which will run a program inside the SQL Server 
+7. Now open a second terminal / powershell window (you don't have to have this window in the same folder as the other terminal). At the new command prompt, type this command, which will run a program inside the SQL Server 
 container, creating the database and some example data described in the file data_gs1_org/README.md <pre>docker exec -it  dataentry-sql-server  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU -i  /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql</pre>
 8. Now take a browser and head to this web address: http://localhost:8080/ui and login as one of the test accounts described in:
  [date_gs1_org/README.md](data_gs1_org/README.md)
