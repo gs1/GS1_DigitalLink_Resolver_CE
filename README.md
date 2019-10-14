@@ -27,7 +27,7 @@ It is for these reasons that this type of architecture has become so popular.
 
 The only outward-facing web server is the <i><b>id-web-server</b></i> container. Any client requests to the /ui/ data entry web application and /api/ API service are proxied through to the <b><i><b>dataentry-web-server</b></i></b> by the <i><b>id-web-server</b></i>. Any other calls to the service are processed by <i><b>id-web-server</b></i> itself.
 
-A third web server, gs1dl-toolkit-server, is a separate service used internally by <i><b>id-web-server</b></i> to detect and create distinctive digital link elements which
+A third web server, <b><i>gs1dl-toolkit-server</i></b>, is a separate service used internally by <i><b>id-web-server</b></i> to detect and create distinctive digital link elements which
 <i><b>id-web-server</b></i> uses for further processing. Indeed, <i><b>gs1dl-toolkit-server</b></i> hosts a set of ten node.js (JavaScript) web servers across ten internal-only IP ports from 3000 to 3009 on the services' private <i><b>gs1-resolver-network</b></i>.
 Processing threads in <i><b>id-web-server</b></i> can choose any of the ten ports at random, which speeds throughput given that each node.js endpoint is a single-threaded application.
 
@@ -50,9 +50,9 @@ which will cause docker to check that all is well with the service and give some
 5. Make sure you have a good internet connection, and then type this command:<pre>docker-compose build</pre>...which will cause Docker to build the complete end-to-end G1 Resolver service.
 This will take quite a while with lots of text flowing up the terminal window as downloading and compiling of the service takes place. Even on a high speed
 connection the build-from-scratch will take 10-15 minutes.
-6. Once completed, type this to start everything up:<pre>docker-compose up</pre>As everything starts up, lots of text will once again flow up the terminal window.
-Let it settle down.
-7. Now open a second terminal / powershell window (you don't have to have this window in the same folder as the other terminal). At the new command prompt, type this command, which will run a program inside the SQL Server 
+6. Once completed, type this to start everything up:<pre>docker-compose up -d</pre>(the -d means 'disconnect' - docker-compose will start up everything then hand control back to you). 
+
+7. Now wait 10 seconds while the system settles down (the SQL Server service takes a few seconds to initialise when 'new') then copy and paste this command, which will run a program inside the SQL Server 
 container, creating the database and some example data described in the file data_gs1_org/README.md <pre>docker exec -it  dataentry-sql-server  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU -i  /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql</pre>
 8. Now take a browser and head to this web address: http://localhost:8080/ui and login as one of the test accounts described in:
  [data_gs1_org/README.md](data_gs1_org/README.md)
