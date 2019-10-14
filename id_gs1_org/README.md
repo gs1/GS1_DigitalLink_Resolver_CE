@@ -8,7 +8,6 @@ Here are the various elements of the application in their respective folders:
 <tr><td>/wwwroot</td><td>home page that currently redirects to https://www.gs1.org home page</td></tr>
 <tr><td>/config</td><td>A folder containing api.ini which has connection info for the databases.</td></tr>
 <tr><td>/docker_config</td><td>Contains an Apache2 config file which Docker will install into the image it builds/td></tr>
-<tr><td>/digitallink_toolkit</td><td>A Node.JS JavaScript application pulled from another GS1 repository and saved here for version control reasons</td></tr>
 <tr><td>Dockerfile</td><td>Used to build an image for this complete application </td></tr>
 </table>
 
