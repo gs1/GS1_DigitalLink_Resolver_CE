@@ -2,7 +2,7 @@
 Depending on your implementation, you are likely to need a proxy server between the internet and your Docker Engine 
 container runtime. The most useful reason for a proxy is that it can take on the job of processing secure HTTP
 decryption and encryption tasks, passing on 'clear text' versions of incoming requests and outgoing responses to the
-id-web-server container running on an internal Docker Engine.
+GS1 DigitalLink Resolver CE Docker service running on an internal Docker Engine.
 
 Our simple solution is to have an upstream web server that performs this proxying. This way our Docker Engine and
 its containers are not themselves on the internet; instead behind an appropriate firewall that only the proxy server
