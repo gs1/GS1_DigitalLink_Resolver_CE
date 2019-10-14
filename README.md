@@ -43,12 +43,12 @@ stores the Mongo document data so that all the data survives the service being s
 ## Fast start
 1. Install the Docker system on your computer. Head to https://www.docker.com/products/docker-desktop for install details for Windows and Mac.
 If you are using linux, follow install instructions here: https://docs.docker.com/install/linux/docker-ce/ubuntu/
-2. Git Pull the repository onto your computer.
+2. <i><b>git clone</b></i> this repository onto your computer.
 3. Open a terminal prompt (Mac and Linux) or PowerShell (Windows 10) and change directory to the one at the 'root' of this repository, so you can see
 the file <b>docker-compose.yml</b> in the current folder.
-4. Type this command:<pre>docker-compose config</pre>...which should simply list the docker-compose.yml without error, and then type this xommand <pre>docker info</pre>
+4. Type this command:<pre>docker-compose config</pre>...which should simply list the docker-compose.yml without error, and then type this command <pre>docker info</pre>
 which will cause docker to check that all is well with the service and give some run-time statistics. If you're not seeing any errors then we're good to go.
-5. Make sure you have a good internet connection, and then type this command:<pre>docker-compose build</pre> which will cause Docker to build the complete end-to-end G1 Resolver service.
+5. Make sure you have a good internet connection, and then type this command:<pre>docker-compose build</pre>...which will cause Docker to build the complete end-to-end G1 Resolver service.
 This will take quite a while with lots of text flowing up the terminal window as downloading and compiling of the service takes place. Even on a high speed
 connection the build-from-scratch will take 10-15 minutes.
 6. Once completed, type this to start everything up:<pre>docker-compose up</pre>As everything starts up, lots of text will once again flow up the terminal window.
