@@ -1,4 +1,4 @@
-##Welcome to the GS1 Digital Link Resolver - Community Edition
+## Welcome to the GS1 Digital Link Resolver - Community Edition
 
 Welcome! The purpose of this repository is to enable you to build a complete resolver service that will enable you to entrr information about GTINs aand other GS1 keys
 and resolve (that is redirect) web clients to their appropriate destinations.
