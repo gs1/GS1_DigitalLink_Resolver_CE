@@ -1,7 +1,7 @@
 ## Welcome to the GS1 Digital Link Resolver - Community Edition
 
-Welcome! The purpose of this repository is to enable you to build a complete resolver service that will enable you to entrr information about GTINs aand other GS1 keys
-and resolve (that is redirect) web clients to their appropriate destinations.
+Welcome! The purpose of this repository is to enable you to build a complete resolver service that will enable you to enter information about GTINs aand other GS1 keys
+and resolve (that is, redirect) web clients to their appropriate destinations.
 
 This repository consists of three projects which work together to provide the resolving service:
 <table border="1">
@@ -24,12 +24,12 @@ understand incming digital ink requests.</td></tr>
 ## Architecture
 
 The community edition of the GS1 Digital Link Resolver is an entirely self-contained service, completed with databases
-and service for date entry and resolving.
+and services for date entry and resolving.
 
 The only outward-facing web server is the <i><b>id-web-server</b></i> container. Any client requests to the /ui/ data entry web application and /api/ API service are proxied through to the <b><i><b>dataentry-web-server</b></i></b> by the <i><b>id-web-server</b></i>. Any other calls to the service are processed by <i><b>id-web-server</b></i> itself.
 
 A third web server, gs1dl-toolkit-server, is a separate service used internally by <i><b>id-web-server</b></i> to detect and create distinctive digital link elements which
-<i><b>id-web-server</b></i> uses for further processing. Indeed, <i><b>gs1dl-toolkit-server</b></i> hosts a set of 10 node.js (JavaScript) web servers across  10 internal-only IP ports from 3000 to 3009 on the services' private <i><b>gs1-resolver-network</b></i>.
+<i><b>id-web-server</b></i> uses for further processing. Indeed, <i><b>gs1dl-toolkit-server</b></i> hosts a set of 10 node.js (JavaScript) web servers across ten internal-only IP ports from 3000 to 3009 on the services' private <i><b>gs1-resolver-network</b></i>.
 Processing threads in <i><b>id-web-server</b></i> can choose any of ten ports at random, which speeds throughput given that each node.js endpoint is a single-threaded application.
 
 As well as enabling CRUD (Create / Read / Update / Delete) operations on data, <i><b>dataentry-web-server</b></i> also has a BUILD function that runs once per minute as a result of the Docker HEALTHCHECK process set up in the Dockerfile for that container.
