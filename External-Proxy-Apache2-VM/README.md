@@ -57,3 +57,16 @@ throughout this config file:
                      ProxyPassReverse /01   http://10.0.0.2:8080/01
  </pre>
 ..followed by:<pre>service apache2 restart</pre>
+
+### Are you thinking about scale? 
+One way is to have the proxying take place to an internal load balancer, then have several machines with the
+Docker engine running GS1 DigitalLink Resolver CE.
+
+The only thing to bear in mind is that now you should leave our two docker containers containing the databases behind and switch to a cloud-hosted
+database services for SQL Server and MongoDB. 
+
+Read the README files in id_gs1_org and data_gs1_org project folders in this repository for details about
+how to change the 'ini' file settings to the new cloud databases.
+
+If you really want to 'go large' then the individual containers in this project can be hosted in their own cloud services such as Azure Container Web Apps
+or Docker Swarm / Kubernetes services on Digital Ocean, AWS, and other providers.  Talk to us at GS1 for more information on our experiences with these services.
