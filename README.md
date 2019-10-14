@@ -57,10 +57,11 @@ container, creating the database and some example data described in the file dat
 8. Now take a browser and head to this web address: http://localhost:8080/ui and login as one of the test accounts described in:
  [data_gs1_org/README.md](data_gs1_org/README.md)
 9. To close the entire application down type this: <pre>docker-compose down</pre> Since the data is stored on Docker volumes, and data will survive the shutdown and be available when you 'up' the service again.
-10. If you wish to delete the volumes and thus wipe the data, type these two commands:<pre>
+10. If you wish to delete the volumes and thus wipe the data, type these two commands: 
+<pre>
 docker volume rm gs1resolver-dataentry-volume
 docker volume rm gs1resolver-document-volume 
-
+</pre>
 ## Next steps
 * Read through the README.md and Dockerfiles for each project in this repository; many originate from when they were separate projects and will prove interesting reading. Especially note the example data installed into the service when you run the SQL script: Welcome to the world of <i>GS1 Westeros<i>!
 
