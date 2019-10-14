@@ -40,7 +40,7 @@ service apache2 restart
 
 If you want to host the Docker Engine behind the proxy server on a different machine, take a look
 at the file etc/apache2/sites-available/000-default.conf in this repository and see how we've set up the proxying for each of the GS1 keys
-plus the 'ui' and 'api' data entry services. You will need to change 'localhost:8080' to '<internal serverr IP address>:8080'
+plus the 'ui' and 'api' data entry services. You will need to change 'localhost:8080' to 'internal Docker Engine IP address:8080'.
 Here is a snippet for the GTIN key:
 <pre>
                      ProxyPass        /gtin http://localhost:8080/gtin
