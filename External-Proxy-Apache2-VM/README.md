@@ -34,7 +34,7 @@ a2enmod headers
 service apache2 restart
 </pre> 
 ...and you should have an (non-encrypted) web site up and running.
-* Now you need to choose a domain name and install the SSL certificate (if you are doing this on your own we recommend Let's Encrypt - <a href="https://letsencrypt.org/">follow the instructsions here</a>)
+* Now you need to choose a domain name and install the SSL certificate (if you are doing this on your own we recommend <i>Let's Encrypt</i> - <a href="https://letsencrypt.org/">follow the instructions here</a>)
 
 ... and now you have a fully working single server operating GS1 Digital Link Resolver CE!
 
@@ -48,3 +48,12 @@ Here is a snippet for the GTIN key:
                      ProxyPass        /01   http://localhost:8080/01
                      ProxyPassReverse /01   http://localhost:8080/01
  </pre>
+Supposing you wish to proxy internet outsiders to a GS1 DigitalLink Resolver CE Docker Engine machine running on internal network IP address 10.0.0.2, you change all the entries from 'localhost' to '10.0.0.2'
+throughout this config file:
+<pre>
+                     ProxyPass        /gtin http://10.0.0.2:8080/gtin
+                     ProxyPassReverse /gtin http://10.0.0.2:8080/gtin
+                     ProxyPass        /01   http://10.0.0.2:8080/01
+                     ProxyPassReverse /01   http://10.0.0.2:8080/01
+ </pre>
+..followed by:<pre>service apache2 restart</pre>
