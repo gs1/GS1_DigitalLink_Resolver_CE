@@ -27,7 +27,7 @@ The community edition of the GS1 Digital Link Resolver is an entirely self-conta
 and services for data entry and resolving.
 
 We chose a Docker-based <i>containerisation</i> or <i>micro-services</i> architecture model for GS1 digital Link Resolver because of need for end-users to build and host a reliable application free from issues with different versions of database drivers and programming languages.
-In addition, most cloud computing providers have teh ability to host containers easily within their service platforms.
+In addition, most cloud computing providers have the ability to host containers easily within their service platforms.
 It is for these reasons that this type of architecture has become so popular.
 
 The only outward-facing web server is the <i><b>id-web-server</b></i> container. Any client requests to the /ui/ data entry web application and /api/ API service are proxied through to the <b><i><b>dataentry-web-server</b></i></b> by the <i><b>id-web-server</b></i>. Any other calls to the service are processed by <i><b>id-web-server</b></i> itself.
