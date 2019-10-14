@@ -17,9 +17,12 @@ Therefore, the proxy server must proxy (that is, forward) web traffic to the con
 If you are setting up a simple service to start with, the best way to do this is to:
 * Spin up a new Ubuntu local or cloud-based virtual computer
 * Install Apache2, git, curl and docker-ce on it<pre>sudo apt update && sudo apt install apache2 git docker-ce curl</pre>
-* git pull this repository
-* Use <pre>docker-compose build</pre> then <pre>docker-compose up -d</a> to set the service running
-* Execute the command to create the SQL <pre>docker exec -it  dataentry-sql-server  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU -i  /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql</pre>
+* git clone this repository; <pre>git clone https://github.com/gs1/GS1_DigitalLink_Resolver_CE.git</pre>
+* Change directory to GS1_DigitalLink_Resolver_CE then run the Docker command:<pre>
+cd GS1_DigitalLink_Resolver_CE
+docker-compose build</pre> ...then.... <pre>docker-compose up -d</pre> to set the service running, then (after counting to 10 while everything starts up!)
+ execute the command to create the SQL database: 
+ <pre>docker exec -it  dataentry-sql-server  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU -i  /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql</pre>
 * Copy the files in this section to the same places on the new server:
 * /etc/apache2/sites-available/000-default.conf)
 * /var/www/html/* (2 files)
