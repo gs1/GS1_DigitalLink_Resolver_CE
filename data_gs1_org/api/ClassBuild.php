@@ -186,7 +186,7 @@ class ClassBuild
 
         $wellKnownDocument = json_decode($json);
 
-        $linkTypesArray = $this->dbAccess->GetActiveinkTypesList();
+        $linkTypesArray = $this->dbAccess->GetActiveLinkTypesList();
 
         $wellKnownDocument->{'_id'} = 'gs1resolver.json';
         //$wellKnownDocument['activeLinkTypes'] = array();
@@ -199,7 +199,7 @@ class ClassBuild
             $wellKnownDocument->{'activeLinkTypes'}->{$linkType['locale']}->{$linkTypeWord}->{'gs1key'} = $linkType['applicable_gs1_key_code'];
         }
 
-       $this->mongoDbClient->putWellKnownRecord($wellKnownDocument);
+        $this->mongoDbClient->putWellKnownRecord($wellKnownDocument);
     }
 
     private function getDigitalLinkVocabWord($linkTypeURL)
@@ -254,9 +254,25 @@ class ClassBuild
 
             //Let's set our link, title, and forward-request-querystrings flag at the end of that hierarchy:
             $mongoDbRecord[$webUri]['responses']['linktype'][$linkType]['lang'][$ianaLanguage]['context'][$context]['mime_type'][$mimeType]['link'] = $response['destination_uri'];
-            $mongoDbRecord[$webUri]['responses']['linktype'][$linkType]['lang'][$ianaLanguage]['context'][$context]['mime_type'][$mimeType]['title'] = $response['link_name'];
             $mongoDbRecord[$webUri]['responses']['linktype'][$linkType]['lang'][$ianaLanguage]['context'][$context]['mime_type'][$mimeType]['fwqs'] = $response['forward_request_querystrings'];
             $mongoDbRecord[$webUri]['responses']['linktype'][$linkType]['lang'][$ianaLanguage]['context'][$context]['mime_type'][$mimeType]['linktype_uri'] = $response['linktype'];
+
+            //Find the most appropriate name - either the one supplied by the entry or, if not there, the official link name:
+            if($response['friendly_link_name'] !== null && strlen($response['friendly_link_name']) > 2)
+            {
+                //The data entry user added their own friendly name for this link
+                $mongoDbRecord[$webUri]['responses']['linktype'][$linkType]['lang'][$ianaLanguage]['context'][$context]['mime_type'][$mimeType]['title'] = $response['friendly_link_name'];
+            }
+            elseif($response['official_link_name'] !== null)
+            {
+                //We'll use up the official name for the link
+                $mongoDbRecord[$webUri]['responses']['linktype'][$linkType]['lang'][$ianaLanguage]['context'][$context]['mime_type'][$mimeType]['title'] = $response['official_link_name'];
+            }
+            else
+            {
+                //Our fallback is just to use the linktype itself.
+                $mongoDbRecord[$webUri]['responses']['linktype'][$linkType]['lang'][$ianaLanguage]['context'][$context]['mime_type'][$mimeType]['title'] = $response['linktype'];
+            }
 
             //Increment the counter
             $responsesCount++;

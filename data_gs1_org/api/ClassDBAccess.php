@@ -851,7 +851,7 @@ class ClassDBAccess
      * @return array
      * @throws Exception
      */
-    public function GetActiveinkTypesList()
+    public function GetActiveLinkTypesList()
     {
         $sql = 'EXEC [gs1resolver_dataentry_db].[get_active_linktypes_list]';
         return $this->DBSelect($sql);

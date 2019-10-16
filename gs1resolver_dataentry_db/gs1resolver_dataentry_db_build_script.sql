@@ -1966,10 +1966,11 @@ BEGIN
         [uri_response_id],
         [uri_request_id],
         [linktype],
+        [friendly_link_name],
+        l.linktype_name as official_link_name,
         [iana_language],
         [context],
         [mime_type],
-        IIF(([friendly_link_name] IS NULL OR LTRIM(RTRIM([friendly_link_name])) = ''), [linktype], [friendly_link_name]) AS link_name,
         [destination_uri],
         [forward_request_querystrings],
         [active],
@@ -1977,7 +1978,8 @@ BEGIN
         [default_iana_language],
         [default_context],
         [default_mime_type]
-    FROM [gs1resolver_dataentry_db].[uri_responses]
+    FROM [gs1resolver_dataentry_db].[uri_responses] r
+             LEFT JOIN [gs1resolver_dataentry_db].[list_linktypes] l ON r.linktype = l.linktype_reference_url
     WHERE uri_request_id = @var_uri_request_id AND active = 1
     ORDER BY
         [uri_response_id],

@@ -101,7 +101,8 @@ class ClassMongoDB
     public function putURIRecord($mongoDbRecord, $deleteCurrentDocument, $active) : Array
     {
         $response = Array();
-        //$this->dbAccess->logThis("BUILD: " . json_encode($mongoDbRecord, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . PHP_EOL . PHP_EOL);
+        $response['OK'] = true;
+        $response['ERROR'] = '';
 
         //Connect to the correct collection called 'gs1resolver.uri' in the MongoDB database
         $collection = $this->mongoDbClient->gs1resolver->uri;
