@@ -37,10 +37,9 @@ ENV MSSQL_DUMP_DIR=/gs1resolver_data/dump
 # More at: https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-run-sql-server-agent-job?view=sql-server-2017
 ENV MSSQL_AGENT_ENABLED=true
 
-# Copy the script and convert it to unix format
+# Copy the scripts and convert them to unix format
 RUN apt-get update -y && apt-get dist-upgrade -y && apt-get install -y dos2unix
 COPY gs1resolver_dataentry_db_build_script.sql /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql
-RUN dos2unix /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql
-
-# Once up and running, type this command on your computer's terminal prompt:
-# docker exec -it gs1resolver_dataentry_db /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU -i  /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql
+COPY gs1resolver_dataentry_backupdb_script.sh /gs1resolver_data/setup/gs1resolver_dataentry_backupdb_script.sh
+COPY gs1resolver_dataentry_restoredb_script.sh /gs1resolver_data/setup/gs1resolver_dataentry_restoredb_script.sh
+RUN find  /gs1resolver_data/setup/* -type f -print0 | xargs -0 dos2unix

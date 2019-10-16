@@ -6,6 +6,7 @@ services:
     container_name: dataentry-sql-server
     volumes:
       - gs1resolver-dataentry-volume:/gs1resolver_data
+      - gs1resolver-dbbackup-volume:/dbbackup
     restart: always
     networks:
       - gs1-resolver-network
@@ -51,6 +52,7 @@ services:
 volumes:
   gs1resolver-dataentry-volume: {}
   gs1resolver-document-volume: {}
+  gs1resolver-dbbackup-volume: {}
 
 networks:
   gs1-resolver-network:

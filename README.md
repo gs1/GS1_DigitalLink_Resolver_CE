@@ -21,23 +21,37 @@ This project uses a SQL Server database to store information, and the API has a 
 
 The community edition of the GS1 Digital Link Resolver is an entirely self-contained set of applications, complete with databases and services for data entry and resolving.
 
-We chose a Docker-based <i>containerisation</i> or <i>micro-services</i> architecture model for GS1 Digital Link Resolver because of the need for end-users to build and host a reliable application free from issues with different versions of database drivers and programming languages.
-In addition, most cloud computing providers have the ability to host containers easily within their service platforms.
+We chose a Docker-based <i>containerisation</i> or <i>micro-services</i> architecture model for GS1 Digital Link Resolver for these reasons:
+* The need for end-users to build and host a reliable application free from issues with different versions of database drivers and programming languages.
+* Should a container fail (equivalent of a cpmputer crash) the Docker Engine can instantly start a fresh copy of the container, thus maintaining service.
+* It is simple to scale-up the service  by running multiple instances of containers with load-balancing. 
+* Most cloud computing providers have the ability to host containers easily within their service platforms. 
+
 It is for these reasons that this type of architecture has become so popular.
 
 The only outward-facing web server is the <i><b>id-web-server</b></i> container. Any client requests to the /ui/ data entry web application and /api/ API service are proxied through to the <b><i><b>dataentry-web-server</b></i></b> by the <i><b>id-web-server</b></i>. Any other calls to the service are processed by <i><b>id-web-server</b></i> itself.
 
-A third web server, gs1dl-toolkit-server, is a separate service used internally by <i><b>id-web-server</b></i> to detect and return distinct GS1 Digital Link elements which
+A third web server, <i><b>gs1dl-toolkit-server</b></i>, is a separate service used internally by <i><b>id-web-server</b></i> to detect and return distinct GS1 Digital Link elements which
 <i><b>id-web-server</b></i> uses for further processing. Indeed, <i><b>gs1dl-toolkit-server</b></i> hosts a set of ten node.js (JavaScript) web servers across ten internal-only IP ports from 3000 to 3009 on the service's private <i><b>gs1-resolver-network</b></i>.
 Processing threads in <i><b>id-web-server</b></i> can choose any of the ten ports at random, which speeds throughput given that each node.js endpoint is a single-threaded application.
 
 As well as enabling CRUD (Create / Read / Update / Delete) operations on data, <i><b>dataentry-web-server</b></i> also has a BUILD function that runs once per minute as a result of the Docker HEALTHCHECK process set up in the Dockerfile for that container.
 BUILD causes <i><b>dataentry-web-server</b></i> to look for changes in the SQL database and uses it to create documents in the MongoDB database. MongoDB can perform high-speed lookups and is ideal for the high-performance reading of data.
 
-Two 'disk' volumes are created for internal use by the service database. Volume <i><b>gs1resolver-dataentry-volume</b></i> stores the SQL database and <i><b>gs1resolver-document-volume</b></i>
-stores the Mongo document data so that all the data survives the service being shutdown or restarted (note that there is no backup service at this time).
+Three 'disk' volumes are created for internal use by the service database. Volume <i><b>gs1resolver-dataentry-volume</b></i> stores the SQL database and <i><b>gs1resolver-document-volume</b></i>
+stores the Mongo document data so that all the data survives the service being shutdown or restarted. A further volume, <i><b>gs1resolver-dbbackup-volume</b></i> (not shown in the diagram below) is used to store
+a backup of the SQL Server database.
 
 ![architecture](architecture-ce-edition.png "Architecture")
+
+#### SQL Server Database backup and restore
+There are two *not-fully-tested-yet*  backup and restore scripts for the SQL Server. To backup the server:
+<pre>docker exec -it  dataentry-sql-server  /bin/bash /gs1resolver_data/setup/gs1resolver_dataentry_backupdb_script.sh</pre>
+.. and to restore it (there are issues with restore which are being worked on!)
+<pre>docker exec -it  dataentry-sql-server  /bin/bash /gs1resolver_data/setup/gs1resolver_dataentry_restoredb_script.sh</pre>
+
+
+
 
 ## Fast start
 1. Install the Docker system on your computer. Head to https://www.docker.com/products/docker-desktop for install details for Windows and Mac.
