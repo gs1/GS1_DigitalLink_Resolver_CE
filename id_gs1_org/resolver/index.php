@@ -556,7 +556,7 @@ function qualityAssureOutgoingLink($responseRecordMimeType, $queryString) : stri
     }
     else //$fwqsFlag === "0"
     {
-        $outgoing = $responseRecordMimeType;
+        $outgoing = trim($responseRecordMimeType->link);
     }
     return str_replace(' ', '', $outgoing);
 }
