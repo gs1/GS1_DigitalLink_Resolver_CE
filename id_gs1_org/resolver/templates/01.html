@@ -85,48 +85,42 @@
 
 
                 let responses = resolverDoc[Object.keys(resolverDoc)[key]].responses;
-                for(let response in responses)
+                for(let linkTypeName in responses.linktype)
                 {
-                    if(responses.linktype !== undefined)
+                    appendToHTMLTable(table, "LinkType: " + linkTypeName, 1);
+                    let thisLinkType = responses.linktype[linkTypeName];
+                    if (thisLinkType.lang !== undefined)
                     {
-                        for(let linkTypeName in responses.linktype)
+                        for (let langName in
+                            thisLinkType.lang)
                         {
-                            appendToHTMLTable(table, "LinkType: " + linkTypeName, 1);
-                            let thisLinkType = responses.linktype[linkTypeName];
-                            if (thisLinkType.lang !== undefined)
+                            appendToHTMLTable(table, " >> Language: " + langName, 1);
+                            let thisLang = thisLinkType.lang[langName];
+                            if (thisLang.context !== undefined)
                             {
-                                for (let langName in
-                                    thisLinkType.lang)
+                                for (let contextName in
+                                    thisLang.context)
                                 {
-                                    appendToHTMLTable(table, " >> Language: " + langName, 1);
-                                    let thisLang = thisLinkType.lang[langName];
-                                    if (thisLang.context !== undefined)
+                                    appendToHTMLTable(table, " >> >> Context: " + contextName, 1);
+                                    let thisContext = thisLang.context[contextName];
+                                    if (thisContext.mime_type !== undefined)
                                     {
-                                        for (let contextName in
-                                            thisLang.context)
+                                        for (let mimeTypeName in
+                                            thisContext.mime_type)
                                         {
-                                            appendToHTMLTable(table, " >> >> Context: " + contextName, 1);
-                                            let thisContext = thisLang.context[contextName];
-                                            if (thisContext.mime_type !== undefined)
-                                            {
-                                                for (let mimeTypeName in
-                                                    thisContext.mime_type)
-                                                {
-                                                    appendToHTMLTable(table, " >> >> >> Document Type: " + mimeTypeName, 1);
-                                                    let thisDestination = thisContext.mime_type[mimeTypeName];
-                                                    appendToHTMLTable(table, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Link: " + thisDestination.link, 1);
-                                                    appendToHTMLTable(table, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Title: " + thisDestination.title, 1);
-                                                    appendToHTMLTable(table, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FWQS: " + thisDestination.fwqs, 1);
-                                                    appendToHTMLTable(table, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;URI: " + thisDestination.linktype_uri, 1);
-                                                }
-                                            }
+                                            appendToHTMLTable(table, " >> >> >> Document Type: " + mimeTypeName, 1);
+                                            let thisDestination = thisContext.mime_type[mimeTypeName];
+                                            appendToHTMLTable(table, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Link: " + thisDestination.link, 1);
+                                            appendToHTMLTable(table, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Title: " + thisDestination.title, 1);
+                                            appendToHTMLTable(table, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FWQS: " + thisDestination.fwqs, 1);
+                                            appendToHTMLTable(table, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;URI: " + thisDestination.linktype_uri, 1);
                                         }
                                     }
-
                                 }
-                                ``
                             }
+
                         }
+                        ``
                     }
                 }
             }
