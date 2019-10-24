@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: C:\Program Files\Docker\Docker\Resources\bin\kompose.exe convert
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: id-web-server
+    app: gs1resolver
+  name: id-web-server
+spec:
+  ports:
+  - name: "8080"
+    port: 8080
+    targetPort: 80
+  selector:
+    io.kompose.service: id-web-server
+status:
+  loadBalancer: {}

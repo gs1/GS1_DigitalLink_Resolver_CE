@@ -1,0 +1,26 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: C:\Program Files\Docker\Docker\Resources\bin\kompose.exe convert
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: dataentry-web-server
+    app: gs1resolver
+  name: dataentry-web-server
+spec:
+  replicas: 2
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: dataentry-web-server
+    spec:
+      containers:
+      - image: dataentry-web-server
+        name: dataentry-web-server
+        resources: {}
+      restartPolicy: Always
+status: {}
