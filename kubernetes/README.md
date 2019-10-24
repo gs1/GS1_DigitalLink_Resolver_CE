@@ -7,7 +7,16 @@ could have serious cost implications.
 
 Proceed with care and caution, and in the knowlesge that you must be liable for your own actions! 
 
+The developers and contributors supporting the GS1 DigitalLink Resolver Community Edition are taking first steps into the Kubernetes world, so expect frequent updates and bug fixes as development continues.
 
+### Use of Kubernetes
+Kubernetes (K8s) is an open-source system for automating deployment, scaling, and management of containerized applications.
+
+It groups containers that make up an application into logical units for easy management and discovery. Kubernetes builds upon 15 years of experience of running production workloads at Google, combined with best-of-breed ideas and practices from the community.
+
+Kubernetes is supported aon amajor cloud platforms. It can also be installed on your local computer for developing and testing. If you have already installed Docker Desktop for Windows, you can enable Kubernetes immediately in settings. 
+
+Alternatively you can use Minkkube - moe infomration here: https://kubernetes.io/docs/tasks/tools/install-minikube/
 
 ### Installation of the various services (current folder)
 Executing the command below should build the complete service in Kubernetes:
