@@ -1,9 +1,9 @@
 ## Deploying to Kubernetes
 
-This is an early attempt at running the GS1 DigitalLink Resolver Commnity Edition on a Kubernetes cluster. 
+This is an early attempt at running the GS1 DigitalLink Resolver Community Edition on a Kubernetes cluster. 
 You are strongly advised to use caution at this time, as the 'YAML' configuration files are a work in progress
 and may yet yield performance and security issues. Running these configuration files on a cloud provider's Kubernetes service
-could have serious costs implications.
+could have serious cost implications.
 
 Proceed with care and caution, and in the knowlesge that you must be liable for your own actions! 
 
