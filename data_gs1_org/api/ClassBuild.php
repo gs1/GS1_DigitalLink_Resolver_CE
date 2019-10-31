@@ -277,7 +277,29 @@ class ClassBuild
             //Increment the counter
             $responsesCount++;
         }
+        //Now check that every attribute has a default, and enforce a default if there is not one:
+        //$mongoDbRecord = $this->EnforceDefaults($webUri, $mongoDbRecord);
+
         return $mongoDbRecord;
+    }
+
+    /**
+     * Iterates through the record loking for the absence of defaults an, if necesary, enforcing defaults
+     * by taking the first entry found for each attribute
+     * @param $mongoDBRecord
+     * @return array
+     */
+    function EnforceDefaults($webUri, $mongoDBRecord) : array
+    {
+        foreach($mongoDBRecord[$webUri]['responses'] as $linktype)
+        {
+            if(!isset($linktype['default_linktype']))
+            {
+                $mongoDBRecord[$webUri]['responses']['default_linktype'] = $mongoDBRecord[$webUri]['responses']['linktype'][0];
+            }
+        }
+
+        return $mongoDBRecord;
     }
 }
 

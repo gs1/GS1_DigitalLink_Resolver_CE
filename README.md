@@ -67,13 +67,16 @@ connection the build-from-scratch will take 10-15 minutes.
 6. Once completed, type this to start everything up:<pre>docker-compose up -d</pre>(the -d means 'disconnect' - docker-compose will start up everything then hand control back to you). 
 
 7. Now wait 10 seconds while the system settles down (the SQL Server service takes a few seconds to initialise when 'new') then copy and paste this command, which will run a program inside the SQL Server 
-container, creating the database and some example data described in [data_gs1_org/README.md](data_gs1_org/README.md) <pre>docker exec -it  dataentry-sql-server  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU -i  /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql</pre>
-8. Now open a web browser and direct it to this web address: <a href="http://localhost:8080/ui">http://localhost:8080/ui</a> and login as one of the test accounts described in [data_gs1_org/README.md](data_gs1_org/README.md)
+container, creating the database and some example data described in [data_gs1_org/README.md](data_gs1_org/README.md) 
+<pre>docker exec -it  dataentry-sql-server  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU -i  /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql</pre>
+8. Now open a web browser and direct it to this web address: <a href="http://localhost:8080/ui/">http://localhost:8080/ui/</a> (the trailing / is important!) and login as one of the test accounts described in [data_gs1_org/README.md](data_gs1_org/README.md)
 9. To close the entire application down type this: <pre>docker-compose down</pre> Since the data is stored on Docker volumes, the data will survive the shutdown and be available when you 'up' the service again.
-10. If you wish to delete the volumes and thus wipe the data, type these two commands: 
+10. If you wish to delete the volumes and thus wipe the data, type these three commands: 
 <pre>
-docker volume rm gs1resolver-dataentry-volume
-docker volume rm gs1resolver-document-volume 
+docker volume rm gs1_digitallink_resolver_ce_gs1resolver-dataentry-volume
+docker volume rm gs1_digitallink_resolver_ce_gs1resolver-dbbackup-volume
+docker volume rm gs1_digitallink_resolver_ce_gs1resolver-document-volume
+ 
 </pre>
 ## Next steps
 * Read through the README.md and Dockerfiles for each project in this repository; many originate from when they were separate projects and will prove interesting reading. Especially note the example data installed into the service when you run the SQL script: Welcome to the world of <i>GS1 Westeros<i>!
