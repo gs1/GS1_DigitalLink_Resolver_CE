@@ -2,6 +2,7 @@
   <dictionary name="nick">
     <words>
       <w>kubectl</w>
+      <w>linktype</w>
     </words>
   </dictionary>
 </component>

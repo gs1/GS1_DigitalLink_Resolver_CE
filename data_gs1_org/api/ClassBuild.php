@@ -278,28 +278,56 @@ class ClassBuild
             $responsesCount++;
         }
         //Now check that every attribute has a default, and enforce a default if there is not one:
-        //$mongoDbRecord = $this->EnforceDefaults($webUri, $mongoDbRecord);
+        $mongoDbRecord = $this->EnforceDefaults($webUri, $mongoDbRecord);
 
         return $mongoDbRecord;
     }
 
     /**
-     * Iterates through the record loking for the absence of defaults an, if necesary, enforcing defaults
+     * Iterates through the record looking for the absence of defaults an, if necessary, enforcing defaults
      * by taking the first entry found for each attribute
+     * @param $webUri
      * @param $mongoDBRecord
      * @return array
      */
     function EnforceDefaults($webUri, $mongoDBRecord) : array
     {
-        foreach($mongoDBRecord[$webUri]['responses'] as $linktype)
+        if(!isset($mongoDBRecord[$webUri]['responses']['default_linktype']))
         {
-            if(!isset($linktype['default_linktype']))
+            $firstLinkTypeName = key($mongoDBRecord[$webUri]['responses']['linktype']);
+            $mongoDBRecord[$webUri]['responses']['default_linktype'] = $firstLinkTypeName;
+        }
+
+        //Check that each linktype has a default language
+        foreach($mongoDBRecord[$webUri]['responses']['linktype'] as $linkTypeName => $linkType)
+        {
+            if(!isset($linkType['default_lang']))
             {
-                $mongoDBRecord[$webUri]['responses']['default_linktype'] = $mongoDBRecord[$webUri]['responses']['linktype'][0];
+                $firstLangName = key($linkType['lang']);
+                $mongoDBRecord[$webUri]['responses']['linktype'][$linkTypeName]['default_lang'] = $firstLangName;
+            }
+
+            //Check that each language has a default context
+            foreach($linkType['lang'] as $langName => $lang)
+            {
+                if(!isset($lang['default_context']))
+                {
+                    $firstContextName = key($lang['context']);
+                    $mongoDBRecord[$webUri]['responses']['linktype'][$linkTypeName]['lang'][$langName]['default_context'] = $firstContextName;
+                }
+
+                //Check that each context has a default mime-type
+                foreach($lang['context'] as $contextName => $context)
+                {
+                    if(!$contextName === 'default_mimetype' && !isset($context['default_mime_type']))
+                    {
+                        $firstMimeTypeName = key($context['mime_type']);
+                        $mongoDBRecord[$webUri]['responses']['linktype'][$linkTypeName]['lang'][$langName]['context'][$contextName]['default_mime_type'] = $firstMimeTypeName;
+                    }
+                }
             }
         }
 
         return $mongoDBRecord;
     }
 }
-
