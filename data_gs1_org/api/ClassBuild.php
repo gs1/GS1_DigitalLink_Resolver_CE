@@ -7,12 +7,12 @@ require_once 'ClassAITable.php';
  * Main Build function which takes each database entry with uri_requests.api_builder_processed column set to 0, and
  * Creates the GS1 Resolver document before inserting it into MongoDB
  */
-
 class ClassBuild
 {
     private $mongoDbClient;
     private $dbAccess;
     private $classAITable;
+
     public function __construct()
     {
         $this->dbAccess = new ClassDBAccess();
@@ -35,7 +35,7 @@ class ClassBuild
 
         //Find out how many URI requests there are
         $uriRequestCount = $this->dbAccess->BUILD_GetURIRequestCount();
-        $logArray[] =  "$uriRequestCount requests need processing....";
+        $logArray[] = "$uriRequestCount requests need processing....";
 
         if ($uriRequestCount > 0)
         {
@@ -52,46 +52,48 @@ class ClassBuild
 
                 foreach ($uriRequests as $uriRequest)
                 {
+
+                    $thisGS1Key = trim($uriRequest['gs1_key_code']);
+                    $thisGS1Value = trim($uriRequest['gs1_key_value']);
+
                     //If the GS1 Key Code and Value are NOT the same as the previous entry in the foreach()
                     //list being processed, then set a flag indicating that the next Key Code/Value has been
                     //found. This will be used later to delete the MongoDB record and start it from scratch.
-                    if($uriRequest['gs1_key_code'] === $previousGS1Key && $uriRequest['gs1_key_value'] === $previousGS1Value)
+                    if ($thisGS1Key === $previousGS1Key && $thisGS1Value === $previousGS1Value)
                     {
                         $nextGS1KeyCodeAndValueFoundFlag = false;
                     }
                     else
                     {
                         $nextGS1KeyCodeAndValueFoundFlag = true;
-                        $previousGS1Key = $uriRequest['gs1_key_code'];
-                        $previousGS1Value = $uriRequest['gs1_key_value'];
+                        $previousGS1Key = $thisGS1Key;
+                        $previousGS1Value = $thisGS1Value;
                     }
 
-
-
-                    if($uriRequest['flagged_for_deletion'] === 0)
+                    if ($uriRequest['flagged_for_deletion'] === 0)
                     {
                         $this->BUILD_UriRecord($uriRequest, $nextGS1KeyCodeAndValueFoundFlag);
                     }
                     else
                     {
                         $mongoDbRecord = array();
-                        $mongoDbRecord['_id'] = '/' . $this->classAITable->lookupAICodeFromAIShortCode($uriRequest['gs1_key_code']) . '/' . $uriRequest['gs1_key_value'];
+                        $mongoDbRecord['_id'] = '/' . $this->classAITable->lookupAICodeFromAIShortCode($thisGS1Key) . '/' . $thisGS1Value;
                         $this->mongoDbClient->deleteURIRecord($mongoDbRecord);
 
                         $this->dbAccess->BUILD_DeleteUriRecord($uriRequest['uri_request_id']);
-                        $this->dbAccess->BUILD_SetToRequireRebuild($uriRequest['gs1_key_code'], $uriRequest['gs1_key_value']);
+                        $this->dbAccess->BUILD_SetToRequireRebuild($thisGS1Key, $thisGS1Value);
                     }
                 }
             }
         }
 
-        $logArray[] =  "Processing GCP Resolves" . PHP_EOL;
+        $logArray[] = "Processing GCP Resolves" . PHP_EOL;
         $this->BUILD_GCP_Resolves();
 
-        $logArray[] =  "Processing Well Known record" . PHP_EOL;
+        $logArray[] = "Processing Well Known record" . PHP_EOL;
         $this->BUILD_Well_Known();
 
-        $logArray[] =  "Completed Latest MongoDB update" . PHP_EOL;
+        $logArray[] = "Completed Latest MongoDB update" . PHP_EOL;
         return $logArray;
     }
 
@@ -102,8 +104,8 @@ class ClassBuild
         $mongoDbRecord = array();
 
         //These two variables just makes it easier to read the code without really slowing it down.
-        $gs1Key = $uriRequest['gs1_key_code'];
-        $gs1Value = $uriRequest['gs1_key_value'];
+        $gs1Key = trim($uriRequest['gs1_key_code']);
+        $gs1Value = trim($uriRequest['gs1_key_value']);
 
         //Make sure that value is appropriate length
         //TODO: Only covers GTIN; we must code for the gs1 keys (data in table)
@@ -120,7 +122,7 @@ class ClassBuild
         $mongoDbRecord['_id'] = '/' . $this->classAITable->lookupAICodeFromAIShortCode($gs1Key) . '/' . $gs1Value;
 
         //Only process active requests that are not flagged for deletion
-        if($uriRequest['active'] === 1 && $uriRequest['flagged_for_deletion'] === 0)
+        if ($uriRequest['active'] === 1 && $uriRequest['flagged_for_deletion'] === 0)
         {
             $webUri = '';
 
@@ -157,7 +159,7 @@ class ClassBuild
 
         $response = $this->mongoDbClient->putURIRecord($mongoDbRecord, $nextGS1KeyCodeAndValueFoundFlag, $uriRequest['active'] === 1);
 
-        if($response['OK'])
+        if ($response['OK'])
         {
             $this->dbAccess->BUILD_FlagUriRecordAsBuilt($uriRequest['uri_request_id']);
         }
@@ -189,9 +191,8 @@ class ClassBuild
         $linkTypesArray = $this->dbAccess->GetActiveLinkTypesList();
 
         $wellKnownDocument->{'_id'} = 'gs1resolver.json';
-        //$wellKnownDocument['activeLinkTypes'] = array();
 
-        foreach($linkTypesArray as $linkType)
+        foreach ($linkTypesArray as $linkType)
         {
             $linkTypeWord = str_replace('https://gs1.org/voc/', '', $linkType['linktype_reference_url']);
             $wellKnownDocument->{'activeLinkTypes'}->{$linkType['locale']}->{$linkTypeWord}->{'title'} = $linkType['linktype_name'];
@@ -214,7 +215,7 @@ class ClassBuild
      * @param string $webUri
      * @return array
      */
-    private function BUILD_UriResponses($uriRequest, array $mongoDbRecord, string $webUri) : array
+    private function BUILD_UriResponses($uriRequest, array $mongoDbRecord, string $webUri): array
     {
         //Now to the URI RESPONSES
         //Get all the URI responses for this uriRequest range, which we'll use a little further down this function
@@ -258,12 +259,12 @@ class ClassBuild
             $mongoDbRecord[$webUri]['responses']['linktype'][$linkType]['lang'][$ianaLanguage]['context'][$context]['mime_type'][$mimeType]['linktype_uri'] = $response['linktype'];
 
             //Find the most appropriate name - either the one supplied by the entry or, if not there, the official link name:
-            if($response['friendly_link_name'] !== null && strlen($response['friendly_link_name']) > 2)
+            if ($response['friendly_link_name'] !== null && strlen($response['friendly_link_name']) > 2)
             {
                 //The data entry user added their own friendly name for this link
                 $mongoDbRecord[$webUri]['responses']['linktype'][$linkType]['lang'][$ianaLanguage]['context'][$context]['mime_type'][$mimeType]['title'] = $response['friendly_link_name'];
             }
-            elseif($response['official_link_name'] !== null)
+            elseif ($response['official_link_name'] !== null)
             {
                 //We'll use up the official name for the link
                 $mongoDbRecord[$webUri]['responses']['linktype'][$linkType]['lang'][$ianaLanguage]['context'][$context]['mime_type'][$mimeType]['title'] = $response['official_link_name'];
@@ -290,36 +291,36 @@ class ClassBuild
      * @param $mongoDBRecord
      * @return array
      */
-    function EnforceDefaults($webUri, $mongoDBRecord) : array
+    function EnforceDefaults($webUri, $mongoDBRecord): array
     {
-        if(!isset($mongoDBRecord[$webUri]['responses']['default_linktype']))
+        if (!isset($mongoDBRecord[$webUri]['responses']['default_linktype']))
         {
             $firstLinkTypeName = key($mongoDBRecord[$webUri]['responses']['linktype']);
             $mongoDBRecord[$webUri]['responses']['default_linktype'] = $firstLinkTypeName;
         }
 
         //Check that each linktype has a default language
-        foreach($mongoDBRecord[$webUri]['responses']['linktype'] as $linkTypeName => $linkType)
+        foreach ($mongoDBRecord[$webUri]['responses']['linktype'] as $linkTypeName => $linkType)
         {
-            if(!isset($linkType['default_lang']))
+            if (!isset($linkType['default_lang']))
             {
                 $firstLangName = key($linkType['lang']);
                 $mongoDBRecord[$webUri]['responses']['linktype'][$linkTypeName]['default_lang'] = $firstLangName;
             }
 
             //Check that each language has a default context
-            foreach($linkType['lang'] as $langName => $lang)
+            foreach ($linkType['lang'] as $langName => $lang)
             {
-                if(!isset($lang['default_context']))
+                if (!isset($lang['default_context']))
                 {
                     $firstContextName = key($lang['context']);
                     $mongoDBRecord[$webUri]['responses']['linktype'][$linkTypeName]['lang'][$langName]['default_context'] = $firstContextName;
                 }
 
                 //Check that each context has a default mime-type
-                foreach($lang['context'] as $contextName => $context)
+                foreach ($lang['context'] as $contextName => $context)
                 {
-                    if(!isset($context['default_mime_type']))
+                    if (!isset($context['default_mime_type']))
                     {
                         $firstMimeTypeName = key($context['mime_type']);
                         $mongoDBRecord[$webUri]['responses']['linktype'][$linkTypeName]['lang'][$langName]['context'][$contextName]['default_mime_type'] = $firstMimeTypeName;
