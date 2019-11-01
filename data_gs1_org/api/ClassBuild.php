@@ -319,7 +319,7 @@ class ClassBuild
                 //Check that each context has a default mime-type
                 foreach($lang['context'] as $contextName => $context)
                 {
-                    if(!$contextName === 'default_mimetype' && !isset($context['default_mime_type']))
+                    if(!isset($context['default_mime_type']))
                     {
                         $firstMimeTypeName = key($context['mime_type']);
                         $mongoDBRecord[$webUri]['responses']['linktype'][$linkTypeName]['lang'][$langName]['context'][$contextName]['default_mime_type'] = $firstMimeTypeName;
