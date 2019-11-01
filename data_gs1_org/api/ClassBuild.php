@@ -52,23 +52,24 @@ class ClassBuild
 
                 foreach ($uriRequests as $uriRequest)
                 {
-
-                    $thisGS1Key = trim($uriRequest['gs1_key_code']);
-                    $thisGS1Value = trim($uriRequest['gs1_key_value']);
+                    //Make sure that gs1_key_code and gs1_key_value are trim()med
+                    $uriRequest['gs1_key_code'] = trim($uriRequest['gs1_key_code']);
+                    $uriRequest['gs1_key_value'] = trim($uriRequest['gs1_key_value']);
 
                     //If the GS1 Key Code and Value are NOT the same as the previous entry in the foreach()
                     //list being processed, then set a flag indicating that the next Key Code/Value has been
                     //found. This will be used later to delete the MongoDB record and start it from scratch.
-                    if ($thisGS1Key === $previousGS1Key && $thisGS1Value === $previousGS1Value)
+                    if ($uriRequest['gs1_key_code'] === $previousGS1Key && $uriRequest['gs1_key_value'] === $previousGS1Value)
                     {
                         $nextGS1KeyCodeAndValueFoundFlag = false;
                     }
                     else
                     {
                         $nextGS1KeyCodeAndValueFoundFlag = true;
-                        $previousGS1Key = $thisGS1Key;
-                        $previousGS1Value = $thisGS1Value;
+                        $previousGS1Key = $uriRequest['gs1_key_code'];
+                        $previousGS1Value = $uriRequest['gs1_key_value'];
                     }
+
 
                     if ($uriRequest['flagged_for_deletion'] === 0)
                     {
@@ -77,11 +78,11 @@ class ClassBuild
                     else
                     {
                         $mongoDbRecord = array();
-                        $mongoDbRecord['_id'] = '/' . $this->classAITable->lookupAICodeFromAIShortCode($thisGS1Key) . '/' . $thisGS1Value;
+                        $mongoDbRecord['_id'] = '/' . $this->classAITable->lookupAICodeFromAIShortCode($uriRequest['gs1_key_code']) . '/' . $uriRequest['gs1_key_value'];
                         $this->mongoDbClient->deleteURIRecord($mongoDbRecord);
 
                         $this->dbAccess->BUILD_DeleteUriRecord($uriRequest['uri_request_id']);
-                        $this->dbAccess->BUILD_SetToRequireRebuild($thisGS1Key, $thisGS1Value);
+                        $this->dbAccess->BUILD_SetToRequireRebuild($uriRequest['gs1_key_code'], $uriRequest['gs1_key_value']);
                     }
                 }
             }
@@ -104,8 +105,8 @@ class ClassBuild
         $mongoDbRecord = array();
 
         //These two variables just makes it easier to read the code without really slowing it down.
-        $gs1Key = trim($uriRequest['gs1_key_code']);
-        $gs1Value = trim($uriRequest['gs1_key_value']);
+        $gs1Key = $uriRequest['gs1_key_code'];
+        $gs1Value = $uriRequest['gs1_key_value'];
 
         //Make sure that value is appropriate length
         //TODO: Only covers GTIN; we must code for the gs1 keys (data in table)
@@ -191,6 +192,7 @@ class ClassBuild
         $linkTypesArray = $this->dbAccess->GetActiveLinkTypesList();
 
         $wellKnownDocument->{'_id'} = 'gs1resolver.json';
+        //$wellKnownDocument['activeLinkTypes'] = array();
 
         foreach ($linkTypesArray as $linkType)
         {
