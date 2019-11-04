@@ -1,4 +1,4 @@
-version: "3.6"
+version: "3.0"
 
 services:
   dataentry-sql-server:
@@ -55,5 +55,4 @@ volumes:
   gs1resolver-dbbackup-volume: {}
 
 networks:
-  gs1-resolver-network:
-    name: gs1-resolver-network
+  gs1-resolver-network: {}
