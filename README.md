@@ -29,6 +29,7 @@ We chose a Docker-based <i>containerisation</i> or <i>micro-services</i> archite
 
 It is for these reasons that this type of architecture has become so popular.
 
+#### Web Servers
 The only outward-facing web server is the <i><b>id-web-server</b></i> container. Any client requests to the /ui/ data entry web application and /api/ API service are proxied through to the <b><i><b>dataentry-web-server</b></i></b> by the <i><b>id-web-server</b></i>. Any other calls to the service are processed by <i><b>id-web-server</b></i> itself.
 
 A third web server, <i><b>gs1dl-toolkit-server</b></i>, is a separate service used internally by <i><b>id-web-server</b></i> to detect and return distinct GS1 Digital Link elements which
@@ -38,6 +39,17 @@ Processing threads in <i><b>id-web-server</b></i> can choose any of the ten port
 As well as enabling CRUD (Create / Read / Update / Delete) operations on data, <i><b>dataentry-web-server</b></i> also has a BUILD function that runs once per minute as a result of the Docker HEALTHCHECK process set up in the Dockerfile for that container.
 BUILD causes <i><b>dataentry-web-server</b></i> to look for changes in the SQL database and uses it to create documents in the MongoDB database. MongoDB can perform high-speed lookups and is ideal for the high-performance reading of data.
 
+#### Database servers
+This repository includes two extra containers for SQL Server and MongoDB. These are included to help you get up and running quickly to experiment and 
+test the service. However, you are strongly advised to move to cloud-based versions of these databases, and change the data connection
+strings in the .ini file in each of the dataentry-web-server and id-web-server (see their respective README.md files).
+
+##### A note on Microsoft Azure
+The MongoDB code in these web servers are 100% compatible with the Microsoft Azure COSMOS DB service. You simply change the connection string
+as if you were using a MongoDB local or cloud server. However you must ass the following string text to the end of the connection string
+for it to work properly: 
+
+#### Disk volumes
 Three 'disk' volumes are created for internal use by the service database. Volume <i><b>gs1resolver-dataentry-volume</b></i> stores the SQL database and <i><b>gs1resolver-document-volume</b></i>
 stores the Mongo document data so that all the data survives the service being shutdown or restarted. A further volume, <i><b>gs1resolver-dbbackup-volume</b></i> (not shown in the diagram below) is used to store
 a backup of the SQL Server database.

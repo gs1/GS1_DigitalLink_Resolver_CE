@@ -5,7 +5,7 @@ You are strongly advised to use caution at this time, as the 'YAML' configuratio
 and may yet yield performance and security issues. Running these configuration files on a cloud provider's Kubernetes service
 could have serious cost implications.
 
-Proceed with care and caution, and in the knowlesge that you must be liable for your own actions! 
+Proceed with care and caution, and in the knowledge that you must be liable for your own actions! 
 
 The developers and contributors supporting the GS1 DigitalLink Resolver Community Edition are taking first steps into the Kubernetes world, so expect frequent updates and bug fixes as development continues.
 
@@ -17,7 +17,7 @@ Kubernetes builds upon 15 years of experience of running production workloads at
 
 Kubernetes is supported on major cloud platforms. It can also be installed on your local computer for developing and testing. If you have already installed Docker Desktop for Windows, you can enable Kubernetes immediately in settings. 
 
-Alternatively you can use Minikube - moe information here: https://kubernetes.io/docs/tasks/tools/install-minikube/
+Alternatively you can use Minikube - more information here: https://kubernetes.io/docs/tasks/tools/install-minikube/
 
 ### Installation of the various services (current folder)
 Executing the command below should build the complete service in Kubernetes:
@@ -32,6 +32,7 @@ Executing the command below should build the complete service in Kubernetes:
 
 Make sure you have your terminal prompt <b>in the root folder</b> of this repository, and use this command to build everything:
 <pre>docker-compose build</pre>
+
 Now run this command to install the newly built images into Kubernetes
 <pre>kubectl apply -f ./kubernetes</pre>
 
@@ -44,12 +45,15 @@ https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/
 
 Connect to the dashboard with:
 <pre>kubectl proxy</pre>
-...then go to http://localhost:8001/ui
+...then go to this long web address (copy it all!):<pre>http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/</pre>
 
-...to get the required Token to login:
+To login you'll need get the required 'token' using this command (in a separate terminal window to where you are running 'kubectl proxy') :
 <pre>kubectl describe secret</pre>
 
-copy token (1025 chars) to dashboard UI token entry section on login screen.
+Copy the token (1025 chars) to dashboard UI token entry section on login screen. In testing this, we have found that just copying and pasting
+from a terminal can cause this long string to be split over 3 lines, when it needs to be one long string.
+To fix this copy it into notepad and delete the hidden end of line characters on all but the last line. thwn, re-copy it and paste it into
+the web page.
 
 #### TODO List
 * Add healthcheck (add readinessProbe and livenessProbe) to container YAML files
