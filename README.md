@@ -45,9 +45,9 @@ test the service. However, you are strongly advised to move to cloud-based versi
 strings in the .ini file in each of the dataentry-web-server and id-web-server (see their respective README.md files).
 
 ##### A note on Microsoft Azure
-The MongoDB code in these web servers are 100% compatible with the Microsoft Azure COSMOS DB service. You simply change the connection string
-as if you were using a MongoDB local or cloud server. However you must ass the following string text to the end of the connection string
-for it to work properly: 
+The MongoDB library/driver code used in the id-web-server and dataentry-web-server containers are 100% compatible with the Microsoft Azure COSMOS DB database service. You simply change the connection string
+as if you were using a MongoDB local or cloud server. However you must add the following string text to the END of the connection string
+for it to work properly: <pre>&retryWrites=false</pre>
 
 #### Disk volumes
 Three 'disk' volumes are created for internal use by the service database. Volume <i><b>gs1resolver-dataentry-volume</b></i> stores the SQL database and <i><b>gs1resolver-document-volume</b></i>
