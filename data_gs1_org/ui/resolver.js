@@ -1479,7 +1479,7 @@ class GS1URI_EDITURI
                 let checkBoxActive = document.createElement("input");
                 checkBoxActive.id = "checkboxActive_" + responseUriEntry.uri_response_id;
                 checkBoxActive.type = "checkbox";
-                checkBoxActive.checked = responseUriEntry.forward_request_querystrings === 1;
+                checkBoxActive.checked = responseUriEntry.active === 1;
                 checkBoxActive.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
                 tdActive.appendChild(checkBoxActive);
 
