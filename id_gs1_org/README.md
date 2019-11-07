@@ -58,6 +58,7 @@ Let's look at an example GS1 Resolver document:
 <pre>
 {
 	"_id": "/01/00037000849988",
+	 "unixtime": 1573152959,
 	"/": {
 		"item_name": "Acme Soapy Suds Laundry Detergent",
 		"active": false,
@@ -144,7 +145,13 @@ At the top of the document is its unique <i>primary key</i> with name "_id". Usi
 (the GTIN itself). Note how this primary key is stored with '/' separators in a 'URI' format that could be appended to a 
 domain name by following the GS1 Digital Link standard.
 
-Under "_id" is a list of one or more 'key variants' which are also stored in URI format, and could be appended to the "_id" value to form the complete URI
+Under "_id" is a name/value pair called "unixtime" which is a numeric value showing when this document was last updated by its author.
+Unixtime is a count of seconds since the midnight that tarted 1 January 1970.
+This value can be used in a call to the resolver to download all documents equal; to or greater than a given unixtime.
+	
+See 'unixtime' section below.
+
+Next, is a list of one or more 'key variants' which are also stored in URI format, and could be appended to the "_id" value to form the complete URI
 
 The first entry URI is always "/" which denotes the 'root variant' and contains generalised links for the product which can be resolved to the calling
 client should no other variants match the incoming request. The vast majority of products are likely only to have the root variant present. 
@@ -175,3 +182,24 @@ to the end of the destination URL. This flag is useful in many scenarios to pass
 However, in our trials, we have encountered an instance where the extra information caused a malfunction at the destination web server. 
 Setting 'fwqs' to 1 will allow the GS1 Resolver to pass through query strings, but setting it to 0 will cause the Resolver
 to suppress any incoming query strings and not forward them. 
+
+### Unixtime
+A new feature of GS1 Resolver is to provide a way of downloading all documents, just those documents for a particular
+GS1 key, or all documents after a particular date, ideal for synchronisng documents with your own systems.
+
+To use it just supply a minimum unixtime to this URL:
+<pre>https://resolver-domain/unixtime/*unixtime*</pre>
+
+All documents with a unixtime equal to or greater than this value will be returned.
+
+If you want to filter on AICode or AIShortCode (otherwise all come back):
+<pre>
+https://resolver-domain/unixtime/unixtime/*ai-code*
+https://resolver-domain/unixtime/unixtime/*ai-short-code*
+</pre>
+Examples:
+<pre>
+https://resolver-domain/unixtime/1573130975
+https://resolver-domain/unixtime/1573130975/gtin
+https://resolver-domain/unixtime/1573130975/01
+</pre>

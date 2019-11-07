@@ -41,7 +41,7 @@
             showBasePageLink(baseURI);
             parseAndDisplayData(resolverDoc, baseURI);
 
-            let firstEntry = resolverDoc[Object.keys(resolverDoc)[1]];
+            let firstEntry = resolverDoc[Object.keys(resolverDoc)[2]];
             document.title = firstEntry.item_name;
             document.getElementById("headerTitle").innerText = firstEntry.item_name;
             document.getElementById("pagetitle").innerText = firstEntry.item_name;
@@ -72,7 +72,7 @@
             let table = document.createElement("table");
             table.id = "maintable";
 
-            for (let key = 1;
+            for (let key = 2;
                  key < Object.keys(resolverDoc).length;
                  key++)
             {

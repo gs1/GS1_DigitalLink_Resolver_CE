@@ -49,6 +49,13 @@ services:
     networks:
       - gs1-resolver-network
 
+  unixtime-web-server:
+    build: './id_gs1_org_unixtime'
+    container_name: unixtime-web-server
+    restart: always
+    networks:
+      - gs1-resolver-network
+
 volumes:
   gs1resolver-dataentry-volume: {}
   gs1resolver-document-volume: {}

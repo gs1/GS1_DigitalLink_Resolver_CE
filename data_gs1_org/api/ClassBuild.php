@@ -122,6 +122,9 @@ class ClassBuild
         //It's being stored as a URI in format "/keyName/keyValue"   e.g. "/gtin/07613326006651"
         $mongoDbRecord['_id'] = '/' . $this->classAITable->lookupAICodeFromAIShortCode($gs1Key) . '/' . $gs1Value;
 
+        //Add the unixtime version of date_last_updated
+        $mongoDbRecord['unixtime'] = strtotime($uriRequest['date_last_updated']);
+
         //Only process active requests that are not flagged for deletion
         if ($uriRequest['active'] === 1 && $uriRequest['flagged_for_deletion'] === 0)
         {
@@ -222,7 +225,6 @@ class ClassBuild
         //Now to the URI RESPONSES
         //Get all the URI responses for this uriRequest range, which we'll use a little further down this function
         $uriResponses = $this->dbAccess->BUILD_GetURIResponses($uriRequest['uri_request_id']);
-
         $responsesCount = 0;
         foreach ($uriResponses as $response)
         {
