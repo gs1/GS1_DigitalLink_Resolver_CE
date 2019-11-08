@@ -11,6 +11,9 @@ This project uses a SQL Server database to store information, and the API has a 
 
 <tr><td>id_gs1_org</td><td>the resolver service <b>id-web-server</b> (as used on the domain <a href="https://id.gs1.org">https://id.gs1.org</a>) which can be used by client applications that supply a GS1 key and value according to the GS1 Digital Link standard. This service performs a high-speed lookup of the specified GS1 key and value, and returns the appropriate redirection where possible.</td></tr>
 
+<tr><td>id_gs1_org_unixtime</td><td>the document sync service <b>unixtime-web-server</b> provides the ability to download resolver documents on or since a specified Unixtime (the number of seconds since 1 January 1970 00:00:00) in order for clients
+to synchronise resolver data with their own. </td></tr>
+
 <tr><td>gs1resolver_dataentry_db</td><td>database service <b>dataentry-sql-server</b> using SQL Server 2017 Express edition (free to use but with 10GB limit) to provide a stable data storage service for the resolver's data-entry needs.</td></tr>
 <tr><td>gs1resolver_document_db</td><td>the <b>id-mongo-server</b> MongoDB database used by the resolver.</td></tr>
 
@@ -30,14 +33,17 @@ We chose a Docker-based <i>containerisation</i> or <i>micro-services</i> archite
 It is for these reasons that this type of architecture has become so popular.
 
 #### Web Servers
-The only outward-facing web server is the <i><b>id-web-server</b></i> container. Any client requests to the /ui/ data entry web application and /api/ API service are proxied through to the <b><i><b>dataentry-web-server</b></i></b> by the <i><b>id-web-server</b></i>. Any other calls to the service are processed by <i><b>id-web-server</b></i> itself.
+The only outward-facing web server is the <i><b>id-web-server</b></i> container. Any client requests to the /ui/ data entry web application and /api/ API service are proxied through to the <b><i>dataentry-web-server</i></b> and <b><i>unixtime-web-server</i></b> by the <i><b>id-web-server</b></i>. Any other calls to the service are processed by <i><b>id-web-server</b></i> itself.
 
-A third web server, <i><b>gs1dl-toolkit-server</b></i>, is a separate service used internally by <i><b>id-web-server</b></i> to detect and return distinct GS1 Digital Link elements which
+A fourth web server, <i><b>gs1dl-toolkit-server</b></i>, is a separate service used internally by <i><b>id-web-server</b></i> to detect and return distinct GS1 Digital Link elements which
 <i><b>id-web-server</b></i> uses for further processing. Indeed, <i><b>gs1dl-toolkit-server</b></i> hosts a set of ten node.js (JavaScript) web servers across ten internal-only IP ports from 3000 to 3009 on the service's private <i><b>gs1-resolver-network</b></i>.
 Processing threads in <i><b>id-web-server</b></i> can choose any of the ten ports at random, which speeds throughput given that each node.js endpoint is a single-threaded application.
 
 As well as enabling CRUD (Create / Read / Update / Delete) operations on data, <i><b>dataentry-web-server</b></i> also has a BUILD function that runs once per minute as a result of the Docker HEALTHCHECK process set up in the Dockerfile for that container.
 BUILD causes <i><b>dataentry-web-server</b></i> to look for changes in the SQL database and uses it to create documents in the MongoDB database. MongoDB can perform high-speed lookups and is ideal for the high-performance reading of data.
+
+The document sync service <b><i>unixtime-web-server</i></b> provides the ability to download resolver documents on or since a specified Unixtime (the number of seconds since 1 January 1970 00:00:00) in order for clients
+to synchronise resolver data with their own. More details in its own README.md file</td></tr>
 
 #### Database servers
 This repository includes two extra containers for SQL Server and MongoDB. These are included to help you get up and running quickly to experiment and 
