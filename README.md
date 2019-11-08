@@ -28,7 +28,7 @@ The community edition of the GS1 Digital Link Resolver is an entirely self-conta
 
 We chose a Docker-based <i>containerisation</i> or <i>micro-services</i> architecture model for GS1 Digital Link Resolver for these reasons:
 * The need for end-users to build and host a reliable application free from issues with different versions of database drivers and programming languages.
-* Should a container fail (equivalent of a cpmputer crash) the Docker Engine can instantly start a fresh copy of the container, thus maintaining service.
+* Should a container fail (equivalent of a computer crash) the Docker Engine can instantly start a fresh copy of the container, thus maintaining service.
 * It is simple to scale-up the service  by running multiple instances of containers with load-balancing. 
 * Most cloud computing providers have the ability to host containers easily within their service platforms. 
 
