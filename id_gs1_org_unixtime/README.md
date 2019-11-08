@@ -5,14 +5,14 @@ GS1 key, or all documents after a particular date, ideal for synchronisng docume
 This server, <b>unixtime-web-server</b> provides this service, with requests proxied through to it by <b>id-web-server</b>.
 
 To use the service just supply a minimum unixtime to this URL:
-<pre>https://resolver-domain/unixtime/*unixtime*</pre>
+<pre>https://resolver-domain/unixtime/*10-digit-unixtime-value*</pre>
 
 All documents with a unixtime equal to or greater than this value will be returned.
 
 If you want to filter on AICode or AIShortCode (otherwise all come back):
 <pre>
-https://resolver-domain/unixtime/unixtime/*ai-code*
-https://resolver-domain/unixtime/unixtime/*ai-short-code*
+https://resolver-domain/unixtime/*10-digit-unixtime-value*/*ai-code*
+https://resolver-domain/unixtime/*10-digit-unixtime-value*/*ai-short-code*
 </pre>
 Examples:
 <pre>
