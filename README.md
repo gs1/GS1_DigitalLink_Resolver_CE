@@ -5,13 +5,15 @@ and resolve (that is, redirect) web clients to their appropriate destinations.
 
 This repository consists of five projects which work together to provide the resolving service:
 <table border="1">
-<tr><td>data_gs1_org</td><td>The Data Entry service <b>dataentry-web-server</b> (as used on the domain <a href="https://data.gs1.org">https://data.gs1.org</a>) consisting of an API that provides controlled access to Create, Read, Update and Delete (CRUD) operations on resolver records, along with 
+<tr><th>Foder Name</th><th>Project</th></tr>
+<tr><td>dataentry_web_server</td><td>The Data Entry service <b>dataentry-web-server</b> (as used on the domain <a href="https://data.gs1.org">https://data.gs1.org</a>) consisting of an API that provides controlled access to Create, Read, Update and Delete (CRUD) operations on resolver records, along with 
 a web-based example user interface that allows easy data entry of this information (and uses the API to perform its operations). 
-This project uses a SQL Server database to store information, and the API has a 'Build' command that takes any changes to the database and builds a document for each GS1 key and value, which will be used by... </td></tr>
+This project uses a SQL Server database to store information, and the API has a 'Build' command that takes any 
+changes to the database and builds a document for each GS1 key and value, which will be used by... </td></tr>
 
-<tr><td>id_gs1_org</td><td>the resolver service <b>id-web-server</b> (as used on the domain <a href="https://id.gs1.org">https://id.gs1.org</a>) which can be used by client applications that supply a GS1 key and value according to the GS1 Digital Link standard. This service performs a high-speed lookup of the specified GS1 key and value, and returns the appropriate redirection where possible.</td></tr>
+<tr><td>id_web_server</td><td>the resolver service <b>id-web-server</b> (as used on the domain <a href="https://id.gs1.org">https://id.gs1.org</a>) which can be used by client applications that supply a GS1 key and value according to the GS1 Digital Link standard. This service performs a high-speed lookup of the specified GS1 key and value, and returns the appropriate redirection where possible.</td></tr>
 
-<tr><td>id_gs1_org_unixtime</td><td>the document sync service <b>unixtime-web-server</b> provides the ability to download resolver documents on or since a specified Unixtime (the number of seconds since 1 January 1970 00:00:00) in order for clients
+<tr><td>unixtime_web_server</td><td>the document sync service <b>unixtime-web-server</b> provides the ability to download resolver documents on or since a specified Unixtime (the number of seconds since 1 January 1970 00:00:00) in order for clients
 to synchronise resolver data with their own. </td></tr>
 
 <tr><td>gs1resolver_dataentry_db</td><td>database service <b>dataentry-sql-server</b> using SQL Server 2017 Express edition (free to use but with 10GB limit) to provide a stable data storage service for the resolver's data-entry needs.</td></tr>
@@ -85,11 +87,11 @@ connection the build-from-scratch will take 10-15 minutes.
 6. Once completed, type this to start everything up:<pre>docker-compose up -d</pre>(the -d means 'disconnect' - docker-compose will start up everything then hand control back to you). 
 
 7. Now wait 10 seconds while the system settles down (the SQL Server service takes a few seconds to initialise when 'new') then copy and paste this command, which will run a program inside the SQL Server 
-container, creating the database and some example data described in [data_gs1_org/README.md](data_gs1_org/README.md) 
+container, creating the database and some example data described in [data_gs1_org/README.md](dataentry_web_server/README.md) 
 <pre>
 docker exec -it  dataentry-sql-server  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU -i  /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql
 </pre>
-8. Now open a web browser and direct it to this web address: <a href="http://localhost:8080/ui/">http://localhost:8080/ui/</a> (the trailing / is important!) and login as one of the test accounts described in [data_gs1_org/README.md](data_gs1_org/README.md)
+8. Now open a web browser and direct it to this web address: <a href="http://localhost:8080/ui/">http://localhost:8080/ui/</a> (the trailing / is important!) and login as one of the test accounts described in [data_gs1_org/README.md](dataentry_web_server/README.md)
 9. To close the entire application down type this: <pre>docker-compose down</pre> Since the data is stored on Docker volumes, the data will survive the shutdown and be available when you 'up' the service again.
 10. If you wish to delete the volumes and thus wipe the data, type these three commands: 
 <pre>

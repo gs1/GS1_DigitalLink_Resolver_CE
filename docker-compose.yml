@@ -28,7 +28,7 @@ services:
       - gs1-resolver-network
 
   dataentry-web-server:
-    build: './data_gs1_org'
+    build: './dataentry_web_server'
     container_name: dataentry-web-server
     depends_on:
       - dataentry-sql-server
@@ -39,7 +39,7 @@ services:
       - gs1-resolver-network
 
   id-web-server:
-    build: './id_gs1_org'
+    build: './id_web_server'
     container_name: id-web-server
     depends_on:
       - id-mongo-server
@@ -50,7 +50,7 @@ services:
       - gs1-resolver-network
 
   unixtime-web-server:
-    build: './id_gs1_org_unixtime'
+    build: './unixtime_web_server'
     container_name: unixtime-web-server
     restart: always
     networks:
