@@ -44,7 +44,7 @@ Processing threads in <i><b>id-web-server</b></i> can choose any of the ten port
 As well as enabling CRUD (Create / Read / Update / Delete) operations on data, <i><b>dataentry-web-server</b></i> also has a BUILD function that runs once per minute as a result of the Docker HEALTHCHECK process set up in the Dockerfile for that container.
 BUILD causes <i><b>dataentry-web-server</b></i> to look for changes in the SQL database and uses it to create documents in the MongoDB database. MongoDB can perform high-speed lookups and is ideal for the high-performance reading of data.
 
-The document sync service <b><i>unixtime-web-server</i></b> provides the ability to download resolver documents on or since a specified Unixtime (the number of seconds since 1 January 1970 00:00:00) in order for clients
+The document sync service <b><i>unixtime-web-server</i></b> provides the ability to download resolver documents containing data updated on or since a specified Unixtime (the number of seconds since 1 January 1970 00:00:00) in order for clients
 to synchronise resolver data with their own. More details in its own README.md file</td></tr>
 
 #### Database servers
