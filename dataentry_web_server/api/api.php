@@ -299,8 +299,7 @@ if(isset($resolver))
     {
         $sessionId = $resolver->session_id;
         $gs1KeyValue = $resolver->gs1_key_value;
-        $itemDescription = $resolver->item_description;
-        $result = $classDBAccess->SearchURIRequests($sessionId, $gs1KeyValue, $itemDescription);
+        $result = $classDBAccess->SearchURIRequests($sessionId, $gs1KeyValue);
     }
     elseif ($resolver->command === 'save_new_gs1mo')
     {

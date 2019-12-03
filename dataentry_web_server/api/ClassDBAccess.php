@@ -636,18 +636,13 @@ class ClassDBAccess
      * @param string $toDate
      * @return array|bool
      */
-    public function SearchURIRequests($sessionId, $gs1KeyValue, $itemDescription) : array
+    public function SearchURIRequests($sessionId, $gs1KeyValue) : array
     {
         $result = array();
 
         if($this->CheckSessionActive($sessionId))
         {
-            if ($itemDescription !== '')
-            {
-                $sql = "EXEC [gs1resolver_dataentry_db].[get_request_uris] '$sessionId', 0, 999999";
-                $result = $this->DBSelect($sql);
-            }
-            elseif ($gs1KeyValue > 0)
+            if ($gs1KeyValue > 0)
             {
                 $sql = "EXEC [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_value] '$sessionId', '$gs1KeyValue'";
                 $result = $this->DBSelect($sql);
