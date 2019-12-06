@@ -199,6 +199,18 @@ GO
 /****** Object:  StoredProcedure [gs1resolver_dataentry_db].[account_login]    Script Date: 03/10/2019 14:08:25 ******/
 DROP PROCEDURE [gs1resolver_dataentry_db].[account_login]
 GO
+
+DROP PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_code_and_value]
+GO
+
+DROP PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_code]
+GO
+
+DROP PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_value]
+GO
+
+
+
 ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] DROP CONSTRAINT [DF__uri_respo__activ__3E1D39E1]
 GO
 ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] DROP CONSTRAINT [DF__uri_respo__forwa__41EDCAC5]
@@ -3345,14 +3357,22 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_value]
+CREATE PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_code_and_value]
     @var_session_id nchar(50),
+    @var_gs1_key_code nvarchar(20),
     @var_gs1_key_value nvarchar(45)
 AS
 BEGIN
     SET  XACT_ABORT  ON
     SET  NOCOUNT  ON
-    SELECT
+
+    DECLARE @member_primary_gln nchar(13)
+
+    SELECT @member_primary_gln = sessions.member_primary_gln
+    FROM gs1resolver_dataentry_db.sessions
+    WHERE sessions.session_id = @var_session_id
+
+    SELECT TOP 1000
         uri_requests.uri_request_id,
         uri_requests.member_primary_gln,
         uri_requests.gs1_key_code,
@@ -3368,15 +3388,101 @@ BEGIN
         uri_requests.web_uri_suffix_3,
         uri_requests.web_uri_prefix_4,
         uri_requests.web_uri_suffix_4,
-        uri_requests.active
+        uri_requests.active,
+        CASE
+            WHEN uri_requests.member_primary_gln = @member_primary_gln THEN 1 ELSE 0
+        END AS editable
     FROM gs1resolver_dataentry_db.uri_requests
     WHERE
-            uri_requests.gs1_key_value = @var_gs1_key_value AND
-            uri_requests.member_primary_gln IN
-            (
-                SELECT sessions.member_primary_gln
-                FROM gs1resolver_dataentry_db.sessions
-                WHERE sessions.session_id = @var_session_id
-            )
+            uri_requests.gs1_key_code = @var_gs1_key_code AND
+            uri_requests.gs1_key_value = @var_gs1_key_value
+
     END
+GO
+
+
+
+CREATE PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_code]
+    @var_session_id nchar(50),
+    @var_gs1_key_code nvarchar(20)
+AS
+BEGIN
+    SET  XACT_ABORT  ON
+    SET  NOCOUNT  ON
+
+    DECLARE @member_primary_gln nchar(13)
+
+    SELECT @member_primary_gln = sessions.member_primary_gln
+    FROM gs1resolver_dataentry_db.sessions
+    WHERE sessions.session_id = @var_session_id
+
+    SELECT TOP 1000
+        uri_requests.uri_request_id,
+        uri_requests.member_primary_gln,
+        uri_requests.gs1_key_code,
+        uri_requests.gs1_key_value,
+        uri_requests.item_description,
+        uri_requests.date_inserted,
+        uri_requests.date_last_updated,
+        uri_requests.web_uri_prefix_1,
+        uri_requests.web_uri_suffix_1,
+        uri_requests.web_uri_prefix_2,
+        uri_requests.web_uri_suffix_2,
+        uri_requests.web_uri_prefix_3,
+        uri_requests.web_uri_suffix_3,
+        uri_requests.web_uri_prefix_4,
+        uri_requests.web_uri_suffix_4,
+        uri_requests.active,
+        CASE
+            WHEN uri_requests.member_primary_gln = @member_primary_gln THEN 1 ELSE 0
+        END AS editable
+    FROM gs1resolver_dataentry_db.uri_requests
+    WHERE
+            uri_requests.gs1_key_code = @var_gs1_key_code
+
+END
+GO
+
+
+
+
+CREATE PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_value]
+    @var_session_id nchar(50),
+    @var_gs1_key_value nvarchar(45)
+AS
+BEGIN
+    SET  XACT_ABORT  ON
+    SET  NOCOUNT  ON
+
+    DECLARE @member_primary_gln nchar(13)
+
+    SELECT @member_primary_gln = sessions.member_primary_gln
+    FROM gs1resolver_dataentry_db.sessions
+    WHERE sessions.session_id = @var_session_id
+
+    SELECT TOP 1000
+        uri_requests.uri_request_id,
+        uri_requests.member_primary_gln,
+        uri_requests.gs1_key_code,
+        uri_requests.gs1_key_value,
+        uri_requests.item_description,
+        uri_requests.date_inserted,
+        uri_requests.date_last_updated,
+        uri_requests.web_uri_prefix_1,
+        uri_requests.web_uri_suffix_1,
+        uri_requests.web_uri_prefix_2,
+        uri_requests.web_uri_suffix_2,
+        uri_requests.web_uri_prefix_3,
+        uri_requests.web_uri_suffix_3,
+        uri_requests.web_uri_prefix_4,
+        uri_requests.web_uri_suffix_4,
+        uri_requests.active,
+        CASE
+            WHEN uri_requests.member_primary_gln = @member_primary_gln THEN 1 ELSE 0
+        END AS editable
+    FROM gs1resolver_dataentry_db.uri_requests
+    WHERE
+            uri_requests.gs1_key_value = @var_gs1_key_value
+
+END
 GO

@@ -430,6 +430,7 @@ class ClassDBAccess
         if($this->CheckSessionActive($sessionId))
         {
             $sql = "EXEC [gs1resolver_dataentry_db].[save_existing_uri_response]  $responseId, '$linkType', '$ianaLanguage', '$context', '$mimeType', '$friendlyLinkName', '$destinationURI', $fwqs, $active, $defaultLinkTypeFlag, $defaultIanaLanguageFlag, $defaultContextFlag, $defaultMimeTypeFlag ";
+            file_put_contents('php://stderr', "SaveExistingUriResponse SQL: " . print_r($sql, true) . PHP_EOL);
             $success = $this->DBExec($sql);
             if($success)
             {
@@ -443,7 +444,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active';
+            $result['STATUS'] = 'ERROR - Session Not Active';
         }
 
         return $result;
@@ -482,7 +483,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active';
+            $result['STATUS'] = 'ERROR - Session Not Active';
         }
 
         return $result;
@@ -526,7 +527,6 @@ class ClassDBAccess
             $sql = "EXEC [gs1resolver_dataentry_db].[check_for_duplicate_request_record] $requestId, N'$gs1KeyCode', N'$gs1KeyValue',
              N'$uriPrefix1', N'$uriSuffix1', N'$uriPrefix2', N'$uriSuffix2', N'$uriPrefix3',  N'$uriSuffix3',
              N'$uriPrefix4', N'$uriSuffix4'";
-
             $response = $this->DBSelect($sql);
 
             if(count($response) === 0)
@@ -554,7 +554,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active';
+            $result['STATUS'] = 'ERROR - Session Not Active';
         }
 
         return $result;
@@ -582,7 +582,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active';
+            $result['STATUS'] = 'ERROR - Session Not Active';
         }
 
         return $result;
@@ -609,7 +609,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active';
+            $result['STATUS'] = 'ERROR - Session Not Active';
         }
 
         return $result;
@@ -630,23 +630,36 @@ class ClassDBAccess
 
     /**
      * @param $sessionId
+     * @param $gs1KeyCode
      * @param $gs1KeyValue
-     * @param $itemDescription
-     * @param string $fromDate
-     * @param string $toDate
-     * @return array|bool
+     * @return array
      */
-    public function SearchURIRequests($sessionId, $gs1KeyValue) : array
+    public function SearchURIRequests($sessionId, $gs1KeyCode, $gs1KeyValue) : array
     {
         $result = array();
 
         if($this->CheckSessionActive($sessionId))
         {
-            if ($gs1KeyValue > 0)
+            if($gs1KeyCode === "*" && $gs1KeyValue === "*")
+            {
+                //Well they want everything...!
+                $this->GetRequestURIs($sessionId, 1, 1000);
+                $sql = "";
+            }
+            elseif($gs1KeyValue === "*") // all the value but specific codes
+            {
+                $sql = "EXEC [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_code] '$sessionId', '$gs1KeyCode'";
+            }
+            elseif ($gs1KeyCode === "*") // all the codes but specific values
             {
                 $sql = "EXEC [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_value] '$sessionId', '$gs1KeyValue'";
-                $result = $this->DBSelect($sql);
             }
+            else  //specific code and value
+            {
+                $sql = "EXEC [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_code_and_value] '$sessionId', '$gs1KeyCode', '$gs1KeyValue'";
+            }
+            $this->logThis("$sessionId / $gs1KeyCode / $gs1KeyValue / $sql");
+            $result = $this->DBSelect($sql);
         }
         return $result;
     }
@@ -905,7 +918,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active';
+            $result['STATUS'] = 'ERROR - Session Not Active';
         }
         return $result;
     }
@@ -964,7 +977,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session not Active - please login again';
+            $result['STATUS'] = 'ERROR - Session Not Active - please login again';
         }
 
         return $result;
@@ -997,7 +1010,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active or User Does Not Have Global Administrative Privileges';
+            $result['STATUS'] = 'ERROR - Session Not Active or User Does Not Have Global Administrative Privileges';
         }
         return $result;
     }
@@ -1030,7 +1043,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active or User Does Not Have Global Administrative Privileges';
+            $result['STATUS'] = 'ERROR - Session Not Active or User Does Not Have Global Administrative Privileges';
         }
         return $result;
     }
@@ -1059,7 +1072,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active or User Does Not Have Global Administrative Privileges';
+            $result['STATUS'] = 'ERROR - Session Not Active or User Does Not Have Global Administrative Privileges';
         }
         return $result;
 
@@ -1094,7 +1107,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active or User Does Not Have Global or Member Organisation Administrative Privileges';
+            $result['STATUS'] = 'ERROR - Session Not Active or User Does Not Have Global or Member Organisation Administrative Privileges';
         }
         return $result;
 
@@ -1127,7 +1140,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active or User Does Not Have Global Administrative Privileges';
+            $result['STATUS'] = 'ERROR - Session Not Active or User Does Not Have Global Administrative Privileges';
         }
         return $result;
     }
@@ -1158,7 +1171,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active or User Does Not Have Global Administrative Privileges';
+            $result['STATUS'] = 'ERROR - Session Not Active or User Does Not Have Global Administrative Privileges';
         }
         return $result;
     }
@@ -1189,7 +1202,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active or User Does Not Have Global Administrative Privileges';
+            $result['STATUS'] = 'ERROR - Session Not Active or User Does Not Have Global Administrative Privileges';
         }
         return $result;
     }
@@ -1221,7 +1234,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active or User Does Not Have Global Administrative Privileges';
+            $result['STATUS'] = 'ERROR - Session Not Active or User Does Not Have Global Administrative Privileges';
         }
         return $result;
     }
@@ -1252,7 +1265,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active or User Does Not Have Global Administrative Privileges';
+            $result['STATUS'] = 'ERROR - Session Not Active or User Does Not Have Global Administrative Privileges';
         }
         return $result;
     }
@@ -1283,7 +1296,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active or User Does Not Have Global Administrative Privileges';
+            $result['STATUS'] = 'ERROR - Session Not Active or User Does Not Have Global Administrative Privileges';
         }
         return $result;
     }
@@ -1313,7 +1326,7 @@ class ClassDBAccess
         }
         else
         {
-            $result['STATUS'] = 'Session Not Active or User Does Not Have Global Administrative Privileges';
+            $result['STATUS'] = 'ERROR - Session Not Active or User Does Not Have Global Administrative Privileges';
         }
         return $result;
     }

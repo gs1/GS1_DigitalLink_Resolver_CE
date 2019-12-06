@@ -75,7 +75,8 @@ There are two *not-fully-tested-yet*  backup and restore scripts for the SQL Ser
 
 ## Fast start
 1. Install the Docker system on your computer. Head to https://www.docker.com/products/docker-desktop for install details for Windows and Mac.
-If you are using Ubuntu Linux, follow install instructions here: https://docs.docker.com/install/linux/docker-ce/ubuntu/
+If you are using Ubuntu Linux, follow install instructions here: https://docs.docker.com/install/linux/docker-ce/ubuntu/ - Note that if you wish to
+install on Windows Server editions, read the section on Windows Server at the foot of this README file. 
 2. <i><b>git clone</b></i> this repository onto your computer.
 3. Open a terminal prompt (Mac and Linux) or PowerShell (Windows 10) and change directory to the one at the 'root' of this repository, so you can see
 the file <b>docker-compose.yml</b> in the current folder.
@@ -101,6 +102,14 @@ docker volume rm gs1_digitallink_resolver_ce_gs1resolver-document-volume
  
 </pre>
 ## Next steps
-* Read through the README.md and Dockerfiles for each project in this repository; many originate from when they were separate projects and will prove interesting reading. Especially note the example data installed into the service when you run the SQL script: Welcome to the world of <i>GS1 Westeros<i>!
+* Read through the README.md and Dockerfiles for each project in this repository; many originate from when they were separate projects and will prove interesting reading. Especially note the example data installed into the service when you run the SQL script: Welcome to the world of <i>GS1 Westeros</i>!
 
-
+## Windows Server (and Azure)
+Unfortunately, running Docker containers within the Windows Server environment is challenging at this time because these projects use much more widely-adopted Linux containers
+which can't run natively in Windows Server without additional complex configuration. If you are allowed only Windows Server machines then the options are:
+* Use the Programs and Features configuration settings to run Hyper-V, the virtual machine Hypervisor, then install and run a Ubuntu virtual machine
+* Clone a copy of this repository and create Windows containers. At this time how much work required to change the Dockerfiles to create Windows containers is unknown, but a welcome extra task!
+* Find out if the real reason is that you need to run in Azure? If so, Azure provide a service called 'Web Apps for Containers' which run Linux containers
+individually. You would just need to create three Web Apps, and replace the otehr two database containers with SQL Server Azure (instead of SQL container)  and CosmosDB (instead of MongoDB) and then alter the database connection strings in the.ini files of the dataentry_web_server, and id_web_server.
+You would also need to point the id_web_server to the new location fo the dl_toolkit_server.
+* Help us configure the Kubernetes configuration so this can be run in a Kubernetes cluster! 

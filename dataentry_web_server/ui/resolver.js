@@ -18,6 +18,70 @@ let page_maxNumberOfLines = 20;
 
 class GS1URI_DASHBOARD
 {
+    static GetGS1KeyCodesList()
+    {
+        let jsonGS1KeyCodesListFromStorage = sessionStorage.getItem("gs1_key_codes");
+        if (jsonGS1KeyCodesListFromStorage !== null)
+        {
+            page_GS1KeyCodesList = JSON.parse(jsonGS1KeyCodesListFromStorage);
+            if (!Array.isArray(page_GS1KeyCodesList))
+            {
+                page_GS1KeyCodesList = page_GS1KeyCodesList.data_list;
+            }
+            GS1URI_DASHBOARD.PopulateGS1KeyCodesListSelectControl()
+        }
+        else
+        {
+            let apiRequest = {
+                command: "get_gs1_key_codes_list"
+            };
+            let fd = new FormData();
+            fd.append("resolver", JSON.stringify(apiRequest));
+            let xhr = new XMLHttpRequest();
+            xhr.addEventListener("load", GS1URI_DASHBOARD.GetGS1KeyCodesList_Response, false);
+            xhr.open("POST", api_url);
+            xhr.send(fd);
+        }
+    }
+
+    static GetGS1KeyCodesList_Response(evt)
+    {
+        sessionStorage.setItem("gs1_key_codes", evt.target.responseText);
+        let gs1KeyCodesObj = GS1URI_COMMON.GetAJAXResponse(evt.target.responseText);
+        page_GS1KeyCodesList = gs1KeyCodesObj.data_list;
+        GS1URI_DASHBOARD.PopulateGS1KeyCodesListSelectControl()
+    }
+
+
+    static PopulateGS1KeyCodesListSelectControl()
+    {
+        let selectSearchGS1KeyCode = document.getElementById("select_search_gs1_key_code");
+
+        // delete existing SELECT options if they are there
+        while (selectSearchGS1KeyCode.firstChild)
+        {
+            selectSearchGS1KeyCode.removeChild(selectSearchGS1KeyCode.firstChild);
+        }
+
+        //Start with an 'ANY' option
+        let thisOption = document.createElement("option");
+        thisOption.value = "Search all GS1 Key Codes";
+        thisOption.label = "Search all GS1 Key Codes";
+        thisOption.text = "Search all GS1 Key Codes";
+        selectSearchGS1KeyCode.appendChild(thisOption);
+
+        //Add in the new SELECT options in the correct order (that has been decided by the API)
+        page_GS1KeyCodesList.forEach(
+            function (obj)
+            {
+                let thisOption = document.createElement("option");
+                thisOption.value = obj.gs1_key_code;
+                thisOption.label = obj.code_name;
+                thisOption.text = obj.gs1_key_code;
+                selectSearchGS1KeyCode.appendChild(thisOption);
+            });
+    }
+
     static ShowInfoInHeader()
     {
         let h3CompanyHeader = document.getElementById("h3_company_header");
@@ -59,6 +123,7 @@ class GS1URI_DASHBOARD
 
     static GetURIList()
     {
+        document.getElementById("wait_animation").style.visibility = "visible";
         let fd = new FormData();
         let apiRequest = {
             command: "get_uri_list",
@@ -76,6 +141,7 @@ class GS1URI_DASHBOARD
 
     static GetURIList_Response(evt)
     {
+        document.getElementById("wait_animation").style.visibility = "hidden";
         let uriList = GS1URI_COMMON.GetAJAXResponse(evt.target.responseText);
         let tableURIList = document.getElementById("table_uri_list");
         tableURIList.innerHTML = "<tr><th>GS1 Key Code</th><th>GS1 Key Value</th><th>Item Description</th><th>Date/Times</th><th>status</th><th>task</th></tr>";
@@ -169,11 +235,12 @@ class GS1URI_DASHBOARD
 
     static Search()
     {
+        document.getElementById("wait_animation").style.visibility = "visible";
         let apiRequest = {
             command: "search_uri_requests",
             session_id: page_session.session_id,
-            gs1_key_value: document.getElementById("text_search_gs1_key_value").value,
-            item_description: document.getElementById("text_search_item_description").value
+            gs1_key_code: document.getElementById("select_search_gs1_key_code").value,
+            gs1_key_value: document.getElementById("text_search_gs1_key_value").value
         };
 
         let fd = new FormData();
@@ -188,7 +255,6 @@ class GS1URI_DASHBOARD
     static ClearSearchBoxesAndRestoreDefaultResults()
     {
         document.getElementById("text_search_gs1_key_value").value = "";
-        document.getElementById("text_search_item_description").value = "";
         GS1URI_DASHBOARD.GetURIList();
     }
 
@@ -483,14 +549,14 @@ class GS1URI_HOMEPAGE
         };
         fd.append("resolver", JSON.stringify(apiRequest));
         let xhr = new XMLHttpRequest();
-        xhr.addEventListener("load", GS1URI_HOMEPAGE.GetSession_Response, false);
+        xhr.addEventListener("load", GS1URI_HOMEPAGE.Login_Response, false);
         xhr.open("POST", api_url);
         xhr.send(fd);
         document.getElementById("wait_animation").style.visibility = "visible";
     }
 
 
-    static GetSession_Response(evt)
+    static Login_Response(evt)
     {
         document.getElementById("wait_animation").style.visibility = "hidden";
         let accountSession = GS1URI_COMMON.GetAJAXResponse(evt.target.responseText);
@@ -951,7 +1017,6 @@ class GS1URI_EDITURI
                 thisOption.text = obj.gs1_key_code;
                 selectGS1KeyCodes.appendChild(thisOption);
             });
-
     }
 
 
@@ -2839,6 +2904,7 @@ class GS1URI_COMMON
         {
             //get the session cookie so it is available for JS routines here
             GS1URI_DASHBOARD.ShowInfoInHeader();
+            GS1URI_DASHBOARD.GetGS1KeyCodesList();
             GS1URI_DASHBOARD.GetURIList();
         }
         else if (window.location.href.includes("edituri.html"))

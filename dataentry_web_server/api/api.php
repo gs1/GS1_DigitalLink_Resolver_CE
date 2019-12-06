@@ -297,9 +297,19 @@ if(isset($resolver))
     }
     elseif ($resolver->command === 'search_uri_requests')
     {
+        $result = [];
         $sessionId = $resolver->session_id;
+        $gs1KeyCode = $resolver->gs1_key_code;
         $gs1KeyValue = $resolver->gs1_key_value;
-        $result = $classDBAccess->SearchURIRequests($sessionId, $gs1KeyValue);
+        if(startsWith(strtolower($gs1KeyCode), "search all")) // <- this value comes from UI provided with data entry service
+        {
+            $gs1KeyCode = "*"; //Asterisk means 'all'
+        }
+        if ($gs1KeyValue === '')
+        {
+            $gs1KeyValue = '*';
+        }
+        $result = $classDBAccess->SearchURIRequests($sessionId, $gs1KeyCode, $gs1KeyValue);
     }
     elseif ($resolver->command === 'save_new_gs1mo')
     {
@@ -478,3 +488,7 @@ function interpretFlagValue($incomingFlag) : int
     return $outgoingFlag;
 }
 
+function startsWith($haystack, $needle)
+{
+    return (strpos($haystack, $needle) === 0);
+}
