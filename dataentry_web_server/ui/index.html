@@ -23,12 +23,18 @@
         }
 
     </style>
+    <script>
+        if(!window.location.pathname.endsWith("/"))
+        {
+            document.location.href = window.location.href + "/";
+        }
+    </script>
 </head>
 <body>
 <table class="centered_table">
     <tr>
         <td>
-            <img src="GS1_Digital_Link_Resolver_Web_Banner_Large_Rectangle_336x280px_2016-02-12.png" height="280" width="336" alt="GS1 Resolver Logo"/>
+            <img id="imglogo" src="GS1_Digital_Link_Resolver_Web_Banner_Large_Rectangle_336x280px_2016-02-12.png" height="280" width="336" alt="GS1 Resolver Logo"/>
         </td>
         <td>
             <table style="border: 5px solid #f26334; border-spacing: 36px" id="table_login">
