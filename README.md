@@ -5,7 +5,7 @@ and resolve (that is, redirect) web clients to their appropriate destinations.
 
 This repository consists of five projects which work together to provide the resolving service:
 <table border="1">
-<tr><th>Foder Name</th><th>Project</th></tr>
+<tr><th>Folder Name</th><th>Project</th></tr>
 <tr><td>dataentry_web_server</td><td>The Data Entry service <b>dataentry-web-server</b> (as used on the domain <a href="https://data.gs1.org">https://data.gs1.org</a>) consisting of an API that provides controlled access to Create, Read, Update and Delete (CRUD) operations on resolver records, along with 
 a web-based example user interface that allows easy data entry of this information (and uses the API to perform its operations). 
 This project uses a SQL Server database to store information, and the API has a 'Build' command that takes any 
