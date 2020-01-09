@@ -2891,7 +2891,7 @@ class GS1URI_COMMON
     static Logout()
     {
         sessionStorage.clear();
-        window.location = "index.html";
+        window.location = "/ui/";
     }
 
     //Functions to run on page load:
