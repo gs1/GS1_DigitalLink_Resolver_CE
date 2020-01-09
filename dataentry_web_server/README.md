@@ -3,6 +3,11 @@
 ## Overview
 Welcome to the GS1 Resolver Data Entry service. This repository contains the applications that manage the data that underpins the requests and responses, and the creation of the MongoDB documents, that are used by the separate GS1 Resolver application.
 
+### Important Note
+This entire service is being redeveloped to use JavaScript (for the id_web_server and Java / SpringBoot for dateentry_web server)
+
+## Detail 
+
 Here are the various modules in their respective folders:
 <table>
 <tr><td>/api</td><td>JSON- and Form POST-aware data entry API, written in PHP 7.2</td></tr>
