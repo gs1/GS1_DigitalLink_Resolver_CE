@@ -22,6 +22,9 @@ to synchronise resolver data with their own. </td></tr>
 <tr><td>dl_toolkit_server</td><td>the <b>gs1dl-toolkit-server</b> service hosting a Node.JS (JavaScript) application running internally within the service to support id_gs1_org's ability to understand incoming GS1 Digital Link requests.</td></tr>
 </table>
 
+### Important Note
+This entire service is being redeveloped to use JavaScript (for the id_web_server and Java / SpringBoot for dateentry_web server)
+
 ## Architecture
 
 The community edition of the GS1 Digital Link Resolver is an entirely self-contained set of applications, complete with databases and services for data entry and resolving.
