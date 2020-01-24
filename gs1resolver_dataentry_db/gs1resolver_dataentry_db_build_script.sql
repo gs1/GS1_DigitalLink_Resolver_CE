@@ -459,13 +459,34 @@ CREATE TABLE [gs1resolver_dataentry_db].[gcp_resolves](
                                                           [gs1_gcp_value] [nvarchar](45) NOT NULL,
                                                           [resolve_url_format] [nvarchar](255) NOT NULL,
                                                           [notes] [nvarchar](255) NULL,
-                                                          [api_builder_processed] [smallint] NOT NULL,
+                                                          [active] [tinyint] NOT NULL,
+                                                          [api_builder_processed] [tinyint] NOT NULL,
+                                                          [marked_for_deletion] [tinyint] NOT NULL,
                                                           CONSTRAINT [PK_gcp_resolves] PRIMARY KEY CLUSTERED
                                                               (
                                                                [gcp_resolve_id] ASC
                                                                   )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
+
+ALTER TABLE [gs1resolver_dataentry_db].[gcp_resolves] ADD  CONSTRAINT [DF_gcp_resolves_active]  DEFAULT ((0)) FOR [active]
+GO
+
+ALTER TABLE [gs1resolver_dataentry_db].[gcp_resolves] ADD  CONSTRAINT [DF_gcp_resolves_api_builder_processed]  DEFAULT ((0)) FOR [api_builder_processed]
+GO
+
+ALTER TABLE [gs1resolver_dataentry_db].[gcp_resolves] ADD  CONSTRAINT [DF_gcp_resolves_marked_for_deletion]  DEFAULT ((0)) FOR [marked_for_deletion]
+GO
+
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'This table is used to provide resolving for partial GS1 keys, where the ''prefix'' is provided. If no GS1 key value exact match can be found in the uri_requests table, the gcp_resolves table is consulted to see if a partial match can be found .' , @level0type=N'SCHEMA',@level0name=N'gs1resolver_dataentry_db', @level1type=N'TABLE',@level1name=N'gcp_resolves', @level2type=N'COLUMN',@level2name=N'gcp_resolve_id'
+GO
+
+EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'The first part of the URL (ending without /) to which the digital link will be appended and redirect issued' , @level0type=N'SCHEMA',@level0name=N'gs1resolver_dataentry_db', @level1type=N'TABLE',@level1name=N'gcp_resolves', @level2type=N'COLUMN',@level2name=N'resolve_url_format'
+GO
+
+
+
+
 /****** Object:  Table [gs1resolver_dataentry_db].[gs1_mos]    Script Date: 03/10/2019 14:08:25 ******/
 SET ANSI_NULLS ON
 GO

@@ -76,7 +76,7 @@ Let's look at an example GS1 Resolver document:
 									"mime_type": {
 										"text/html": {
 											"link": "https://acme.com/en-us/shop/type/powder/acme-powder",
-											"title": "https://gs1.org/voc/pip",
+											"title": "Product Information Page",
 											"fwqs": 1,
 											"linktype_uri": "https://gs1.org/voc/pip"
 										}
