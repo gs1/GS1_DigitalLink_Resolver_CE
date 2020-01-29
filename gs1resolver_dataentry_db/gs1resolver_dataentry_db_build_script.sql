@@ -1,387 +1,41 @@
 /*
-This SQL scripts create teh database used by the data entry application. If you are running this script in a container then
+This SQL scripts create the database used by the data entry application. If you are running this script in a container then
 all is fine. If you are running this in a cloud server such as SQL Azure or existing database server on your network,
 you may need to review or remove the first section below.
-For example, if you are suing SQL Azure then the database and user will have been setup for you.
+For example, if you are using SQL Azure then the database and user will have been setup for you.
  */
 
 /****************************************************** START OF SECTION TO CHECK BASED ON SQL SERVER IMPLEMENTATION ************/
 
-sp_configure 'contained database authentication', 1;
-GO
-RECONFIGURE
-GO
 
-If(db_id(N'gs1resolverdb') IS NULL)
+If(db_id(N'gs1resolver-dataentry-db') IS NULL)
 BEGIN
-    CREATE DATABASE  [gs1resolverdb] CONTAINMENT = PARTIAL
+    CREATE DATABASE  [gs1resolver-dataentry-db]
 END
 GO
 
-USE  [gs1resolverdb]
+USE  [gs1resolver-dataentry-db]
 GO
 
-/* The create user statements below should only be used on a self-standing database
-   such as the one created in its own container if you run the docker / docker-compose commands.
-   If you are using an existing database server or cloud database such as SQL Azure then you may
-   have already been given login information, in which case delete the commands below before running
-   this script.
+/* This repository is using the 'sa' login user and a password provided for 'sa' in the Dockerfile that builds the SQL Server container.
+   You are strongly advised to adopt good security practices to secure the database. Beyond experimentation you should be
+   using cloud-based databases or properly-managed on-premises versions. Example commands you would use are show below to crate
+   a login user and limit their permissions to EXECUTE only, as the dataentry_web_server calls into stored procedureas only.
+   You will need to change the name and password in the dataentry_web_server's "api.ini" file.
+
+   CREATE USER dataentry_user WITH PASSWORD='feorfhgofgq348ryfwfAHGAU',  DEFAULT_LANGUAGE=[English], DEFAULT_SCHEMA=[gs1resolver_dataentry_db]
+
+   GRANT EXECUTE TO dataentry_user
+
+   GO
  */
-CREATE USER dataentry_user WITH PASSWORD='feorfhgofgq348ryfwfAHGAU',  DEFAULT_LANGUAGE=[English], DEFAULT_SCHEMA=[gs1resolver_dataentry_db]
 
-
-GRANT EXECUTE TO dataentry_user
+SELECT 'Starting Database build' as STATUS
 GO
 
-
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_value]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_value]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_new_uri_response]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[save_new_uri_response]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_new_session]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[save_new_session]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_existing_uri_response]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[save_existing_uri_response]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_existing_uri_request]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[save_existing_uri_request]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_existing_account]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[save_existing_account]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[logThis]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[logThis]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[list_members_for_gs1_mo]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[list_members_for_gs1_mo]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[list_gs1_mos]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[list_gs1_mos]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[list_accounts_for_member]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[list_accounts_for_member]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[is_session_active]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[is_session_active]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[is_administrator]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[is_administrator]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[HEALTH_save_healthcheck]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[HEALTH_save_healthcheck]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[HEALTH_get_1000_responses_to_healthcheck]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[HEALTH_get_1000_responses_to_healthcheck]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_session]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[get_session]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_response_uris_for_request]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[get_response_uris_for_request]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_request_uris]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[get_request_uris]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_request_uri_status]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[get_request_uri_status]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_request_uri_for_edit]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[get_request_uri_for_edit]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_mime_types_list]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[get_mime_types_list]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_member_primary_gln_from_session_id]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[get_member_primary_gln_from_session_id]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_linktypes_list]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[get_linktypes_list]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_key_code_components_list]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[get_key_code_components_list]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_contexts_list]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[get_contexts_list]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_active_linktypes_list]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[get_active_linktypes_list]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_account_details]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[get_account_details]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_1000_responses_to_healthcheck]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[get_1000_responses_to_healthcheck]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[delete_uri_response]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[delete_uri_response]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[create_new_uri_request]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[create_new_uri_request]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[check_for_duplicate_request_record]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[check_for_duplicate_request_record]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[change_password]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[change_password]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[delete_uri_request]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[delete_uri_request]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_SetToRequireRebuild]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[BUILD_SetToRequireRebuild]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_GetURIResponses]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[BUILD_GetURIResponses]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_GetURIRequests]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[BUILD_GetURIRequests]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_GetURIRequestCount]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[BUILD_GetURIRequestCount]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_get_gcp_resolves_list]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[BUILD_get_gcp_resolves_list]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_FlagUriRequestAsBuilt]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[BUILD_FlagUriRequestAsBuilt]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_DeleteUriRecord]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[BUILD_DeleteUriRecord]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_mime_types_item]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_save_new_mime_types_item]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_member]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_save_new_member]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_linktypes_item]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_save_new_linktypes_item]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_gs1mo]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_save_new_gs1mo]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_gs1_key_components_item]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_save_new_gs1_key_components_item]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_gs1_key_component]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_save_new_gs1_key_component]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_contexts_item]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_save_new_contexts_item]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_account]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_save_new_account]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_existing_mime_types_item]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_save_existing_mime_types_item]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_existing_linktypes_item]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_save_existing_linktypes_item]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_existing_gs1_key_components_item]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_save_existing_gs1_key_components_item]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_existing_contexts_item]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_save_existing_contexts_item]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_list_accounts]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_list_accounts]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_change_password]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_change_password]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_administrator_level]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[ADMIN_administrator_level]
-GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[account_login]    Script Date: 03/10/2019 14:08:25 ******/
-DROP PROCEDURE [gs1resolver_dataentry_db].[account_login]
-GO
-
-DROP PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_code_and_value]
-GO
-
-DROP PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_code]
-GO
-
-DROP PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_value]
-GO
-
-
-
-ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] DROP CONSTRAINT [DF__uri_respo__activ__3E1D39E1]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] DROP CONSTRAINT [DF__uri_respo__forwa__41EDCAC5]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] DROP CONSTRAINT [DF_uri_responses_default_mime_type]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] DROP CONSTRAINT [DF_uri_responses_default_context]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] DROP CONSTRAINT [DF_uri_responses_default_iana_language]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] DROP CONSTRAINT [DF_uri_responses_default_linktype]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] DROP CONSTRAINT [DF__uri_respo__desti__3B40CD36]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] DROP CONSTRAINT [DF__uri_respo__alt_a__3D2915A8]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] DROP CONSTRAINT [DF__uri_respo__desti__40F9A68C]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] DROP CONSTRAINT [DF_uri_responses_context]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] DROP CONSTRAINT [DF__uri_respo__iana___3864608B]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] DROP CONSTRAINT [DF__uri_respo__attri__3A4CA8FD]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_response_health_checks] DROP CONSTRAINT [DF__uri_respo__lates__55EAA1D1]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_response_health_checks] DROP CONSTRAINT [DF__uri_respo__attem__54F67D98]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_response_health_checks] DROP CONSTRAINT [DF__uri_respo__healt__5402595F]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_response_health_checks] DROP CONSTRAINT [DF__uri_respo__uri_r__530E3526]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF_uri_requests_flagged_for_deletion]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__api_b__32AB8735]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__activ__29221CFB]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__inclu__31B762FC]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__web_u__30C33EC3]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__web_u__2FCF1A8A]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__web_u__2EDAF651]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__web_u__2DE6D218]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__web_u__2CF2ADDF]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__web_u__2BFE89A6]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__web_u__2B0A656D]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__web_u__2A164134]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__date___282DF8C2]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__date___2739D489]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__item___2645B050]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__gs1_k__25518C17]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__gs1_k__245D67DE]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[uri_requests] DROP CONSTRAINT [DF__uri_reque__membe__236943A5]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[sessions] DROP CONSTRAINT [DF__sessions__dateti__5C2D8B0C]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[members] DROP CONSTRAINT [DF__members__active__2180FB33]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[members] DROP CONSTRAINT [DF__members__notes__208CD6FA]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[members] DROP CONSTRAINT [DF__members__member___1F98B2C1]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[members] DROP CONSTRAINT [DF__members__gs1_mo___1EA48E88]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[list_mime_types] DROP CONSTRAINT [DF_list_mime_types_default_mime_type_flag]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[list_linktypes] DROP CONSTRAINT [DF__list_link__appli__3C2ACFCE]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[list_linktypes] DROP CONSTRAINT [DF__list_link__linkt__3B36AB95]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[list_gs1_key_components] DROP CONSTRAINT [DF__list_gs1___accep__548C6944]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[list_gs1_key_components] DROP CONSTRAINT [DF__list_gs1___compo__5398450B]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[list_gs1_key_components] DROP CONSTRAINT [DF__list_gs1___compo__52A420D2]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[list_contexts] DROP CONSTRAINT [DF_list_contexts_default_context]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[gs1_mos] DROP CONSTRAINT [DF__gs1_mos__organis__30EE274C]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[gcp_resolves] DROP CONSTRAINT [DF_gcp_resolves_api_builder_processed]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[audit_log] DROP CONSTRAINT [DF_audit_log_entryDateTime]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[accounts] DROP CONSTRAINT [DF__accounts__active__4DDF6BB5]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[accounts] DROP CONSTRAINT [DF__accounts__admini__4CEB477C]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[accounts] DROP CONSTRAINT [DF__accounts__last_l__4BF72343]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[accounts] DROP CONSTRAINT [DF__accounts__accoun__4B02FF0A]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[accounts] DROP CONSTRAINT [DF__accounts__surnam__4A0EDAD1]
-GO
-ALTER TABLE [gs1resolver_dataentry_db].[accounts] DROP CONSTRAINT [DF__accounts__firstn__491AB698]
-GO
-/****** Object:  Index [uri_request_id_idx]    Script Date: 03/10/2019 14:08:25 ******/
-DROP INDEX [uri_request_id_idx] ON [gs1resolver_dataentry_db].[uri_responses]
-GO
-/****** Object:  Index [member_primary_gln]    Script Date: 03/10/2019 14:08:25 ******/
-DROP INDEX [member_primary_gln] ON [gs1resolver_dataentry_db].[uri_requests]
-GO
-/****** Object:  Index [IX_list_contexts_value]    Script Date: 03/10/2019 14:08:25 ******/
-DROP INDEX [IX_list_contexts_value] ON [gs1resolver_dataentry_db].[list_contexts]
-GO
-/****** Object:  Index [IX_gcp_resolves]    Script Date: 03/10/2019 14:08:25 ******/
-DROP INDEX [IX_gcp_resolves] ON [gs1resolver_dataentry_db].[gcp_resolves]
-GO
-/****** Object:  Table [gs1resolver_dataentry_db].[uri_responses]    Script Date: 03/10/2019 14:08:25 ******/
-DROP TABLE [gs1resolver_dataentry_db].[uri_responses]
-GO
-/****** Object:  Table [gs1resolver_dataentry_db].[uri_response_health_checks]    Script Date: 03/10/2019 14:08:25 ******/
-DROP TABLE [gs1resolver_dataentry_db].[uri_response_health_checks]
-GO
-/****** Object:  Table [gs1resolver_dataentry_db].[uri_requests]    Script Date: 03/10/2019 14:08:25 ******/
-DROP TABLE [gs1resolver_dataentry_db].[uri_requests]
-GO
-/****** Object:  Table [gs1resolver_dataentry_db].[sessions]    Script Date: 03/10/2019 14:08:25 ******/
-DROP TABLE [gs1resolver_dataentry_db].[sessions]
-GO
-/****** Object:  Table [gs1resolver_dataentry_db].[members]    Script Date: 03/10/2019 14:08:25 ******/
-DROP TABLE [gs1resolver_dataentry_db].[members]
-GO
-/****** Object:  Table [gs1resolver_dataentry_db].[list_mime_types]    Script Date: 03/10/2019 14:08:25 ******/
-DROP TABLE [gs1resolver_dataentry_db].[list_mime_types]
-GO
-/****** Object:  Table [gs1resolver_dataentry_db].[list_linktypes]    Script Date: 03/10/2019 14:08:25 ******/
-DROP TABLE [gs1resolver_dataentry_db].[list_linktypes]
-GO
-/****** Object:  Table [gs1resolver_dataentry_db].[list_gs1_key_components]    Script Date: 03/10/2019 14:08:25 ******/
-DROP TABLE [gs1resolver_dataentry_db].[list_gs1_key_components]
-GO
-/****** Object:  Table [gs1resolver_dataentry_db].[list_contexts]    Script Date: 03/10/2019 14:08:25 ******/
-DROP TABLE [gs1resolver_dataentry_db].[list_contexts]
-GO
-/****** Object:  Table [gs1resolver_dataentry_db].[gs1_mos]    Script Date: 03/10/2019 14:08:25 ******/
-DROP TABLE [gs1resolver_dataentry_db].[gs1_mos]
-GO
-/****** Object:  Table [gs1resolver_dataentry_db].[gcp_resolves]    Script Date: 03/10/2019 14:08:25 ******/
-DROP TABLE [gs1resolver_dataentry_db].[gcp_resolves]
-GO
-/****** Object:  Table [gs1resolver_dataentry_db].[audit_log]    Script Date: 03/10/2019 14:08:25 ******/
-DROP TABLE [gs1resolver_dataentry_db].[audit_log]
-GO
-/****** Object:  Table [gs1resolver_dataentry_db].[accounts]    Script Date: 03/10/2019 14:08:25 ******/
-DROP TABLE [gs1resolver_dataentry_db].[accounts]
-GO
-/****** Object:  UserDefinedFunction [gs1resolver_dataentry_db].[PW_ENCRYPT]    Script Date: 03/10/2019 14:08:25 ******/
-DROP FUNCTION [gs1resolver_dataentry_db].[PW_ENCRYPT]
-GO
-/****** Object:  Schema [gs1resolver_dataentry_db]    Script Date: 03/10/2019 14:08:25 ******/
-DROP SCHEMA [gs1resolver_dataentry_db]
-GO
-/****** Object:  Schema [gs1resolver_dataentry_db]    Script Date: 03/10/2019 14:08:25 ******/
 CREATE SCHEMA [gs1resolver_dataentry_db]
 GO
-/****** Object:  UserDefinedFunction [gs1resolver_dataentry_db].[PW_ENCRYPT]    Script Date: 03/10/2019 14:08:25 ******/
+/****** Object:  UserDefinedFunction [gs1resolver_dataentry_db].[PW_ENCRYPT]    Script Date: 29/01/2020 14:19:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -397,6 +51,9 @@ GO
 *   M2SS0003: The following SQL clause was ignored during conversion: DETERMINISTIC.
 */
 
+SELECT 'Creating the PW_ENCRYPT Function' as STATUS
+GO
+
 CREATE FUNCTION [gs1resolver_dataentry_db].[PW_ENCRYPT]
 (
     @var_cleartext_password nvarchar(100)
@@ -409,7 +66,13 @@ BEGIN
     RETURN CONVERT(VARCHAR(1000), HashBytes('MD5', @hashbytes), 2)
 END
 GO
-/****** Object:  Table [gs1resolver_dataentry_db].[accounts]    Script Date: 03/10/2019 14:08:25 ******/
+
+SELECT 'Creating the Tables' as STATUS
+GO
+
+
+
+/****** Object:  Table [gs1resolver_dataentry_db].[accounts]    Script Date: 29/01/2020 14:19:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -431,7 +94,7 @@ CREATE TABLE [gs1resolver_dataentry_db].[accounts](
                                                               )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [gs1resolver_dataentry_db].[audit_log]    Script Date: 03/10/2019 14:08:25 ******/
+/****** Object:  Table [gs1resolver_dataentry_db].[audit_log]    Script Date: 29/01/2020 14:19:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -447,7 +110,7 @@ CREATE TABLE [gs1resolver_dataentry_db].[audit_log](
                                                                )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [gs1resolver_dataentry_db].[gcp_resolves]    Script Date: 03/10/2019 14:08:25 ******/
+/****** Object:  Table [gs1resolver_dataentry_db].[gcp_resolves]    Script Date: 29/01/2020 14:19:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -468,26 +131,7 @@ CREATE TABLE [gs1resolver_dataentry_db].[gcp_resolves](
                                                                   )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-
-ALTER TABLE [gs1resolver_dataentry_db].[gcp_resolves] ADD  CONSTRAINT [DF_gcp_resolves_active]  DEFAULT ((0)) FOR [active]
-GO
-
-ALTER TABLE [gs1resolver_dataentry_db].[gcp_resolves] ADD  CONSTRAINT [DF_gcp_resolves_api_builder_processed]  DEFAULT ((0)) FOR [api_builder_processed]
-GO
-
-ALTER TABLE [gs1resolver_dataentry_db].[gcp_resolves] ADD  CONSTRAINT [DF_gcp_resolves_marked_for_deletion]  DEFAULT ((0)) FOR [marked_for_deletion]
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'This table is used to provide resolving for partial GS1 keys, where the ''prefix'' is provided. If no GS1 key value exact match can be found in the uri_requests table, the gcp_resolves table is consulted to see if a partial match can be found .' , @level0type=N'SCHEMA',@level0name=N'gs1resolver_dataentry_db', @level1type=N'TABLE',@level1name=N'gcp_resolves', @level2type=N'COLUMN',@level2name=N'gcp_resolve_id'
-GO
-
-EXEC sys.sp_addextendedproperty @name=N'MS_Description', @value=N'The first part of the URL (ending without /) to which the digital link will be appended and redirect issued' , @level0type=N'SCHEMA',@level0name=N'gs1resolver_dataentry_db', @level1type=N'TABLE',@level1name=N'gcp_resolves', @level2type=N'COLUMN',@level2name=N'resolve_url_format'
-GO
-
-
-
-
-/****** Object:  Table [gs1resolver_dataentry_db].[gs1_mos]    Script Date: 03/10/2019 14:08:25 ******/
+/****** Object:  Table [gs1resolver_dataentry_db].[gs1_mos]    Script Date: 29/01/2020 14:19:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -501,7 +145,7 @@ CREATE TABLE [gs1resolver_dataentry_db].[gs1_mos](
                                                              )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [gs1resolver_dataentry_db].[list_contexts]    Script Date: 03/10/2019 14:08:25 ******/
+/****** Object:  Table [gs1resolver_dataentry_db].[list_contexts]    Script Date: 29/01/2020 14:19:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -517,7 +161,7 @@ CREATE TABLE [gs1resolver_dataentry_db].[list_contexts](
                                                                    )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [gs1resolver_dataentry_db].[list_gs1_key_components]    Script Date: 03/10/2019 14:08:25 ******/
+/****** Object:  Table [gs1resolver_dataentry_db].[list_gs1_key_components]    Script Date: 29/01/2020 14:19:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -535,7 +179,7 @@ CREATE TABLE [gs1resolver_dataentry_db].[list_gs1_key_components](
                                                                              )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [gs1resolver_dataentry_db].[list_linktypes]    Script Date: 03/10/2019 14:08:25 ******/
+/****** Object:  Table [gs1resolver_dataentry_db].[list_linktypes]    Script Date: 29/01/2020 14:19:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -553,7 +197,7 @@ CREATE TABLE [gs1resolver_dataentry_db].[list_linktypes](
                                                                     )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [gs1resolver_dataentry_db].[list_mime_types]    Script Date: 03/10/2019 14:08:25 ******/
+/****** Object:  Table [gs1resolver_dataentry_db].[list_mime_types]    Script Date: 29/01/2020 14:19:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -569,7 +213,7 @@ CREATE TABLE [gs1resolver_dataentry_db].[list_mime_types](
                                                                      )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [gs1resolver_dataentry_db].[members]    Script Date: 03/10/2019 14:08:25 ******/
+/****** Object:  Table [gs1resolver_dataentry_db].[members]    Script Date: 29/01/2020 14:19:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -587,7 +231,7 @@ CREATE TABLE [gs1resolver_dataentry_db].[members](
                                                              )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [gs1resolver_dataentry_db].[sessions]    Script Date: 03/10/2019 14:08:25 ******/
+/****** Object:  Table [gs1resolver_dataentry_db].[sessions]    Script Date: 29/01/2020 14:19:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -603,7 +247,7 @@ CREATE TABLE [gs1resolver_dataentry_db].[sessions](
                                                               )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [gs1resolver_dataentry_db].[uri_requests]    Script Date: 03/10/2019 14:08:25 ******/
+/****** Object:  Table [gs1resolver_dataentry_db].[uri_requests]    Script Date: 29/01/2020 14:19:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -634,7 +278,7 @@ CREATE TABLE [gs1resolver_dataentry_db].[uri_requests](
                                                                   )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [gs1resolver_dataentry_db].[uri_response_health_checks]    Script Date: 03/10/2019 14:08:25 ******/
+/****** Object:  Table [gs1resolver_dataentry_db].[uri_response_health_checks]    Script Date: 29/01/2020 14:19:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -652,7 +296,7 @@ CREATE TABLE [gs1resolver_dataentry_db].[uri_response_health_checks](
                                                                                 )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [gs1resolver_dataentry_db].[uri_responses]    Script Date: 03/10/2019 14:08:25 ******/
+/****** Object:  Table [gs1resolver_dataentry_db].[uri_responses]    Script Date: 29/01/2020 14:19:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -672,12 +316,17 @@ CREATE TABLE [gs1resolver_dataentry_db].[uri_responses](
                                                            [default_mime_type] [bit] NOT NULL,
                                                            [forward_request_querystrings] [bit] NOT NULL,
                                                            [active] [bit] NOT NULL,
+                                                           [flagged_for_deletion] [bit] NOT NULL,
                                                            CONSTRAINT [PK_uri_responses_uri_response_id] PRIMARY KEY CLUSTERED
                                                                (
                                                                 [uri_response_id] ASC
                                                                    )WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
+
+SELECT 'Inserting resolver demonstration data' as STATUS
+GO
+
 SET IDENTITY_INSERT [gs1resolver_dataentry_db].[accounts] ON
 
 INSERT [gs1resolver_dataentry_db].[accounts] ([account_id], [member_primary_gln], [firstname], [surname], [login_password], [login_email], [account_notes], [last_login_datetime], [administrator], [active]) VALUES (1, N'7878787878787', N'Sansa', N'Stark', N'6F0E30DCB10808362901D783C65AD092', N'sansa.stark@gs1westeros.com', N'Test Global Account', CAST(N'2019-10-03T12:08:11.0000000' AS DateTime2), N'G', 1)
@@ -686,8 +335,7 @@ INSERT [gs1resolver_dataentry_db].[accounts] ([account_id], [member_primary_gln]
 INSERT [gs1resolver_dataentry_db].[accounts] ([account_id], [member_primary_gln], [firstname], [surname], [login_password], [login_email], [account_notes], [last_login_datetime], [administrator], [active]) VALUES (4, N'4564564564567', N'Jon', N'Snow', N'6F0E30DCB10808362901D783C65AD092', N'jon.snow@castleblack.com', N'Test Member Account', CAST(N'2019-08-15T12:47:08.0000000' AS DateTime2), N'M', 1)
 SET IDENTITY_INSERT [gs1resolver_dataentry_db].[accounts] OFF
 SET IDENTITY_INSERT [gs1resolver_dataentry_db].[gcp_resolves] ON
-
-INSERT [gs1resolver_dataentry_db].[gcp_resolves] ([gcp_resolve_id], [member_primary_gln], [gs1_key_code], [gs1_gcp_value], [resolve_url_format], [notes], [api_builder_processed]) VALUES (1, N'9898989898989', N'01', N'0505476', N'https://lansley.com', N'Example entry - any GTIN not int the requests table but that starts 0505476 will be redirected to the ggievn web address. DO NOT PUT A FORWARD-SLASH AFTER THE DOMAIN NAME!', 1)
+INSERT [gs1resolver_dataentry_db].[gcp_resolves] ([gcp_resolve_id], [member_primary_gln], [gs1_key_code], [gs1_gcp_value], [resolve_url_format], [notes], [api_builder_processed], [marked_for_deletion], [active]) VALUES (1, N'9898989898989', N'01', N'0505476', N'https://lansley.com', N'Example entry - any GTIN not in the requests table but that starts 0505476 will be redirected to the given web address. DO NOT PUT A FORWARD-SLASH AFTER THE DOMAIN NAME', 1, 0, 1)
 SET IDENTITY_INSERT [gs1resolver_dataentry_db].[gcp_resolves] OFF
 INSERT [gs1resolver_dataentry_db].[gs1_mos] ([gs1_mo_primary_gln], [organisation_name]) VALUES (N'9898989898989', N'GS1 Westeros')
 SET IDENTITY_INSERT [gs1resolver_dataentry_db].[list_contexts] ON
@@ -1022,14 +670,21 @@ INSERT [gs1resolver_dataentry_db].[uri_response_health_checks] ([uri_response_id
 INSERT [gs1resolver_dataentry_db].[uri_response_health_checks] ([uri_response_id], [health_status], [attempt_count_since_last_green], [HTTP_code], [error_response], [latest_test_datetime]) VALUES (44767777, N'G', 0, 200, N'OK - 0', N'Sep 20 2019  7:48AM')
 SET IDENTITY_INSERT [gs1resolver_dataentry_db].[uri_responses] ON
 
-INSERT [gs1resolver_dataentry_db].[uri_responses] ([uri_response_id], [uri_request_id], [linktype], [iana_language], [context], [mime_type], [friendly_link_name], [destination_uri], [default_linktype], [default_iana_language], [default_context], [default_mime_type], [forward_request_querystrings], [active]) VALUES (1, 1, N'https://gs1.org/voc/pip', N'en', N'gb', N'text/html', N'[]RGVzY3JpcHRpb24gKEdTMSBHTyBIb21lIFBhZ2Up', N'https://www.gs1.org', 1, 0, 0, 0, 1, 1)
-INSERT [gs1resolver_dataentry_db].[uri_responses] ([uri_response_id], [uri_request_id], [linktype], [iana_language], [context], [mime_type], [friendly_link_name], [destination_uri], [default_linktype], [default_iana_language], [default_context], [default_mime_type], [forward_request_querystrings], [active]) VALUES (2, 1, N'https://gs1.org/voc/epil', N'en', N'fr', N'application/pdf', N'[]R1MxIEdsb2JhbCBPZmZpY2UgRkFR', N'https://www.gs1.org/docs/media_centre/gs1_pr_060614_epcis_cbv_FAQ.pdf', 1, 0, 1, 1, 1, 1)
-INSERT [gs1resolver_dataentry_db].[uri_responses] ([uri_response_id], [uri_request_id], [linktype], [iana_language], [context], [mime_type], [friendly_link_name], [destination_uri], [default_linktype], [default_iana_language], [default_context], [default_mime_type], [forward_request_querystrings], [active]) VALUES (3, 2, N'https://gs1.org/voc/pip', N'en', N'gb', N'text/html', N'[]', N'https://awoiaf.westeros.org/index.php/Iron_Islands', 1, 1, 1, 1, 1, 0)
-INSERT [gs1resolver_dataentry_db].[uri_responses] ([uri_response_id], [uri_request_id], [linktype], [iana_language], [context], [mime_type], [friendly_link_name], [destination_uri], [default_linktype], [default_iana_language], [default_context], [default_mime_type], [forward_request_querystrings], [active]) VALUES (44767777, 1, N'https://gs1.org/voc/pip', N'en', N'gb', N'application/json', N'[]', N'https://lansley.com', 1, 1, 1, 1, 1, 1)
+INSERT [gs1resolver_dataentry_db].[uri_responses] ([uri_response_id], [uri_request_id], [linktype], [iana_language], [context], [mime_type], [friendly_link_name], [destination_uri], [default_linktype], [default_iana_language], [default_context], [default_mime_type], [forward_request_querystrings], [active], [flagged_for_deletion]) VALUES (1, 1, N'https://gs1.org/voc/pip', N'en', N'gb', N'text/html', N'[]RGVzY3JpcHRpb24gKEdTMSBHTyBIb21lIFBhZ2Up', N'https://www.gs1.org', 1, 0, 0, 0, 1, 1, 0)
+INSERT [gs1resolver_dataentry_db].[uri_responses] ([uri_response_id], [uri_request_id], [linktype], [iana_language], [context], [mime_type], [friendly_link_name], [destination_uri], [default_linktype], [default_iana_language], [default_context], [default_mime_type], [forward_request_querystrings], [active], [flagged_for_deletion]) VALUES (2, 1, N'https://gs1.org/voc/epil', N'en', N'fr', N'application/pdf', N'[]R1MxIEdsb2JhbCBPZmZpY2UgRkFR', N'https://www.gs1.org/docs/media_centre/gs1_pr_060614_epcis_cbv_FAQ.pdf', 1, 0, 1, 1, 1, 1, 0)
+INSERT [gs1resolver_dataentry_db].[uri_responses] ([uri_response_id], [uri_request_id], [linktype], [iana_language], [context], [mime_type], [friendly_link_name], [destination_uri], [default_linktype], [default_iana_language], [default_context], [default_mime_type], [forward_request_querystrings], [active], [flagged_for_deletion]) VALUES (3, 2, N'https://gs1.org/voc/pip', N'en', N'gb', N'text/html', N'[]', N'https://awoiaf.westeros.org/index.php/Iron_Islands', 1, 1, 1, 1, 1, 0, 0)
+INSERT [gs1resolver_dataentry_db].[uri_responses] ([uri_response_id], [uri_request_id], [linktype], [iana_language], [context], [mime_type], [friendly_link_name], [destination_uri], [default_linktype], [default_iana_language], [default_context], [default_mime_type], [forward_request_querystrings], [active], [flagged_for_deletion]) VALUES (44767777, 1, N'https://gs1.org/voc/pip', N'en', N'gb', N'application/json', N'[]', N'https://lansley.com', 1, 1, 1, 1, 1, 1, 0)
 SET IDENTITY_INSERT [gs1resolver_dataentry_db].[uri_responses] OFF
+
+SELECT 'Building Indexes' as STATUS
+GO
+
+
+
+
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [IX_gcp_resolves]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  Index [IX_gcp_resolves]    Script Date: 29/01/2020 14:19:45 ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_gcp_resolves] ON [gs1resolver_dataentry_db].[gcp_resolves]
     (
      [gs1_key_code] ASC,
@@ -1038,7 +693,7 @@ CREATE UNIQUE NONCLUSTERED INDEX [IX_gcp_resolves] ON [gs1resolver_dataentry_db]
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [IX_list_contexts_value]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  Index [IX_list_contexts_value]    Script Date: 29/01/2020 14:19:45 ******/
 CREATE NONCLUSTERED INDEX [IX_list_contexts_value] ON [gs1resolver_dataentry_db].[list_contexts]
     (
      [context_value] ASC
@@ -1046,18 +701,24 @@ CREATE NONCLUSTERED INDEX [IX_list_contexts_value] ON [gs1resolver_dataentry_db]
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [member_primary_gln]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  Index [member_primary_gln]    Script Date: 29/01/2020 14:19:45 ******/
 CREATE NONCLUSTERED INDEX [member_primary_gln] ON [gs1resolver_dataentry_db].[uri_requests]
     (
      [member_primary_gln] ASC
         )WITH (STATISTICS_NORECOMPUTE = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [uri_request_id_idx]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  Index [uri_request_id_idx]    Script Date: 29/01/2020 14:19:45 ******/
 CREATE NONCLUSTERED INDEX [uri_request_id_idx] ON [gs1resolver_dataentry_db].[uri_responses]
     (
      [uri_request_id] ASC
         )WITH (STATISTICS_NORECOMPUTE = OFF, DROP_EXISTING = OFF, ONLINE = OFF) ON [PRIMARY]
 GO
+
+SELECT 'Adding constraints and defaults to tables' as STATUS
+GO
+
+
+
 ALTER TABLE [gs1resolver_dataentry_db].[accounts] ADD  DEFAULT (NULL) FOR [firstname]
 GO
 ALTER TABLE [gs1resolver_dataentry_db].[accounts] ADD  DEFAULT (NULL) FOR [surname]
@@ -1072,7 +733,11 @@ ALTER TABLE [gs1resolver_dataentry_db].[accounts] ADD  DEFAULT ((1)) FOR [active
 GO
 ALTER TABLE [gs1resolver_dataentry_db].[audit_log] ADD  CONSTRAINT [DF_audit_log_entryDateTime]  DEFAULT (getdate()) FOR [logTimestamp]
 GO
+ALTER TABLE [gs1resolver_dataentry_db].[gcp_resolves] ADD  CONSTRAINT [DF_gcp_resolves_active]  DEFAULT ((0)) FOR [active]
+GO
 ALTER TABLE [gs1resolver_dataentry_db].[gcp_resolves] ADD  CONSTRAINT [DF_gcp_resolves_api_builder_processed]  DEFAULT ((0)) FOR [api_builder_processed]
+GO
+ALTER TABLE [gs1resolver_dataentry_db].[gcp_resolves] ADD  CONSTRAINT [DF_gcp_resolves_marked_for_deletion]  DEFAULT ((0)) FOR [marked_for_deletion]
 GO
 ALTER TABLE [gs1resolver_dataentry_db].[gs1_mos] ADD  CONSTRAINT [DF__gs1_mos__organis__30EE274C]  DEFAULT (NULL) FOR [organisation_name]
 GO
@@ -1168,7 +833,16 @@ ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] ADD  CONSTRAINT [DF__uri_
 GO
 ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] ADD  CONSTRAINT [DF__uri_respo__activ__3E1D39E1]  DEFAULT ((0)) FOR [active]
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[account_login]    Script Date: 03/10/2019 14:08:27 ******/
+ALTER TABLE [gs1resolver_dataentry_db].[uri_responses] ADD  CONSTRAINT [DF_uri_responses_flagged_for_deletion]  DEFAULT ((0)) FOR [flagged_for_deletion]
+GO
+
+
+SELECT 'Creating stored procedures' as STATUS
+GO
+
+
+
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[account_login]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1231,7 +905,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_administrator_level]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_administrator_level]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1260,7 +934,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_change_password]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_change_password]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1290,7 +964,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_list_accounts]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_list_accounts]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1328,7 +1002,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_existing_contexts_item]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_existing_contexts_item]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1366,7 +1040,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_existing_gs1_key_components_item]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_existing_gs1_key_components_item]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1396,7 +1070,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_existing_linktypes_item]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_existing_linktypes_item]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1426,7 +1100,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_existing_mime_types_item]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_existing_mime_types_item]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1464,7 +1138,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_account]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_account]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1518,31 +1192,7 @@ BEGIN
 
 END
 GO
-
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[delete_uri_request]    Script Date: 08/10/2019 15:48:17 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
-
-CREATE PROCEDURE [gs1resolver_dataentry_db].[delete_uri_request]
-@var_uri_request_id int
-AS
-BEGIN
-
-    SET  XACT_ABORT  ON
-
-    SET  NOCOUNT  ON
-
-    UPDATE gs1resolver_dataentry_db.uri_requests
-    SET flagged_for_deletion = 1
-    WHERE uri_request_id = @var_uri_request_id
-
-END
-GO
-
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_contexts_item]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_contexts_item]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1575,7 +1225,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_gs1_key_component]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_gs1_key_component]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1619,7 +1269,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_gs1_key_components_item]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_gs1_key_components_item]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1664,7 +1314,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_gs1mo]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_gs1mo]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1701,7 +1351,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_linktypes_item]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_linktypes_item]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1732,7 +1382,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_member]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_member]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1776,7 +1426,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_mime_types_item]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[ADMIN_save_new_mime_types_item]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1809,7 +1459,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_DeleteUriRecord]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_DeleteUriRecord]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1832,7 +1482,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_FlagUriRequestAsBuilt]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_FlagUriRequestAsBuilt]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1853,7 +1503,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_get_gcp_resolves_list]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_get_gcp_resolves_list]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1881,7 +1531,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_GetURIRequestCount]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_GetURIRequestCount]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1906,7 +1556,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_GetURIRequests]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_GetURIRequests]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -1941,8 +1591,8 @@ BEGIN
     record and tart rebuilding it.
     */
     SELECT DISTINCT TOP (@var_max_rows_to_return)
-    [gs1_key_code],
-    [gs1_key_value]
+        [gs1_key_code],
+        [gs1_key_value]
     INTO #temp_gs1_key_codes_values
     FROM [uri_requests]
     WHERE api_builder_processed = 0
@@ -1973,7 +1623,7 @@ BEGIN
     DROP TABLE #temp_gs1_key_codes_values
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_GetURIResponses]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_GetURIResponses]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2021,7 +1671,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_SetToRequireRebuild]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_SetToRequireRebuild]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2047,7 +1697,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[change_password]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[change_password]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2092,7 +1742,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[check_for_duplicate_request_record]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[check_for_duplicate_request_record]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2136,7 +1786,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[create_new_uri_request]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[create_new_uri_request]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2186,7 +1836,33 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[delete_uri_response]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[delete_uri_request]    Script Date: 29/01/2020 14:19:45 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+/*
+*   SSMA informational messages:
+*   M2SS0003: The following SQL clause was ignored during conversion:
+*   DEFINER = `root`@`localhost`.
+*/
+
+CREATE PROCEDURE [gs1resolver_dataentry_db].[delete_uri_request]
+@var_uri_request_id int
+AS
+BEGIN
+
+    SET  XACT_ABORT  ON
+
+    SET  NOCOUNT  ON
+
+    UPDATE gs1resolver_dataentry_db.uri_requests
+    SET flagged_for_deletion = 1
+    WHERE uri_request_id = @var_uri_request_id
+
+END
+GO
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[delete_uri_response]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2212,7 +1888,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_1000_responses_to_healthcheck]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_1000_responses_to_healthcheck]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2229,18 +1905,18 @@ BEGIN
     SET NOCOUNT ON
 
     SELECT TOP 1000
-    r.uri_response_id,
-    r.destination_uri,
-    h.health_status,
-    h.attempt_count_since_last_green,
-    h.latest_test_datetime
+        r.uri_response_id,
+        r.destination_uri,
+        h.health_status,
+        h.attempt_count_since_last_green,
+        h.latest_test_datetime
     FROM uri_responses r LEFT JOIN uri_response_health_checks h
                                    ON r.uri_response_id = h.uri_response_id
     WHERE r.uri_response_id >= @var_minimum_response_id
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_account_details]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_account_details]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2379,7 +2055,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_active_linktypes_list]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_active_linktypes_list]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2406,7 +2082,7 @@ BEGIN
     ORDER BY l.locale, l.linktype_name
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_contexts_list]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_contexts_list]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2436,7 +2112,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_key_code_components_list]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_key_code_components_list]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2476,7 +2152,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_linktypes_list]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_linktypes_list]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2500,7 +2176,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_member_primary_gln_from_session_id]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_member_primary_gln_from_session_id]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2529,7 +2205,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_mime_types_list]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_mime_types_list]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2559,7 +2235,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_request_uri_for_edit]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_request_uri_for_edit]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2608,7 +2284,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_request_uri_status]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_request_uri_status]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2636,7 +2312,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_request_uris]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_request_uris]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2683,30 +2359,30 @@ BEGIN
     ORDER BY r.uri_request_id
 
     SELECT TOP (@max_number_of_lines)
-    uri_request_id,
-    member_primary_gln,
-    gs1_key_code,
-    gs1_key_value,
-    item_description,
-    date_inserted,
-    date_last_updated,
-    web_uri_prefix_1,
-    web_uri_suffix_1,
-    web_uri_prefix_2,
-    web_uri_suffix_2,
-    web_uri_prefix_3,
-    web_uri_suffix_3,
-    web_uri_prefix_4,
-    web_uri_suffix_4,
-    include_in_sitemap,
-    active,
-    flagged_for_deletion,
-    api_builder_processed
+        uri_request_id,
+        member_primary_gln,
+        gs1_key_code,
+        gs1_key_value,
+        item_description,
+        date_inserted,
+        date_last_updated,
+        web_uri_prefix_1,
+        web_uri_suffix_1,
+        web_uri_prefix_2,
+        web_uri_suffix_2,
+        web_uri_prefix_3,
+        web_uri_suffix_3,
+        web_uri_prefix_4,
+        web_uri_suffix_4,
+        include_in_sitemap,
+        active,
+        flagged_for_deletion,
+        api_builder_processed
     FROM #temp_get_request_uris
     WHERE rownum >= @first_line_number
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_response_uris_for_request]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_response_uris_for_request]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2748,7 +2424,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_session]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[get_session]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2814,7 +2490,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[HEALTH_get_1000_responses_to_healthcheck]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[HEALTH_get_1000_responses_to_healthcheck]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2832,11 +2508,11 @@ BEGIN
     SET NOCOUNT ON
 
     SELECT TOP 1000
-    r.uri_response_id,
-    r.destination_uri,
-    h.health_status,
-    h.attempt_count_since_last_green,
-    h.latest_test_datetime
+        r.uri_response_id,
+        r.destination_uri,
+        h.health_status,
+        h.attempt_count_since_last_green,
+        h.latest_test_datetime
     FROM uri_responses r LEFT JOIN uri_response_health_checks h
                                    ON r.uri_response_id = h.uri_response_id
     WHERE r.uri_response_id >= @var_minimum_response_id
@@ -2844,7 +2520,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[HEALTH_save_healthcheck]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[HEALTH_save_healthcheck]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2899,7 +2575,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[is_administrator]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[is_administrator]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2925,7 +2601,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[is_session_active]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[is_session_active]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -2978,7 +2654,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[list_accounts_for_member]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[list_accounts_for_member]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -3005,7 +2681,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[list_gs1_mos]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[list_gs1_mos]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -3030,7 +2706,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[list_members_for_gs1_mo]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[list_members_for_gs1_mo]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -3057,7 +2733,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[logThis]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[logThis]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -3087,7 +2763,7 @@ BEGIN
     )
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_existing_account]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_existing_account]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -3148,7 +2824,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_existing_uri_request]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_existing_uri_request]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -3202,7 +2878,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_existing_uri_response]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_existing_uri_response]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -3265,7 +2941,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_new_session]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_new_session]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -3303,7 +2979,7 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_new_uri_response]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[save_new_uri_response]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -3370,7 +3046,54 @@ BEGIN
 
 END
 GO
-/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_value]    Script Date: 03/10/2019 14:08:27 ******/
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_code]    Script Date: 29/01/2020 14:19:45 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_code]
+    @var_session_id nchar(50),
+    @var_gs1_key_code nvarchar(20)
+AS
+BEGIN
+    SET  XACT_ABORT  ON
+    SET  NOCOUNT  ON
+
+    DECLARE @member_primary_gln nchar(13)
+
+    SELECT @member_primary_gln = sessions.member_primary_gln
+    FROM gs1resolver_dataentry_db.sessions
+    WHERE sessions.session_id = @var_session_id
+
+    SELECT TOP 1000
+        uri_requests.uri_request_id,
+        uri_requests.member_primary_gln,
+        uri_requests.gs1_key_code,
+        uri_requests.gs1_key_value,
+        uri_requests.item_description,
+        uri_requests.date_inserted,
+        uri_requests.date_last_updated,
+        uri_requests.web_uri_prefix_1,
+        uri_requests.web_uri_suffix_1,
+        uri_requests.web_uri_prefix_2,
+        uri_requests.web_uri_suffix_2,
+        uri_requests.web_uri_prefix_3,
+        uri_requests.web_uri_suffix_3,
+        uri_requests.web_uri_prefix_4,
+        uri_requests.web_uri_suffix_4,
+        uri_requests.active,
+        CASE
+            WHEN uri_requests.member_primary_gln = @member_primary_gln THEN 1 ELSE 0
+            END AS editable
+    FROM gs1resolver_dataentry_db.uri_requests
+    WHERE
+            uri_requests.gs1_key_code = @var_gs1_key_code
+
+END
+GO
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_code_and_value]    Script Date: 29/01/2020 14:19:45 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -3410,60 +3133,19 @@ BEGIN
         uri_requests.active,
         CASE
             WHEN uri_requests.member_primary_gln = @member_primary_gln THEN 1 ELSE 0
-        END AS editable
+            END AS editable
     FROM gs1resolver_dataentry_db.uri_requests
     WHERE
             uri_requests.gs1_key_code = @var_gs1_key_code AND
             uri_requests.gs1_key_value = @var_gs1_key_value
 
-    END
-GO
-
-
-
-CREATE PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_code]
-    @var_session_id nchar(50),
-    @var_gs1_key_code nvarchar(20)
-AS
-BEGIN
-    SET  XACT_ABORT  ON
-    SET  NOCOUNT  ON
-
-    DECLARE @member_primary_gln nchar(13)
-
-    SELECT @member_primary_gln = sessions.member_primary_gln
-    FROM gs1resolver_dataentry_db.sessions
-    WHERE sessions.session_id = @var_session_id
-
-    SELECT TOP 1000
-        uri_requests.uri_request_id,
-        uri_requests.member_primary_gln,
-        uri_requests.gs1_key_code,
-        uri_requests.gs1_key_value,
-        uri_requests.item_description,
-        uri_requests.date_inserted,
-        uri_requests.date_last_updated,
-        uri_requests.web_uri_prefix_1,
-        uri_requests.web_uri_suffix_1,
-        uri_requests.web_uri_prefix_2,
-        uri_requests.web_uri_suffix_2,
-        uri_requests.web_uri_prefix_3,
-        uri_requests.web_uri_suffix_3,
-        uri_requests.web_uri_prefix_4,
-        uri_requests.web_uri_suffix_4,
-        uri_requests.active,
-        CASE
-            WHEN uri_requests.member_primary_gln = @member_primary_gln THEN 1 ELSE 0
-        END AS editable
-    FROM gs1resolver_dataentry_db.uri_requests
-    WHERE
-            uri_requests.gs1_key_code = @var_gs1_key_code
-
 END
 GO
-
-
-
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_value]    Script Date: 29/01/2020 14:19:45 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
 
 CREATE PROCEDURE [gs1resolver_dataentry_db].[search_request_uris_by_gs1_key_value]
     @var_session_id nchar(50),
@@ -3498,10 +3180,13 @@ BEGIN
         uri_requests.active,
         CASE
             WHEN uri_requests.member_primary_gln = @member_primary_gln THEN 1 ELSE 0
-        END AS editable
+            END AS editable
     FROM gs1resolver_dataentry_db.uri_requests
     WHERE
             uri_requests.gs1_key_value = @var_gs1_key_value
 
 END
+GO
+
+SELECT 'Creation of GS1Resolver database completed!' as STATUS
 GO

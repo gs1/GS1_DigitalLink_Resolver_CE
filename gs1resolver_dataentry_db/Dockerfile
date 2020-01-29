@@ -1,5 +1,6 @@
 # This Dockerfile will build a Microsoft SQL Server Express edition container and copy across the SQL script
 # which you will run inside the container once it is up and running.
+# ONLY USE THIS CONTAINER FOR EXPERIMENTATION - Use proper cloud or on-premises-based databases in production
 FROM mcr.microsoft.com/mssql/server:2017-latest
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -8,9 +9,7 @@ ENV ACCEPT_EULA=Y
 # Set the TZDATA value to the continent/city matching your own timezone
 ENV TZ=Europe/London
 
-# The data_gs1_org API does not use the SA username and password, as the database script creates a new database
-# in 'isolated mode' complete with user and password. See the SQL script at gs1resolver_dataentry_db/gs1resolver_dataentry_db_build_script.sql
-# for more info. You would only use this password to access the database for admin purposes.
+# This password is used by the dataentry_web_server to login to the database as 'sa'.
 ENV MSSQL_SA_PASSWORD=feorfhgofgq348ryfwfAHGAU
 
 # We are using Express edition. If you have a licence then you can change to other allowed editions

@@ -10,6 +10,8 @@ services:
     restart: always
     networks:
       - gs1-resolver-network
+    ports:
+      - "3333:1433"
 
   id-mongo-server:
     build: './gs1resolver_document_db'
@@ -19,6 +21,8 @@ services:
       - gs1resolver-document-volume:/data/db
     networks:
       - gs1-resolver-network
+    ports:
+      - "27017:27017"
 
   gs1dl-toolkit-server:
     build: './dl_toolkit_server'
