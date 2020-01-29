@@ -107,6 +107,7 @@ class ClassMongoDB
                 file_put_contents('php://stderr', "Error calling MongodDB: " . print_r($cte, true). PHP_EOL);
                 return json_decode('{"Error", "MongoDB Database Connection Failed. Please contact the Resolver administrator - error log on server for details"}');
             }
+            //file_put_contents('php://stderr', "Result from MongodDB: " . print_r($result, true). PHP_EOL);
             if($result === null && $searchCharsLength > 3)
             {
                 $searchCharsLength--;

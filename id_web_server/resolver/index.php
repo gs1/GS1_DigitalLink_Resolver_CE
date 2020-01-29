@@ -119,7 +119,7 @@ else
 
 
 file_put_contents('php://stderr', 'Request is ' . $_SERVER['REQUEST_URI'] . PHP_EOL);
-
+header('DLServer: id_web_server', false);
 
 //Decode the elements using the Digital Link Toolkit:
 $dl = new ClassGS1DigitalLink();
@@ -188,8 +188,8 @@ foreach ($digitalLinkObject->other as $nameValuePair)
         if (strtolower($nvKey) === 'linktype')
         {
             $linkValue = $nvValue;
-            $dbLinkValue = strtolower($nvValue); //The MongoDB documents stores linkType in lowercase
-            file_put_contents('php://stderr', "DISCOVERY: requested linktype found in 'other' attributes: '" . $dbLinkValue . "'" . PHP_EOL);
+            $dbLinkValue = convertCURIEStandardToLinkTypeInDB($nvValue);
+            file_put_contents('php://stderr', "DISCOVERY: requested linktype found in 'other' attributes: '$linkValue', stored in DB as '$dbLinkValue'" . PHP_EOL);
         }
         elseif (strtolower($nvKey) === 'lang')
         {
@@ -252,9 +252,7 @@ if ($resolverDocument === null)
     $resolverGCP = $classMongoDB->readGCPRecord($gs1Key, $gs1Value);
     if ($resolverGCP !== null)
     {
-        $redirectUrl = $resolverGCP['resolve_url_format'];
-        $redirectUrl = str_replace('{URI}', $_SERVER['REQUEST_URI'], $redirectUrl);
-        $redirectUrl = str_replace('{DL}', urlencode(json_encode($digitalLinkObject)), $redirectUrl);
+        $redirectUrl = $resolverGCP['resolve_url_format'] . $_SERVER['REQUEST_URI'];
         header('Location: ' . $redirectUrl, true, 307);
         file_put_contents('php://stderr', 'GCP Redirect:  $redirectUrl = ' . print_r($redirectUrl, true) . PHP_EOL . PHP_EOL);
         die(); // <== ALTERNATIVE EXIT
@@ -274,85 +272,6 @@ if ($resolverDocument === null)
 //URI elements such as "/lot/12345/cpv/ABC123". In any case, the resolver just has to match that value directly
 //by examining the values at the same property level as "_id". See the example below which has "/: Object" which would
 //match $uri value "/".
-
-//Here is an example document from the MongoDB database (seen as JSON for readability) which I'll refer to in the notes for this code:
-
-/*
- *
- {
-    "_id": "/01/07625695556149",
-    "/22/123/10/456/21/789": {
-        "item_name": "Niacin 60 Capsules 500 mg",
-        "active": false,
-        "responses": {
-            "default_linktype": "https://gs1#org/voc/instructionsForUse",
-            "linktype": {
-                "https://gs1#org/voc/recipeWebsite": {
-                    "default_lang": "en",
-                    "lang": {
-                        "en": {
-                            "default_context": "gb",
-                            "context": {
-                                "eu": {
-                                    "default_mime_type": "text/html",
-                                    "mime_type": {
-                                        "vnd#ms-powerpoint": {
-                                            "link": "https://lansley.com/yummy",
-                                            "title": "Yummy recipes",
-                                            "fwqs": 1
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "https://gs1#org/voc/instructionsForUse": {
-                    "default_lang": "en",
-                    "lang": {
-                        "fr": {
-                            "default_context": "gb",
-                            "context": {
-                                "fr": {
-                                    "default_mime_type": "text/html",
-                                    "mime_type": {
-                                        "text/html": {
-                                            "link": "https://lansley.com/french",
-                                            "title": "Manual",
-                                            "fwqs": 1
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "https://gs1#org/voc/activityIdeas": {
-                    "default_lang": "en",
-                    "lang": {
-                        "en": {
-                            "default_context": "gb",
-                            "context": {
-                                "gb": {
-                                    "default_mime_type": "text/html",
-                                    "mime_type": {
-                                        "text/html": {
-                                            "link": "https://lansley.com/greatideas",
-                                            "title": "Great ideas",
-                                            "fwqs": 1
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
- *
- */
 
 
 //the first ELSEIF checks if $dbLinkValue = "all"
@@ -381,7 +300,7 @@ else
 
         $responseRecordMimeType = get_mimetype_subdocument($responseRecordContext, $mimeTypeRequired);
 
-        $redirectUrl = qualityAssureOutgoingLink($responseRecordMimeType,  $queryString);
+        $redirectUrl = buildOutgoingLinkURL($responseRecordMimeType,  $queryString);
 
         file_put_contents('php://stderr', "DECISION: Send redirect to location: '$redirectUrl'" . PHP_EOL);
 
@@ -440,10 +359,24 @@ function get_linktype_subdocument($resolverDocument, $uri, $dbLinkValue) : objec
     }
     else
     {
-        file_put_contents('php://stderr', "DECISION: The requested linkType '$dbLinkValue' is unavailable so using the default which is: " . $resolverDocument[$uri]->responses->default_linktype . PHP_EOL);
-        $dbLinkValue = $resolverDocument[$uri]->responses->default_linktype;
-        $responseRecordLinkType = $resolverDocument[$uri]->responses->linktype->{$dbLinkValue};
+        //Are we using the legacy database format for linktype (which did not store the CURIE prefix)?
+        $legacyLinkType = convertCURIEStandardToLegacyLinkTypeInDB($dbLinkValue);
+        if(isset($resolverDocument[$uri]->responses->linktype->{$legacyLinkType}))
+        {
+            file_put_contents('php://stderr', 'DISCOVERY: We have a LEGACY link in the DB matching: ' . $legacyLinkType . PHP_EOL);
+            //So now we either have the requested legacy linkType or the default one stored in $dbLinkValue.
+            //For the sake of processing costs and code simplicity, let's save the response document into a new variable
+            //and work with that going forwards:
+            $responseRecordLinkType = $resolverDocument[$uri]->responses->linktype->{$legacyLinkType};
+        }
+        else
+        {
+            file_put_contents('php://stderr', "DECISION: The requested linkType '$dbLinkValue' is unavailable so using the default which is: " . $resolverDocument[$uri]->responses->default_linktype . PHP_EOL);
+            $dbLinkValue = $resolverDocument[$uri]->responses->default_linktype;
+            $responseRecordLinkType = $resolverDocument[$uri]->responses->linktype->{$dbLinkValue};
+        }
     }
+
     if($responseRecordLinkType === null)
     {
         //Use the first linktype it can find!
@@ -532,7 +465,7 @@ function get_mimetype_subdocument($responseRecordContext, $mimeTypeRequired) : o
  * @param $fwqsFlag
  * @return string
  */
-function qualityAssureOutgoingLink($responseRecordMimeType, $queryString) : string
+function buildOutgoingLinkURL($responseRecordMimeType, $queryString) : string
 {
     file_put_contents('php://stderr', "qualityAssureOutgoingLink: '$responseRecordMimeType->link', '$queryString', '$responseRecordMimeType->fwqs'" . PHP_EOL);
     //Ignore the querystring value if the the fwqs 'forward querystrings' flag is set to "0"
@@ -560,6 +493,8 @@ function qualityAssureOutgoingLink($responseRecordMimeType, $queryString) : stri
     }
     return str_replace(' ', '', $outgoing);
 }
+
+
 
 function buildLinkHeader($resolverDocument, $uri, $queryString)
 {
@@ -606,8 +541,8 @@ function buildLinkHeader($resolverDocument, $uri, $queryString)
                                         {
                                             if (gettype($mimeTypeDocument) === 'object')
                                             {
-                                                //DEBUG: file_put_contents('php://stderr', '$mimeTypeDocument =============> ' . print_r($mimeTypeDocument, true) . PHP_EOL);
-                                                $linkHeader = '<' . qualityAssureOutgoingLink($mimeTypeDocument->link, $queryString) . '>; rel="' . $linkTypeKey . '"; type="' . $mimeTypeKey . '"; hreflang="' . $langKey . '"; title="' . $mimeTypeDocument->title . '", ';
+                                                //file_put_contents('php://stderr', '$mimeTypeDocument =============> ' . print_r($mimeTypeDocument, true) . PHP_EOL);
+                                                $linkHeader = '<' . buildOutgoingLinkURL($mimeTypeDocument, $queryString) . '>; rel="' . convertLinkTypeInDBToCURIEStandard($linkTypeKey) . '"; type="' . $mimeTypeKey . '"; hreflang="' . $langKey . '"; title="' . $mimeTypeDocument->title . '", ';
                                                 $linkHeaderArray[$counter] = $linkHeader;
                                                 if ($resolverDocument[$uri]->responses->defaultlink === $responseKey)
                                                 {
@@ -618,13 +553,10 @@ function buildLinkHeader($resolverDocument, $uri, $queryString)
                                         }
                                     }
                                 }
-
                             }
                         }
                     }
                 }
-
-
             }
         }
 
@@ -652,7 +584,15 @@ function buildLinkHeader($resolverDocument, $uri, $queryString)
 
 }
 
-
+/**
+ * Builds the interstitial page for linktype=all
+ * @param $gs1Key
+ * @param $gs1Value
+ * @param $resolverDocument
+ * @param $uri
+ * @param $queryString
+ * @return false|string|string[]
+ */
 function buildInterstitialPage($gs1Key, $gs1Value, $resolverDocument,  $uri, $queryString)
 {
 
@@ -683,7 +623,7 @@ function isRequestURIInDocument($resolverDocument, $requestUri) : array
 {
     //First of all, let's just see if we can find the whole request URI
     //because if we can, we can return 'true' straightaway.
-    //The two elemets of the returned ara are:
+    //The two elements of the returned ara are:
     //[0] = 1 if something found or 0 if not
     //[1] = The URI we actually found
 
@@ -704,7 +644,7 @@ function isRequestURIInDocument($resolverDocument, $requestUri) : array
         //Break the $requestUri into pieces based on the / symbol
         $requestElements = explode("/", $requestUri);
 
-        file_put_contents('php://stderr', "request Elements are " . print_r($requestElements, true) . PHP_EOL);
+        file_put_contents('php://stderr', "request Elements from [$requestUri] are " . print_r($requestElements, true) . PHP_EOL);
 
         //We going to rebuild the request URI with less and less elements until we (hopefully) get a match
         //starting with 3 less than the original because each uri attribute has '/name/value' - so two elements
@@ -742,8 +682,87 @@ function isRequestURIInDocument($resolverDocument, $requestUri) : array
 }
 
 
-
+/**
+ * Creates the useful 'startsWith() function (available in most other programming languages!!)
+ * @param $haystack
+ * @param $needle
+ * @return bool
+ */
 function startsWith($haystack, $needle)
 {
     return (strpos($haystack, $needle) === 0);
+}
+
+
+/**
+ * If present, changes the '*' in the database version of a CURIE to a ':':
+ * If there is no '*' (legacy format for linktypes) then add 'gs1:' prefix.
+ * @param $dbLinktype
+ * @return string
+ */
+function convertLinkTypeInDBToCURIEStandard($dbLinktype) : string
+{
+    if(strpos($dbLinktype, '*') === false)
+    {
+        return 'gs1:' . $dbLinktype;
+    }
+    return str_replace('*', ':', $dbLinktype);
+}
+
+
+/**
+ * Converts a colon of a CURIE (compressed) linktype to a '*' as document databases can't store
+ * names (in name/value pairs) with colons in them.
+ * @param $linktype
+ * @return string
+ */
+function convertCURIEStandardToLinkTypeInDB($linktype) : string
+{
+    //For legacy applications, if there is no 'gs1:' or 'schema:' prefix for a linktype, add 'gs1*'.
+    if($linktype ==='all')
+    {
+        return 'all';
+    }
+    elseif(strpos($linktype, 'gs1:') !== false)
+    {
+        return 'gs1*' . $linktype;
+    }
+    elseif(strpos($linktype, 'schema:') !== false)
+    {
+        return 'schema*' . $linktype;
+    }
+    elseif(strpos($linktype, "https://gs1.org/voc/") !== false)
+    {
+        //We have a full GS1 URI-based linktype which we need to shorten:
+        return 'gs1*' . str_replace('https://gs1.org/voc/', '', $linktype);
+    }
+    elseif(strpos($linktype, "https://schema.org/") !== false)
+    {
+        //We have a full Schema URI-based linktype which we need to shorten:
+        return 'schema*' . str_replace('https://schema.org/', '', $linktype);
+    }
+    else
+    {
+        //Otherwise just convert the colon to the asterisk
+        return str_replace(':', '*', $linktype);
+    }
+}
+
+
+/**
+ * The legacy version of the database document has linktypes all in lowercase with no CURIE prefix.
+ * So here we check where the '*' and only use the section after it.
+ * This function exists should we, for support reasons, need to switch to a backup database in legacy format.
+ * @param $linktype
+ * @return string
+ */
+function convertCURIEStandardToLegacyLinkTypeInDB($linktype) : string
+{
+
+    $linkTypeSections = explode('*', $linktype);
+    if(count($linkTypeSections) > 1)
+    {
+        return strtolower($linkTypeSections[1]);
+    }
+    return strtolower($linktype);
 }
