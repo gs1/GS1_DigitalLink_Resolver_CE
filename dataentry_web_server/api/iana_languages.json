@@ -1,12 +1,13 @@
 {
     "xx":{
-        "name":"(Not Used)",
-        "nativeName":"Not used for this destination"
+        "name":"(Not Applicable)",
+        "nativeName":"Not used for this destination",
+        "default":"1"
     },
     "ab":{
-    "name":"Abkhaz",
+        "name":"Abkhaz",
         "nativeName":"аҧсуа"
-},
+    },
     "aa":{
         "name":"Afar",
         "nativeName":"Afaraf"
@@ -161,8 +162,7 @@
     },
     "en":{
         "name":"English",
-        "nativeName":"English",
-        "default":"1"
+        "nativeName":"English"
     },
     "eo":{
         "name":"Esperanto",

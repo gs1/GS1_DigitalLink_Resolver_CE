@@ -17,7 +17,7 @@ $classGS1Keys = new classGS1Keys();
 
 header('Access-Control-Allow-Origin: *');
 //$classDBAccess->logThis( '$_POST: ' . print_r($_POST, true));
-
+header('DLServer: dataentry_web_server', false);
 
 //This API can accept command requests as either an HTTP POST (such as from a web browser XHR request)
 //or from simple raw input in JSON format such as:

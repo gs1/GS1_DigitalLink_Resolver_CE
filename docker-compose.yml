@@ -5,7 +5,9 @@ services:
     build: './gs1resolver_dataentry_db'
     container_name: dataentry-sql-server
     volumes:
-      - gs1resolver-dataentry-volume:/gs1resolver_data
+      - gs1resolver-dataentry-volume-db-data:/var/opt/mssql/data
+      - gs1resolver-dataentry-volume-db-log:/var/opt/mssql/log
+      - gs1resolver-dataentry-volume-db-secrets:/var/opt/mssql/secrets
       - gs1resolver-dbbackup-volume:/dbbackup
     restart: always
     networks:
@@ -15,15 +17,10 @@ services:
     build: './gs1resolver_document_db'
     container_name: id-mongo-server
     restart: always
+    ports:
+      - "27012:27012"
     volumes:
       - gs1resolver-document-volume:/data/db
-    networks:
-      - gs1-resolver-network
-
-  gs1dl-toolkit-server:
-    build: './dl_toolkit_server'
-    container_name: gs1dl-toolkit-server
-    restart: always
     networks:
       - gs1-resolver-network
 
@@ -33,7 +30,6 @@ services:
     depends_on:
       - dataentry-sql-server
       - id-mongo-server
-      - gs1dl-toolkit-server
     restart: always
     networks:
       - gs1-resolver-network
@@ -44,20 +40,25 @@ services:
     depends_on:
       - id-mongo-server
     restart: always
+    networks:
+      - gs1-resolver-network
+
+  frontend-proxy-server:
+    build: './frontend_proxy_server'
+    container_name: frontend-proxy-server
+    depends_on:
+      - id-web-server
+      - dataentry-web-server
+    restart: always
     ports:
       - "8080:80"
     networks:
       - gs1-resolver-network
 
-  unixtime-web-server:
-    build: './unixtime_web_server'
-    container_name: unixtime-web-server
-    restart: always
-    networks:
-      - gs1-resolver-network
-
 volumes:
-  gs1resolver-dataentry-volume: {}
+  gs1resolver-dataentry-volume-db-data: {}
+  gs1resolver-dataentry-volume-db-log: {}
+  gs1resolver-dataentry-volume-db-secrets: {}
   gs1resolver-document-volume: {}
   gs1resolver-dbbackup-volume: {}
 

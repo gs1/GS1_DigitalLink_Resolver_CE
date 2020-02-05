@@ -1,4 +1,5 @@
-## Welcome to the GS1 Digital Link Resolver - Community Edition
+## Welcome to the GS1 Digital Link Resolver
+### Community Edition v1.1
 
 Welcome! The purpose of this repository is to provide you with the ability to build a complete resolver service that will enable you to enter information about GTINs and other GS1 keys
 and resolve (that is, redirect) web clients to their appropriate destinations.
@@ -10,20 +11,41 @@ This repository consists of five projects which work together to provide the res
 a web-based example user interface that allows easy data entry of this information (and uses the API to perform its operations). 
 This project uses a SQL Server database to store information, and the API has a 'Build' command that takes any 
 changes to the database and builds a document for each GS1 key and value, which will be used by... </td></tr>
-
-<tr><td>id_web_server</td><td>the resolver service <b>id-web-server</b> (as used on the domain <a href="https://id.gs1.org">https://id.gs1.org</a>) which can be used by client applications that supply a GS1 key and value according to the GS1 Digital Link standard. This service performs a high-speed lookup of the specified GS1 key and value, and returns the appropriate redirection where possible.</td></tr>
-
-<tr><td>unixtime_web_server</td><td>the document sync service <b>unixtime-web-server</b> provides the ability to download resolver documents on or since a specified Unixtime (the number of seconds since 1 January 1970 00:00:00) in order for clients
-to synchronise resolver data with their own. </td></tr>
-
-<tr><td>gs1resolver_dataentry_db</td><td>database service <b>dataentry-sql-server</b> using SQL Server 2017 Express edition (free to use but with 10GB limit) to provide a stable data storage service for the resolver's data-entry needs.</td></tr>
-<tr><td>gs1resolver_document_db</td><td>the <b>id-mongo-server</b> MongoDB database used by the resolver.</td></tr>
-
-<tr><td>dl_toolkit_server</td><td>the <b>gs1dl-toolkit-server</b> service hosting a Node.JS (JavaScript) application running internally within the service to support id_gs1_org's ability to understand incoming GS1 Digital Link requests.</td></tr>
+<tr><td>id_web_server</td><td>The resolving service <b>id-web-server</b> (as used on the domain <a href="https://id.gs1.org">https://id.gs1.org</a>) and completely re-written in Node.js for improved performance and scalability which can be used by client applications that supply a GS1 key and value according to the GS1 Digital Link standard. This service performs a high-speed lookup of the specified GS1 key and value, and returns the appropriate redirection where possible.</td></tr>
+<tr><td>gs1resolver_dataentry_db</td><td>The SQL database service <b>dataentry-sql-server</b> using SQL Server 2017 Express edition (free to use but with 10GB limit) to provide a stable data storage service for the resolver's data-entry needs.</td></tr>
+<tr><td>gs1resolver_document_db</td><td>The <b>id-mongo-server</b> MongoDB database used by the resolver.</td></tr>
+<tr><td>frontend_proxy_server</td><td>The frontend web server routing traffic securely to the other containers. Using NGINX, this server's config can be adjusted to support load blancing and more,</td></tr>
 </table>
 
-### Important Note
-This entire service is being redeveloped to use JavaScript (for the id_web_server and Java / SpringBoot for dateentry_web server)
+### Important Notes for existing users of previous version 1.0
+On 5th February 2020, this repository was updated to reflect big changes to the design and architecture of the service.
+These changes were to provide:
+* More complete compliance with the GS1 Digital Link standard
+* Performance and security improvements
+* Rewrite of the id_web_server from PHP 7.3 to Node.JS v13.7
+* Removel of separate Digital Link Toolkit server - now integrated into id_web_server
+* Removal of experimental unixtime service (unixtime downloads will be revisited at later time)
+
+As a result of these changes, if you are upgrading the service then you need to perform these tasks:
+
+BEFORE YOU 'GIT PULL' an update:
+1. Unless you are are using a separate external SQL database, backup the SQL database to an external host location, as you will be deleting its container data volume. Make sure
+you have a successful backup by restoring it to another database. This is done at your own risk! 
+2. Use 'docker-compose down' to stop and remove the containers using the previous docker-compose.yml
+3. Delete all the repository's docker volumes (listed further down this page and in docker-compose.yml)
+
+Now let's build the new service:
+1. 'git pull' (or 'git clone' to a new location) this repository.
+2. IF using an external Mongo database: Change the connection string which is now in id_web_server/Dockerfile and dataentry_web_server/config/api.ini
+3. IF using an external SQL server: Change the connection string which is now in dataentry_web_server/config/api.ini
+2. Run 'docker-compose build' to build the new v1.1 service.
+3. IF using the dataentry_sql_server container: Restore your database to the SQL server.
+4. Wherever your SQL server is, you must run this SQL statement, which will cause the resolver to rebuild all the document data in MongoDB at the next BUILD event (usually once per minute with default settings): <pre>UPDATE [gs1resolver_dataentry_db].[uri_requests] SET [api_builder_processed] = 0
+GO</pre> 
+
+Your service should now be fully restored.
+ 
+ 
 
 ## Architecture
 
@@ -38,25 +60,23 @@ We chose a Docker-based <i>containerisation</i> or <i>micro-services</i> archite
 It is for these reasons that this type of architecture has become so popular.
 
 #### Web Servers
-The only outward-facing web server is the <i><b>id-web-server</b></i> container. Any client requests to the /ui/ data entry web application and /api/ API service are proxied through to the <b><i>dataentry-web-server</i></b> and <b><i>unixtime-web-server</i></b> by the <i><b>id-web-server</b></i>. Any other calls to the service are processed by <i><b>id-web-server</b></i> itself.
 
-A fourth web server, <i><b>gs1dl-toolkit-server</b></i>, is a separate service used internally by <i><b>id-web-server</b></i> to detect and return distinct GS1 Digital Link elements which
-<i><b>id-web-server</b></i> uses for further processing. Indeed, <i><b>gs1dl-toolkit-server</b></i> hosts a set of ten node.js (JavaScript) web servers across ten internal-only IP ports from 3000 to 3009 on the service's private <i><b>gs1-resolver-network</b></i>.
-Processing threads in <i><b>id-web-server</b></i> can choose any of the ten ports at random, which speeds throughput given that each node.js endpoint is a single-threaded application.
+The only outward-facing web server is <i><b>frontend-proxy-server</b></i> which proxies any client requests to the /ui/ data entry web application and /api/ API service 
+through to the <b><i>dataentry-web-server</i></b> which provides both services. All requests that are not /ui/ or /api/ are sent to <b><i>id-web-server</i></b>
+
 
 As well as enabling CRUD (Create / Read / Update / Delete) operations on data, <i><b>dataentry-web-server</b></i> also has a BUILD function that runs once per minute as a result of the Docker HEALTHCHECK process set up in the Dockerfile for that container.
 BUILD causes <i><b>dataentry-web-server</b></i> to look for changes in the SQL database and uses it to create documents in the MongoDB database. MongoDB can perform high-speed lookups and is ideal for the high-performance reading of data.
 
-The document sync service <b><i>unixtime-web-server</i></b> provides the ability to download resolver documents containing data updated on or since a specified Unixtime (the number of seconds since 1 January 1970 00:00:00) in order for clients
-to synchronise resolver data with their own. More details in its own README.md file</td></tr>
-
 #### Database servers
 This repository includes two extra containers for SQL Server and MongoDB. These are included to help you get up and running quickly to experiment and 
 test the service. However, you are strongly advised to move to cloud-based versions of these databases, and change the data connection
-strings in the .ini file in each of the dataentry-web-server and id-web-server (see their respective README.md files).
+strings as stored below:
+* <b>dataentry-web-server</b> stores both SQL and MONGO strings in dataentry_web_server/config/api.ini 
+* <b>id-web-server</b> stores its MONGO (only) string in id_web_server/Dockerfile 
 
 ##### A note on Microsoft Azure
-The MongoDB library/driver code used in the id-web-server and dataentry-web-server containers are 100% compatible with the Microsoft Azure COSMOS DB database service. You simply change the connection string
+The MongoDB library/driver code used in the id-web-server and dataentry-web-server containers are 100% compatible with the Microsoft Azure COSMOS DB with Mongo API database service. You simply change the connection string
 as if you were using a MongoDB local or cloud server. However you must add the following string text to the END of the connection string
 for it to work properly: <pre>&retryWrites=false</pre>
 
@@ -65,7 +85,6 @@ Three 'disk' volumes are created for internal use by the service database. Volum
 stores the Mongo document data so that all the data survives the service being shutdown or restarted. A further volume, <i><b>gs1resolver-dbbackup-volume</b></i> (not shown in the diagram below) is used to store
 a backup of the SQL Server database.
 
-![architecture](architecture-ce-edition.png "Architecture")
 
 #### SQL Server Database backup and restore
 There are two *not-fully-tested-yet*  backup and restore scripts for the SQL Server. To backup the server:
@@ -93,17 +112,21 @@ connection the build-from-scratch will take 10-15 minutes.
 7. Now wait 10 seconds while the system settles down (the SQL Server service takes a few seconds to initialise when 'new') then copy and paste this command, which will run a program inside the SQL Server 
 container, creating the database and some example data described in [data_gs1_org/README.md](dataentry_web_server/README.md) 
 <pre>
-docker exec -it  dataentry-sql-server  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU -i  /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql
+docker exec -it  dataentry-sql-server  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P feorfhgofgq348ryfwfAHGAU -i  /gs1resolver_sql_scripts/gs1resolver_dataentry_db_build_script.sql
 </pre>
 8. Now open a web browser and direct it to this web address: <a href="http://localhost:8080/ui/">http://localhost:8080/ui/</a> (the trailing / is important!) and login as one of the test accounts described in [data_gs1_org/README.md](dataentry_web_server/README.md)
 9. To close the entire application down type this: <pre>docker-compose down</pre> Since the data is stored on Docker volumes, the data will survive the shutdown and be available when you 'up' the service again.
-10. If you wish to delete the volumes and thus wipe the data, type these three commands: 
+10. If you wish to delete the volumes and thus wipe the data, type these commands: 
 <pre>
-docker volume rm gs1_digitallink_resolver_ce_gs1resolver-dataentry-volume
+docker volume rm gs1_digitallink_resolver_ce_gs1resolver-dataentry-volume-db-data
+docker volume rm gs1_digitallink_resolver_ce_gs1resolver-dataentry-volume-db-log
+docker volume rm gs1_digitallink_resolver_ce_gs1resolver-dataentry-volume-db-secrets
 docker volume rm gs1_digitallink_resolver_ce_gs1resolver-dbbackup-volume
 docker volume rm gs1_digitallink_resolver_ce_gs1resolver-document-volume
- 
 </pre>
+
+If the above volume are the ony ones in your Docker Engine then it's quicker to type:<pre>docker volume ls </pre> to confirm, then to delete all the volumes type:<pre>docker volume prune </pre> 
+
 ## Next steps
 * Read through the README.md and Dockerfiles for each project in this repository; many originate from when they were separate projects and will prove interesting reading. Especially note the example data installed into the service when you run the SQL script: Welcome to the world of <i>GS1 Westeros</i>!
 

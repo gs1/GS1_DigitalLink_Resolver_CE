@@ -25,20 +25,15 @@ ENV MSSQL_LCID=1033
 # tha data entry API data_gs1_org have been designed to minimise processing load as much as possible.
 ENV MSSQL_MEMORY_LIMIT_MB=1024
 
-# These data directories cause data to be stored on an external disk volume, so that the container can be restarted
-# wihout forgetting anything!
-ENV MSSQL_BACKUP_DIR=/gs1resolver_data/backup
-ENV MSSQL_DATA_DIR=/gs1resolver_data/data
-ENV MSSQL_LOG_DIR=/gs1resolver_data/log
-ENV MSSQL_DUMP_DIR=/gs1resolver_data/dump
-
 # Enabling MSSQL Agent will allow scheduled tasks to be conducted such as performing regukar backups (Not imeplmented yet in this project yet)
 # More at: https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-run-sql-server-agent-job?view=sql-server-2017
 ENV MSSQL_AGENT_ENABLED=true
 
 # Copy the scripts and convert them to unix format
 RUN apt-get update -y && apt-get dist-upgrade -y && apt-get install -y dos2unix
-COPY gs1resolver_dataentry_db_build_script.sql /gs1resolver_data/setup/gs1resolver_dataentry_db_build_script.sql
-COPY gs1resolver_dataentry_backupdb_script.sh /gs1resolver_data/setup/gs1resolver_dataentry_backupdb_script.sh
-COPY gs1resolver_dataentry_restoredb_script.sh /gs1resolver_data/setup/gs1resolver_dataentry_restoredb_script.sh
+COPY gs1resolver_dataentry_db_build_script.sql /gs1resolver_sql_scripts/gs1resolver_dataentry_db_build_script.sql
+COPY gs1resolver_dataentry_backupdb_script.sh /gs1resolver_sql_scripts/gs1resolver_dataentry_backupdb_script.sh
+COPY gs1resolver_dataentry_restoredb_script.sh /gs1resolver_sql_scripts/gs1resolver_dataentry_restoredb_script.sh
+
+# Convert any Windows formatted text files to unix format.
 RUN find  /gs1resolver_data/setup/* -type f -print0 | xargs -0 dos2unix

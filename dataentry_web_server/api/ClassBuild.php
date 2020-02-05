@@ -31,7 +31,7 @@ class ClassBuild
     {
         $logArray = Array();
 
-        $logArray[] = 'Starting Latest MongoDB update from MySQL DB ...';
+        $logArray[] = 'Starting Latest Document DB update from SQL DB ...';
 
         //Find out how many URI requests there are
         $uriRequestCount = $this->dbAccess->BUILD_GetURIRequestCount();
@@ -94,7 +94,7 @@ class ClassBuild
         $logArray[] = "Processing Well Known record" . PHP_EOL;
         $this->BUILD_Well_Known();
 
-        $logArray[] = "Completed Latest MongoDB update" . PHP_EOL;
+        $logArray[] = "Completed Latest Document DB update" . PHP_EOL;
         return $logArray;
     }
 
@@ -109,7 +109,8 @@ class ClassBuild
         $gs1Value = $uriRequest['gs1_key_value'];
 
         //Make sure that value is appropriate length
-        //TODO: Only covers GTIN; we must code for the gs1 keys (data in table)
+        //TODO: This validation test only covers GTIN by forcing it to 14 numeric characters (zero-prefixed)
+        //We must code for the gs1 keys at some stage
         if ($gs1Key === 'gtin' || $gs1Key === '01')
         {
             while (strlen($gs1Value) < 14)
@@ -208,10 +209,33 @@ class ClassBuild
         $this->mongoDbClient->putWellKnownRecord($wellKnownDocument);
     }
 
+    /**
+     * getDigitalLinkVocabWord takes the linktype and creates a 'compressed' version (CURIE).
+     * For example, 'https:/gs1.org/voc/hasRetailers' becomes 'gs1:hasRetailers'
+     * But, since colons are reserved in come computer languages making the database inaccessible.
+     * Indeed, MongoDB and other Docum,ent DBs doen't allow colons in names of name/value pairs.
+     * So this function actually returns 'gs1*hasRetailers' which will be returned to a colon
+     * by code reading the database for the benefit of end users.
+     * Currently this function detects and supports 'gs1' and 'schema' CURIEs
+     * @param $linkTypeURL
+     * @return mixed
+     */
     private function getDigitalLinkVocabWord($linkTypeURL)
     {
         $list = explode('/', $linkTypeURL);
-        return $list[count($list) - 1];
+        if(strpos(strtolower($linkTypeURL), 'gs1') !== false)
+        {
+            return 'gs1*' . $list[count($list) - 1];
+        }
+        elseif(strpos(strtolower($linkTypeURL), 'schema') !== false)
+        {
+            return 'schema*' . $list[count($list) - 1];
+        }
+        else
+        {
+            //Just return the original
+            return $list[count($list) - 1];
+        }
     }
 
     /**
@@ -228,9 +252,11 @@ class ClassBuild
         $responsesCount = 0;
         foreach ($uriResponses as $response)
         {
-            //Just use the final word of the link type URL, and save it as lowercase.
-            //So 'http://gs1.org/voc/epil' becomes 'epil':
-            $linkType = strtolower($this->getDigitalLinkVocabWord($response['linktype']));
+            //Just use the final word of the link type URL:
+            //So 'http://gs1.org/voc/epil' becomes 'gs1:epil' which is returned by getDigitalLinkVocabWord as gs1*epil
+            //since colons are reserved in come computer languages making the database inaccessible.
+            $linkType = $this->getDigitalLinkVocabWord($response['linktype']);
+
             if ($response['default_linktype'] === 1)
             {
                 $mongoDbRecord[$webUri]['responses']['default_linktype'] = str_replace('.', '#', $linkType);
