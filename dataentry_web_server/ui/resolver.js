@@ -690,6 +690,7 @@ class GS1URI_EDITURI
 
             textInput.type = "text";
             textInput.size = 10;
+            textInput.maxLength = 40;
             textInput.placeholder = callingButton.value.replace("Add ", "");
             textInput.id = "uri_value_" + componentOrderId;
             uriSuffix.innerHTML = null;
@@ -1428,6 +1429,7 @@ class GS1URI_EDITURI
                 textFriendlyName.type = "text";
                 textFriendlyName.id = "textFriendlyName_" + responseUriEntry.uri_response_id;
                 textFriendlyName.size = 40;
+                textFriendlyName.maxLength = 30;
                 textFriendlyName.value = responseUriEntry.friendly_link_name;
                 textFriendlyName.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
                 tdFriendlyName.appendChild(textFriendlyName);
@@ -1466,6 +1468,7 @@ class GS1URI_EDITURI
                 textDestinationURI.type = "text";
                 textDestinationURI.id = "textDestinationURI_" + responseUriEntry.uri_response_id;
                 textDestinationURI.size = 80;
+                textDestinationURI.maxLength = 1000;
                 textDestinationURI.value = responseUriEntry.destination_uri;
                 textDestinationURI.setAttribute("uri_response_id", responseUriEntry.uri_response_id);
                 tdDestinationURI.appendChild(textDestinationURI);
@@ -1744,6 +1747,7 @@ class GS1URI_EDITURI
         let textFriendlyName = document.createElement("input");
         textFriendlyName.id = "textNewFriendlyName";
         textFriendlyName.size = 40;
+        textFriendlyName.maxLength = 30;
         textFriendlyName.type = "text";
         textFriendlyName.setAttribute("uri_request_id", uriRequestId);
         tdFriendlyName.appendChild(textFriendlyName);
@@ -1752,6 +1756,7 @@ class GS1URI_EDITURI
         let textDestinationURI = document.createElement("input");
         textDestinationURI.id = "textNewDestinationURI";
         textDestinationURI.size = 80;
+        textDestinationURI.maxLength = 1000;
         textDestinationURI.type = "text";
         textDestinationURI.setAttribute("uri_request_id", uriRequestId);
         tdDestinationURI.appendChild(textDestinationURI);
