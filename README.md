@@ -81,7 +81,7 @@ as if you were using a MongoDB local or cloud server. However you must add the f
 for it to work properly: <pre>&retryWrites=false</pre>
 
 #### Disk volumes
-Three 'disk' volumes are created for internal use by the service database. Volume <i><b>gs1resolver-dataentry-volume</b></i> stores the SQL database and <i><b>gs1resolver-document-volume</b></i>
+FIve 'disk' volumes are created for internal use by the service database. Three <i><b>gs1resolver-dataentry- prefixed</b></i> volumes stores the SQL database and <i><b>gs1resolver-document-volume</b></i>
 stores the Mongo document data so that all the data survives the service being shutdown or restarted. A further volume, <i><b>gs1resolver-dbbackup-volume</b></i> (not shown in the diagram below) is used to store
 a backup of the SQL Server database.
 
