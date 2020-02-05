@@ -136,6 +136,4 @@ which can't run natively in Windows Server without additional complex configurat
 * Use the Programs and Features configuration settings to run Hyper-V, the virtual machine Hypervisor, then install and run a Ubuntu virtual machine
 * Clone a copy of this repository and create Windows containers. At this time how much work required to change the Dockerfiles to create Windows containers is unknown, but a welcome extra task!
 * Find out if the real reason is that you need to run in Azure? If so, Azure provide a service called 'Web Apps for Containers' which run Linux containers
-individually. You would just need to create three Web Apps, and replace the otehr two database containers with SQL Server Azure (instead of SQL container)  and CosmosDB (instead of MongoDB) and then alter the database connection strings in the.ini files of the dataentry_web_server, and id_web_server.
-You would also need to point the id_web_server to the new location fo the dl_toolkit_server.
-* Help us configure the Kubernetes configuration so this can be run in a Kubernetes cluster! 
+individually. Web Apps for containers can run both individual containers and also docker-compose, so this service should work natively.
