@@ -17,8 +17,6 @@ services:
     build: './gs1resolver_document_db'
     container_name: id-mongo-server
     restart: always
-    ports:
-      - "27012:27012"
     volumes:
       - gs1resolver-document-volume:/data/db
     networks:
