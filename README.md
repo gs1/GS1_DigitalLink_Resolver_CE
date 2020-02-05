@@ -14,7 +14,7 @@ changes to the database and builds a document for each GS1 key and value, which 
 <tr><td>id_web_server</td><td>The resolving service <b>id-web-server</b> (as used on the domain <a href="https://id.gs1.org">https://id.gs1.org</a>) and completely re-written in Node.js for improved performance and scalability which can be used by client applications that supply a GS1 key and value according to the GS1 Digital Link standard. This service performs a high-speed lookup of the specified GS1 key and value, and returns the appropriate redirection where possible.</td></tr>
 <tr><td>gs1resolver_dataentry_db</td><td>The SQL database service <b>dataentry-sql-server</b> using SQL Server 2017 Express edition (free to use but with 10GB limit) to provide a stable data storage service for the resolver's data-entry needs.</td></tr>
 <tr><td>gs1resolver_document_db</td><td>The <b>id-mongo-server</b> MongoDB database used by the resolver.</td></tr>
-<tr><td>frontend_proxy_server</td><td>The frontend web server routing traffic securely to the other containers. Using NGINX, this server's config can be adjusted to support load blancing and more,</td></tr>
+<tr><td>frontend_proxy_server</td><td>The frontend web server routing traffic securely to the other containers. Using NGINX, this server's config can be adjusted to support load balancing and more,</td></tr>
 </table>
 
 ### Important Notes for existing users of previous version 1.0
@@ -23,7 +23,7 @@ These changes were to provide:
 * More complete compliance with the GS1 Digital Link standard
 * Performance and security improvements
 * Rewrite of the id_web_server from PHP 7.3 to Node.JS v13.7
-* Removel of separate Digital Link Toolkit server - now integrated into id_web_server
+* Removal of separate Digital Link Toolkit server - now integrated into id_web_server
 * Removal of experimental unixtime service (unixtime downloads will be revisited at later time)
 
 As a result of these changes, if you are upgrading the service then you need to perform these tasks:
@@ -31,7 +31,7 @@ As a result of these changes, if you are upgrading the service then you need to 
 BEFORE YOU 'GIT PULL' an update:
 1. Unless you are are using a separate external SQL database, backup the SQL database to an external host location, as you will be deleting its container data volume. Make sure
 you have a successful backup by restoring it to another database. This is done at your own risk! 
-2. Use 'docker-compose down' to stop and remove the containers using the previous docker-compose.yml
+2. Use 'docker-compose down' to stop and remove the containers using the  docker-compose.yml for the version 1.0 that you are running.
 3. Delete all the repository's docker volumes (listed further down this page and in docker-compose.yml)
 
 Now let's build the new service:
