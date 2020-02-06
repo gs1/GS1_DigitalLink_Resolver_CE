@@ -45,6 +45,9 @@ const getDigitalLinkStructure = (uri) =>
  */
 const processSpecificLinkType = (httpRequest, incomingRequestDigitalLinkStructure, resolverDBdocument, httpResponse, processStartTime) =>
 {
+    const gs1KeyCode = Object.keys(incomingRequestDigitalLinkStructure.identifiers[0])[0];
+    const gs1KeyValue = incomingRequestDigitalLinkStructure.identifiers[0][gs1KeyCode];
+
     // STEP 1: FIND MATCHING QUALIFIERS (since there can be more than one in the same document as the resolverDBdocument presents the
     //         entire knowledge base for the this product, useful in certain scenarios.
     const docVariant = getVariantDocument(resolverDBdocument,  incomingRequestDigitalLinkStructure.qualifiers);
@@ -63,27 +66,52 @@ const processSpecificLinkType = (httpRequest, incomingRequestDigitalLinkStructur
         {
             console.log("using linktype to get lang");
             const langDoc = getAttributeDoc(incomingRequestDigitalLinkStructure, docVariant.responses, "linktype", httpRequest);
-            console.log("using lang to get context");
-            const contextDoc = getAttributeDoc(incomingRequestDigitalLinkStructure, langDoc, "lang", httpRequest);
-            console.log("using context to get mime");
-            const mimeTypeDoc = getAttributeDoc(incomingRequestDigitalLinkStructure, contextDoc, "context", httpRequest);
-            console.log("using mime to get resolved link");
-            const resolverObj = getAttributeDoc(incomingRequestDigitalLinkStructure, mimeTypeDoc, "mime_type", httpRequest);
+            console.log("DEBUG =======>", langDoc, !langDoc === undefined);
+            if (langDoc !== undefined)
+            {
+                console.log("using lang to get context");
+                const contextDoc = getAttributeDoc(incomingRequestDigitalLinkStructure, langDoc, "lang", httpRequest);
+                if (contextDoc !== undefined)
+                {
+                    console.log("using context to get mime");
+                    const mimeTypeDoc = getAttributeDoc(incomingRequestDigitalLinkStructure, contextDoc, "context", httpRequest);
+                    if (mimeTypeDoc !== undefined)
+                    {
+                        console.log("using mime to get resolved link");
+                        const resolverObj = getAttributeDoc(incomingRequestDigitalLinkStructure, mimeTypeDoc, "mime_type", httpRequest);
 
-            //STEP 3: Build the Link Header, which contains all the linktypes, languages, contexts and mime_types in docVariant.
-            //and build it into the addition HTTP headers to be sent back to the client:
-            const additionalHttpHeaders = {
-                'Link': getLinkHeaderText(docVariant, incomingRequestDigitalLinkStructure),
-                'Location': formatRedirectLink(httpRequest.url, resolverObj.link, resolverObj.fwqs)
-            };
+                        //STEP 3: Build the Link Header, which contains all the linktypes, languages, contexts and mime_types in docVariant.
+                        //and build it into the addition HTTP headers to be sent back to the client:
+                        const additionalHttpHeaders = {
+                            'Link': getLinkHeaderText(docVariant, incomingRequestDigitalLinkStructure),
+                            'Location': formatRedirectLink(httpRequest.url, resolverObj.link, resolverObj.fwqs)
+                        };
+                        resolverHTTPResponse(httpResponse, additionalHttpHeaders, null, 307, processStartTime);
+                    }
+                    else
+                    {
+                        console.log("processSpecificLinkType: No requested nor default mime-type found!");
+                        response_NotFoundPage(gs1KeyCode, gs1KeyValue, httpResponse, processStartTime).then();
+                    }
+                }
+                else
+                {
+                    console.log("processSpecificLinkType: No requested nor default context found!");
+                    response_NotFoundPage(gs1KeyCode, gs1KeyValue, httpResponse, processStartTime).then();
+                }
+            }
+            else
+            {
+                console.log("processSpecificLinkType: No requested nor default language found!");
+                response_NotFoundPage(gs1KeyCode, gs1KeyValue, httpResponse, processStartTime).then();
+            }
 
-            resolverHTTPResponse(httpResponse, additionalHttpHeaders, null, 307, processStartTime);
         }
         catch (error)
         {
             //Catches the no document found for further processing
             console.log("processSpecificLinkType error:", error);
-            response_NotFoundPage(0, 0, httpResponse, processStartTime);
+            response_NotFoundPage(gs1KeyCode, gs1KeyValue, httpResponse, processStartTime);
         }
     }
 };
@@ -155,7 +183,7 @@ const getAttributeDoc = (structure, variantDoc, attributeName, httpRequest) =>
     if (!variantDoc)
     {
         console.log("getAttributeDoc: An empty variantDoc arrived");
-        return {}; //there's nothing we can do when nothing arrives!
+        return undefined; //there's nothing we can do when nothing arrives!
     }
 
 
@@ -179,7 +207,7 @@ const getAttributeDoc = (structure, variantDoc, attributeName, httpRequest) =>
                 attributeValue = thisOther[requestedAttributeName]
             }
 
-            console.log("Attribute", attributeName, "found in incoming request", attributeValue);
+            console.log("getAttributeDoc: Attribute", attributeName, "found in incoming request", attributeValue);
             break;
         }
     }
@@ -331,30 +359,39 @@ const getLinkHeaderText = (docVariant, incomingRequestDigitalLinkStructure) =>
 
     console.log(docVariant);
 
-    for (const linkType of Object.keys(docVariant.responses.linktype))
+    try
     {
-        for (const language of Object.keys(docVariant.responses.linktype[linkType].lang))
-        {
-            for (const context of Object.keys(docVariant.responses.linktype[linkType].lang[language].context))
-            {
-                for (const mimeType of Object.keys(docVariant.responses.linktype[linkType].lang[language].context[context].mime_type))
-                {
-                    let { link, title } = docVariant.responses.linktype[linkType].lang[language].context[context].mime_type[mimeType];
 
-                    //test if the title passes the regex test. If so, bae64 it!
-                    if (headerCharRegex.test(title))
+        for (const linkType of Object.keys(docVariant.responses.linktype))
+        {
+            for (const language of Object.keys(docVariant.responses.linktype[linkType].lang))
+            {
+                for (const context of Object.keys(docVariant.responses.linktype[linkType].lang[language].context))
+                {
+                    for (const mimeType of Object.keys(docVariant.responses.linktype[linkType].lang[language].context[context].mime_type))
                     {
-                        title = Base64_encoding_and_decoding.encodeStringToBase64(title);
+                        let { link, title } = docVariant.responses.linktype[linkType].lang[language].context[context].mime_type[mimeType];
+
+                        //test if the title passes the regex test. If so, bae64 it!
+                        if (headerCharRegex.test(title))
+                        {
+                            title = Base64_encoding_and_decoding.encodeStringToBase64(title);
+                        }
+                        linkText += `<${link}>; rel="${linkType.replace("*", ":")}"; type="${mimeType}"; hreflang="${language}"; title="${title}", `
                     }
-                    linkText += `<${link}>; rel="${linkType.replace("*", ":")}"; type="${mimeType}"; hreflang="${language}"; title="${title}", `
                 }
             }
         }
-    }
 
-    //Remove the last two characters (the ', ') from the linkText text then return it.
-    const rebuiltRequest = reBuildOriginalRequestFromDLStructure(incomingRequestDigitalLinkStructure);
-    return linkText + `<https://id.gs1.org${rebuiltRequest}>; rel="owl:SameAs"`;
+        //Remove the last two characters (the ', ') from the linkText text then return it.
+        const rebuiltRequest = reBuildOriginalRequestFromDLStructure(incomingRequestDigitalLinkStructure);
+        return linkText + `<https://id.gs1.org${rebuiltRequest}>; rel="owl:SameAs"`;
+    }
+    catch(e)
+    {
+        console.log("getLinkHeaderText error:", e);
+        return "";
+    }
 };
 
 
@@ -373,7 +410,7 @@ const getLinkHeaderText = (docVariant, incomingRequestDigitalLinkStructure) =>
 const response_InterstitialPage = async (httpResponse, structure, resolverDBdocument, docVariant, jsonOrHtml, processStartTime) =>
 {
     let body = "";
-    //resolverDBdocument = getLinksArray(resolverDBdocument);
+    console.log("================>", docVariant, structure);
 
     const additionalHttpHeaders = {
         'Link': getLinkHeaderText(docVariant, structure),
@@ -418,6 +455,7 @@ const response_InterstitialPage = async (httpResponse, structure, resolverDBdocu
  */
 const response_NotFoundPage = async (gs1KeyCode, gs1KeyValue, httpResponse, processStartTime) =>
 {
+    console.log("response_NotFoundPage: processStartTime = ", processStartTime);
     let html = "";
     //Get the required interstitial page template by checking the identifier key
     try
