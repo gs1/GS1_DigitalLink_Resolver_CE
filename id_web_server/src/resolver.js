@@ -1,5 +1,6 @@
 const GS1DigitalLinkToolkit = require("./GS1DigitalLinkToolkit");
 const Base64_encoding_and_decoding = require("./Base64_encoding_and_decoding");
+const resolverJSON_V2 = require("./resolverJSON_V2");
 const fs = require('fs');
 const util = require('util');
 const readFilePromise = util.promisify(fs.readFile);
@@ -110,6 +111,11 @@ const processLinkTypeAll = async (httpRequest, incomingRequestDigitalLinkStructu
     if (resolverDBdocument)
     {
         const docVariant = getVariantDocument(resolverDBdocument,  incomingRequestDigitalLinkStructure.qualifiers);
+
+        if(httpRequest.url.toLowerCase().includes("json=v2"))
+        {
+            resolverDBdocument = resolverJSON_V2.convertResolverDocV1ToV2(resolverDBdocument);
+        }
 
         //From the DB, colons in linktype names are converted from * to escaped colons for responding to the client with JSON (or HTML woth JSOn embedded)
         resolverDBdocument = JSON.parse(JSON.stringify(resolverDBdocument).replace(/"gs1\*/g, '"gs1\:'));
@@ -223,12 +229,12 @@ const getVariantDocument = (doc, qualifiers) =>
     //of qualifiers.
     for (let qualifiersCountToConcatenate = qualifiers.length; qualifiersCountToConcatenate > 0; qualifiersCountToConcatenate--)
     {
+        dlQualifiersVariant = '';
         //this loops builds a specific qualifier list
-        for (let qualifier = 0; qualifier < qualifiersCountToConcatenate; qualifier++)
+        for (let thisQualifier = 0; thisQualifier < qualifiersCountToConcatenate; thisQualifier++)
         {
-            dlQualifiersVariant = '';
-            qualifierKey = Object.keys(qualifiers[qualifier])[0];
-            dlQualifiersVariant += "/" + qualifierKey + "/" + qualifiers[qualifier][qualifierKey];
+            qualifierKey = Object.keys(qualifiers[thisQualifier])[0];
+            dlQualifiersVariant += "/" + qualifierKey + "/" + qualifiers[thisQualifier][qualifierKey];
         }
 
         //test this new qualifier list to see if we get a match
@@ -323,6 +329,8 @@ const getLinkHeaderText = (docVariant, incomingRequestDigitalLinkStructure) =>
 {
     let linkText = "";
 
+    console.log(docVariant);
+
     for (const linkType of Object.keys(docVariant.responses.linktype))
     {
         for (const language of Object.keys(docVariant.responses.linktype[linkType].lang))
@@ -365,6 +373,7 @@ const getLinkHeaderText = (docVariant, incomingRequestDigitalLinkStructure) =>
 const response_InterstitialPage = async (httpResponse, structure, resolverDBdocument, docVariant, jsonOrHtml, processStartTime) =>
 {
     let body = "";
+    //resolverDBdocument = getLinksArray(resolverDBdocument);
 
     const additionalHttpHeaders = {
         'Link': getLinkHeaderText(docVariant, structure),
