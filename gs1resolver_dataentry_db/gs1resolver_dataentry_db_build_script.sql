@@ -1628,11 +1628,90 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
+
+/****** Object:  StoredProcedure [gs1resolver_dataentry_db].[BUILD_GetURIRequests]    Script Date: 06/02/2020 10:51:32 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
 /*
 *   SSMA informational messages:
 *   M2SS0003: The following SQL clause was ignored during conversion:
 *   DEFINER = `root`@`localhost`.
 */
+
+CREATE PROCEDURE [gs1resolver_dataentry_db].[BUILD_GetURIRequestsFromRequestID]
+    @var_lowest_request_id int = 0,
+    @var_max_rows_to_return int = 10000
+AS
+BEGIN
+
+    SET  XACT_ABORT  ON
+
+    SET  NOCOUNT  ON
+    /*
+    This procedure finds all Resolver records from a minimum request_id
+    and expands the search to include all instances of the same GS1 Key Code and Value (including
+    those those that don't need processing). The reason for this is because Builder recreates the
+    MongoDB Resolver Document for that GS1 Key Code and Value from scratch, thus illiminating
+    deleted or obselete instances of individual URIs no longer in the SQL database.
+
+    It's important that the returned set of rows is in gs1 key code / gs1 key value order, as
+    Builder detects the boundary between two different values and uses it to delete the MongoDB
+    record and tart rebuilding it.
+    */
+    SELECT DISTINCT TOP (@var_max_rows_to_return)
+        [gs1_key_code],
+        [gs1_key_value]
+    INTO #temp_gs1_key_codes_values
+    FROM [uri_requests]
+    WHERE uri_request_id >= @var_lowest_request_id
+    ORDER BY gs1_key_code, gs1_key_value
+
+    SELECT
+        r.uri_request_id,
+        r.member_primary_gln,
+        r.gs1_key_code,
+        r.gs1_key_value,
+        r.item_description,
+        r.date_inserted,
+        r.date_last_updated,
+        r.web_uri_prefix_1,
+        r.web_uri_suffix_1,
+        r.web_uri_prefix_2,
+        r.web_uri_suffix_2,
+        r.web_uri_prefix_3,
+        r.web_uri_suffix_3,
+        r.web_uri_prefix_4,
+        r.web_uri_suffix_4,
+        r.include_in_sitemap,
+        r.active,
+        r.flagged_for_deletion
+    FROM [gs1resolver_dataentry_db].[uri_requests] r
+             INNER JOIN #temp_gs1_key_codes_values t ON r.gs1_key_code = t.gs1_key_code AND r.gs1_key_value = t.gs1_key_value
+    ORDER BY r.gs1_key_code, r.gs1_key_value
+
+    DROP TABLE #temp_gs1_key_codes_values
+END
+GO
+
+
+CREATE PROCEDURE [gs1resolver_dataentry_db].[BUILD_GetURIRequestCountFromRequestID]
+@var_lowest_request_id int = 0
+AS
+BEGIN
+
+    SET  XACT_ABORT  ON
+
+    SET  NOCOUNT  ON
+
+    SELECT count_big(*) AS uri_request_count
+    FROM gs1resolver_dataentry_db.uri_requests
+    WHERE uri_request_id >= @var_lowest_request_id
+
+END
+GO
 
 CREATE PROCEDURE [gs1resolver_dataentry_db].[BUILD_GetURIResponses]
 @var_uri_request_id int

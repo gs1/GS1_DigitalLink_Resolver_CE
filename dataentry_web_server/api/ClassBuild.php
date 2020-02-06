@@ -25,68 +25,19 @@ class ClassBuild
      * and updates the document in the resolver's document database. Given that a resolver document has the gs1_key and value
      * at its root, several resolver SQL records may apply to a single resolver document (all SQL records sharing the
      * same key ane value). This complicates processing but makes for high speed document retrieval by the resolver itself.
+     * If the $forceFlag is set true, all resolver records are rebuilt regardless of whether or not api_builder_processed
+     * flag is set to 0 or 1 in table uri_requests.
+     * @param $forceFlag
      * @return array
      */
-    public function Build(): array
+    public function Build($forceFlag = false): array
     {
         $logArray = Array();
 
         $logArray[] = 'Starting Latest Document DB update from SQL DB ...';
 
-        //Find out how many URI requests there are
-        $uriRequestCount = $this->dbAccess->BUILD_GetURIRequestCount();
-        $logArray[] = "$uriRequestCount requests need processing....";
 
-        if ($uriRequestCount > 0)
-        {
-            $counter = 0;
-            while ($counter < $uriRequestCount)
-            {
-                //get all the URI requests we need to build:
-                $uriRequests = $this->dbAccess->BUILD_GetURIRequests();
-                $counter += count($uriRequests);
-
-                //Let's go through each request that requires building:
-                $previousGS1Key = 'X';
-                $previousGS1Value = 'X';
-
-                foreach ($uriRequests as $uriRequest)
-                {
-                    //Make sure that gs1_key_code and gs1_key_value are trim()med
-                    $uriRequest['gs1_key_code'] = trim($uriRequest['gs1_key_code']);
-                    $uriRequest['gs1_key_value'] = trim($uriRequest['gs1_key_value']);
-
-                    //If the GS1 Key Code and Value are NOT the same as the previous entry in the foreach()
-                    //list being processed, then set a flag indicating that the next Key Code/Value has been
-                    //found. This will be used later to delete the MongoDB record and start it from scratch.
-                    if ($uriRequest['gs1_key_code'] === $previousGS1Key && $uriRequest['gs1_key_value'] === $previousGS1Value)
-                    {
-                        $nextGS1KeyCodeAndValueFoundFlag = false;
-                    }
-                    else
-                    {
-                        $nextGS1KeyCodeAndValueFoundFlag = true;
-                        $previousGS1Key = $uriRequest['gs1_key_code'];
-                        $previousGS1Value = $uriRequest['gs1_key_value'];
-                    }
-
-
-                    if ($uriRequest['flagged_for_deletion'] === 0)
-                    {
-                        $this->BUILD_UriRecord($uriRequest, $nextGS1KeyCodeAndValueFoundFlag);
-                    }
-                    else
-                    {
-                        $mongoDbRecord = array();
-                        $mongoDbRecord['_id'] = '/' . $this->classAITable->lookupAICodeFromAIShortCode($uriRequest['gs1_key_code']) . '/' . $uriRequest['gs1_key_value'];
-                        $this->mongoDbClient->deleteURIRecord($mongoDbRecord);
-
-                        $this->dbAccess->BUILD_DeleteUriRecord($uriRequest['uri_request_id']);
-                        $this->dbAccess->BUILD_SetToRequireRebuild($uriRequest['gs1_key_code'], $uriRequest['gs1_key_value']);
-                    }
-                }
-            }
-        }
+        $logArray[] = $this->BUILD_URI_Entries($forceFlag);
 
         $logArray[] = "Processing GCP Resolves" . PHP_EOL;
         $this->BUILD_GCP_Resolves();
@@ -98,6 +49,98 @@ class ClassBuild
         return $logArray;
     }
 
+    /**
+     * This function controls the building of all the URI entries
+     * @param $forceFlag
+     * @return array
+     */
+    private function BUILD_URI_Entries($forceFlag) : array
+    {
+        $finishFlag = false;
+        $nextRequestIdInBatch = 0;
+        $logArray[] = "Processing URI Entries" . PHP_EOL;
+
+        while(!$finishFlag)
+        {
+            //Find out how many URI requests there are
+            if($forceFlag)
+            {
+                $uriRequestCount = $this->dbAccess->BUILD_GetURIRequestCountFromRequestId($nextRequestIdInBatch);
+            }
+            else
+            {
+                $uriRequestCount = $this->dbAccess->BUILD_GetURIRequestCount();
+            }
+            $logArray[] = "$uriRequestCount URI requests need processing in this batch....";
+
+            if ($uriRequestCount > 0)
+            {
+                $counter = 0;
+                while ($counter < $uriRequestCount)
+                {
+                    //get all the URI requests we need to build:
+                    if ($forceFlag)
+                    {
+                        $uriRequests = $this->dbAccess->BUILD_GetURIRequestsFromRequestID(0, 10000);
+                    }
+                    else
+                    {
+                        $uriRequests = $this->dbAccess->BUILD_GetURIRequests(10000);
+                    }
+                    $counter += count($uriRequests);
+
+                    //Let's go through each request that requires building:
+                    $previousGS1Key = 'X';
+                    $previousGS1Value = 'X';
+
+                    foreach ($uriRequests as $uriRequest)
+                    {
+                        //Make sure that gs1_key_code and gs1_key_value are trim()med
+                        $uriRequest['gs1_key_code'] = trim($uriRequest['gs1_key_code']);
+                        $uriRequest['gs1_key_value'] = trim($uriRequest['gs1_key_value']);
+
+                        //If the GS1 Key Code and Value are NOT the same as the previous entry in the foreach()
+                        //list being processed, then set a flag indicating that the next Key Code/Value has been
+                        //found. This will be used later to delete the MongoDB record and start it from scratch.
+                        if ($uriRequest['gs1_key_code'] === $previousGS1Key && $uriRequest['gs1_key_value'] === $previousGS1Value)
+                        {
+                            $nextGS1KeyCodeAndValueFoundFlag = false;
+                        }
+                        else
+                        {
+                            $nextGS1KeyCodeAndValueFoundFlag = true;
+                            $previousGS1Key = $uriRequest['gs1_key_code'];
+                            $previousGS1Value = $uriRequest['gs1_key_value'];
+                        }
+
+                        if ($uriRequest['flagged_for_deletion'] === 0)
+                        {
+                            $this->BUILD_UriRecord($uriRequest, $nextGS1KeyCodeAndValueFoundFlag);
+                        }
+                        else
+                        {
+                            $mongoDbRecord = array();
+                            $mongoDbRecord['_id'] = '/' . $this->classAITable->lookupAICodeFromAIShortCode($uriRequest['gs1_key_code']) . '/' . $uriRequest['gs1_key_value'];
+
+                            //Deletes the record from MongoDB
+                            $this->mongoDbClient->deleteURIRecord($mongoDbRecord);
+
+                            //THEN deletes the record from SQL database
+                            $this->dbAccess->BUILD_DeleteUriRecord($uriRequest['uri_request_id']);
+                            $this->dbAccess->BUILD_SetToRequireRebuild($uriRequest['gs1_key_code'], $uriRequest['gs1_key_value']);
+                        }
+                        //IMPORTANT! The next request is set here so that we take the next request id (thus +1)
+                        $nextRequestIdInBatch = $uriRequest['uri_request_id'] + 1;
+                    }
+                }
+            }
+            else
+            {
+                $finishFlag = true;
+            }
+        }
+        return $logArray;
+    }
 
     private function BUILD_UriRecord($uriRequest, $nextGS1KeyCodeAndValueFoundFlag)
     {
@@ -201,7 +244,14 @@ class ClassBuild
         foreach ($linkTypesArray as $linkType)
         {
             $linkTypeWord = str_replace('https://gs1.org/voc/', '', $linkType['linktype_reference_url']);
-            $wellKnownDocument->{'activeLinkTypes'}->{$linkType['locale']}->{$linkTypeWord}->{'title'} = $linkType['linktype_name'];
+            if(!isset($linkType['linktype_name']) || $linkType['linktype_name'] === null)
+            {
+                $wellKnownDocument->{'activeLinkTypes'}->{$linkType['locale']}->{$linkTypeWord}->{'title'} = '()';
+            }
+            else
+            {
+                $wellKnownDocument->{'activeLinkTypes'}->{$linkType['locale']}->{$linkTypeWord}->{'title'} = $linkType['linktype_name'];
+            }
             $wellKnownDocument->{'activeLinkTypes'}->{$linkType['locale']}->{$linkTypeWord}->{'description'} = $linkType['description'];
             $wellKnownDocument->{'activeLinkTypes'}->{$linkType['locale']}->{$linkTypeWord}->{'gs1key'} = $linkType['applicable_gs1_key_code'];
         }

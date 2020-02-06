@@ -34,7 +34,7 @@ else
     $rawInput = file_get_contents('php://input');
     try
     {
-        //DEBUG: $classDBAccess->logThis('$rawInput: ' . print_r($rawInput, true)) ;
+        $classDBAccess->logThis('$rawInput: ' . print_r($rawInput, true)) ;
         $resolver = json_decode($rawInput);
     }
     catch(Exception $e)
@@ -406,7 +406,20 @@ if(isset($resolver))
         if(isset($resolver->build_auth_key) && $resolver->build_auth_key === $ini['build_auth_key'])
         {
             $classBuild = new ClassBuild();
-            $result = $classBuild->Build();
+            $result = $classBuild->Build(false);
+        }
+        else
+        {
+            $result['STATUS'] = "Incorrect auth key - build not allowed";
+        }
+    }
+    elseif ($resolver->command === 'forcebuild')
+    {
+        $ini = parse_ini_file('/var/www/config/api.ini');
+        if(isset($resolver->build_auth_key) && $resolver->build_auth_key === $ini['build_auth_key'])
+        {
+            $classBuild = new ClassBuild();
+            $result = $classBuild->Build(true);
         }
         else
         {

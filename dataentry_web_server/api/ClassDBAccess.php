@@ -1378,9 +1378,26 @@ class ClassDBAccess
         return -1; //denotes error
     }
 
-    public function BUILD_GetURIRequests()
+    public function BUILD_GetURIRequestCountFromRequestId($minRequestId)
     {
-        $sql = 'EXEC [gs1resolver_dataentry_db].[BUILD_GetURIRequests] 10000';
+        $sql = "EXEC [gs1resolver_dataentry_db].[BUILD_GetURIRequestCountFromRequestID] $minRequestId";
+        $result = $this->DBSelect($sql);
+        if(isset($result[0]['uri_request_count']))
+        {
+            return (int)$result[0]['uri_request_count'];
+        }
+        return -1; //denotes error
+    }
+
+    public function BUILD_GetURIRequests($maxRequestsToReturn)
+    {
+        $sql = "EXEC [gs1resolver_dataentry_db].[BUILD_GetURIRequests] $maxRequestsToReturn";
+        return $this->DBSelect($sql);
+    }
+
+    public function BUILD_GetURIRequestsFromRequestID($minRequestId, $maxRequestsToReturn)
+    {
+        $sql = "EXEC [gs1resolver_dataentry_db].[BUILD_GetURIRequestsFromRequestID] $minRequestId, $maxRequestsToReturn";
         return $this->DBSelect($sql);
     }
 
