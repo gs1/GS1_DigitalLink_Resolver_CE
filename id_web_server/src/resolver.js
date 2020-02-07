@@ -385,7 +385,7 @@ const getLinkHeaderText = (docVariant, incomingRequestDigitalLinkStructure) =>
 
         //Remove the last two characters (the ', ') from the linkText text then return it.
         const rebuiltRequest = reBuildOriginalRequestFromDLStructure(incomingRequestDigitalLinkStructure);
-        return linkText + `<https://id.gs1.org${rebuiltRequest}>; rel="owl:SameAs"`;
+        return linkText + `<https://id.gs1.org${rebuiltRequest}>; rel="owl:sameAs"`;
     }
     catch(e)
     {
