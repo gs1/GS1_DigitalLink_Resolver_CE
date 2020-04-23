@@ -1,0 +1,15 @@
+secretGenerator:
+  - name: sqldbconn
+    literals:
+      - user=sa
+      - password=its@SECR3T!
+      - server=resolver-sql-service
+      - database=gs1-resolver-ce-v2-db
+
+resources:
+  - k8s/resolver-sql-server.yaml
+  - k8s/build-sync-server.yaml
+  - k8s/frontend-proxy-server.yaml
+  - k8s/resolver-data-entry-server.yaml
+  - k8s/resolver-mongo-server.yaml
+  - k8s/resolver-web-server.yaml

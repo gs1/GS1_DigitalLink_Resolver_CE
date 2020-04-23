@@ -1,0 +1,15 @@
+{
+  "name": "build_sync_server",
+  "version": "1.0.0",
+  "description": "This server reviews changes made to dataentry database and applied the changes to the local MongoDB database",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Nick Lansley",
+  "license": "ISC",
+  "dependencies": {
+    "mongodb": "^3.5.2",
+    "mssql": "^6.0.1"
+  }
+}

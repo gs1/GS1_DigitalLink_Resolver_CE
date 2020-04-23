@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GS1 Resolver - Download Your Data</title>
+    <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+    <script src="javascripts/GS1DigitalLinkToolkit.js"></script>
+    <script src="javascripts/download.js"></script>
+</head>
+<body>
+<h1>GS1 Resolver - Download Your Data</h1>
+<div>Please paste your authentication key here: <input type="text" id="authKey"></div>
+<br/>
+<div>
+    <button id="buttonDownload" onclick="downloadData();">Download Data Now</button>
+    <hr />
+    <div id="divStatus"></div>
+    <div id="divDownload" style="visibility: hidden">
+        <a id="downloadLink" download="resolverdata.csv" href="">Download as Text (CSV) File</a>
+    </div>
+</div>
+<p><a href="index.html">Back to the home page</a></p>
+</body>
+</html>

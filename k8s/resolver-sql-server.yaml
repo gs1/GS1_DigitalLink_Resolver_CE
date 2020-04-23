@@ -1,0 +1,99 @@
+# Mongo database application
+apiVersion: v1
+kind: Service
+metadata:
+  name: resolver-sql-service
+  labels:
+    app: resolver-sql-server
+    tier: sqldb
+spec:
+  type: ClusterIP
+  ports:
+    - port: 1433
+      protocol: TCP
+  selector:
+    app: resolver-sql-server
+    tier: sqldb
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: resolver-document-pv-claim
+  labels:
+    app: resolver-sql-server
+    tier: sqldb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resolver-mongo-server
+  labels:
+    app: resolver-sql-server
+    tier: sqldb
+spec:
+  selector:
+    matchLabels:
+      app: resolver-sql-server
+      tier: sqldb
+  template:
+    metadata:
+      labels:
+        app: resolver-sql-server
+        tier: sqldb
+    spec:
+      containers:
+        - name: resolver-sql-server
+          image: <container repository>/<image name>:<version>
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SQLDBCONN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: sqldbconn
+                  key: user
+            - name: SQLDBCONN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sqldbconn
+                  key: password
+            - name: SQLDBCONN_SERVER
+              valueFrom:
+                secretKeyRef:
+                  name: sqldbconn
+                  key: server
+            - name: SQLDBCONN_DB
+              valueFrom:
+                secretKeyRef:
+                  name: sqldbconn
+                  key: database
+
+          ports:
+            - containerPort: 1433
+          volumeMounts:
+            - name: resolver-sql-server-volume-db-data
+              mountPath: /var/opt/mssql/data
+            - name: resolver-sql-server-volume-db-log
+              mountPath: /var/opt/mssql/log
+            - name: resolver-sql-server-volume-db-secrets
+              mountPath: /var/opt/mssql/secrets
+            - name: resolver-sql-server-dbbackup-volume
+              mountPath: /dbbackup
+      volumes:
+        - name: resolver-sql-server-volume-db-data
+          persistentVolumeClaim:
+            claimName: resolver-sql-pv-claim
+        - name: resolver-sql-server-volume-db-log
+          persistentVolumeClaim:
+            claimName: resolver-sql-pv-claim
+        - name: resolver-sql-server-volume-db-secrets
+          persistentVolumeClaim:
+            claimName: resolver-sql-pv-claim
+        - name: resolver-sql-server-dbbackup-volume
+          persistentVolumeClaim:
+            claimName: resolver-sql-pv-claim

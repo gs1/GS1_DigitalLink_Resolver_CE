@@ -1,0 +1,180 @@
+{
+  "_id": "gs1resolver.json",
+  "name": "The GS1 AISBL Resolver",
+  "resolverRoot": "https://id.gs1.org",
+  "supportedLinkType": [
+    {
+      "namespace": "http://gs1.org/voc/",
+      "prefix": "gs1:"
+    },
+    {
+      "namespace": "http://schema.org/",
+      "prefix": "schema:"
+    }
+  ],
+  "supportedPrimaryKeys": [
+    "all"
+  ],
+  "supportedContextValuesEnumerated": [
+    "dscsaSaleableReturn"
+  ],
+  "supportedContextValuesExternal": [
+    {
+      "nameOfList": "ISO-3166 Alpha-2",
+      "url": "https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes"
+    }
+  ],
+  "linkTypeDefaultCanBeAll": true,
+  "contact": {
+    "fn": "GS1 AISBL",
+    "hasAddress": {
+      "streetAddress": "Avenue Louise 326",
+      "locality": "Brussels",
+      "country-name": "Belgium",
+      "postal-code": "1050"
+    },
+    "hasTelephone": "tel:+32 2 788 78 00"
+  },
+  "supportsLanguageVariants": true,
+  "supportsSemanticInterpretation": true,
+  "validatesAIcombinations": true,
+  "activeLinkTypes": {
+    "en-GB": {
+      "activityIdeas": {
+        "title": "Activity ideas",
+        "description": "Ideas for using the product, particularly with children.",
+        "gs1key": "gtin"
+      },
+      "consumerHandlingStorageInfo": {
+        "title": "Consumer handling and storage information",
+        "description": "A link to information about safe handling and storage of the product.",
+        "gs1key": "gtin"
+      },
+      "epcis": {
+        "title": "EPCIS repository",
+        "description": "A link to an EPCIS repository of visibility event data.",
+        "gs1key": "gtin"
+      },
+      "faqs": {
+        "title": "FAQs",
+        "description": "A link to a set of frequently asked questions.",
+        "gs1key": "gtin"
+      },
+      "ingredientsInfo": {
+        "title": "Ingredients information",
+        "description": "A document providing facts about the product's ingredients.",
+        "gs1key": "gtin"
+      },
+      "instructions": {
+        "title": "Instructions",
+        "description": "A document, video or graphic that provides instructions related to the item, including assembly instructions, usage tips etc.",
+        "gs1key": "gtin"
+      },
+      "masterData": {
+        "title": "Master data",
+        "description": "A link to a source of structured master data for the entity. This is typically for B2B applications, rather than for consumers, and likely to be subject to access control.",
+        "gs1key": "gtin"
+      },
+      "brandHomepagePatient": {
+        "title": "More information for patients about this brand",
+        "description": "Link to a brand presence aimed at patients.",
+        "gs1key": "gtin"
+      },
+      "brandHomepageClinical": {
+        "title": "More information for professionals about this bran",
+        "description": "Link to brand presence aimed at clinical professionals.",
+        "gs1key": "gtin"
+      },
+      "nutritionalInfo": {
+        "title": "Nutritional information",
+        "description": "A document providing nutritional facts about the product.",
+        "gs1key": "gtin"
+      },
+      "epil": {
+        "title": "Patient information",
+        "description": "Link to an electronic patient information leaflet.",
+        "gs1key": "gtin"
+      },
+      "pip": {
+        "title": "Product information page",
+        "description": "A document that provides information about the identified item, typically operated by the brand owner or a retailer of the product. It may include links to further information, product description, specifications etc. N.B. The page may be human or machine readable, or a combination of the two (such as an HTML page with embedded structured data).",
+        "gs1key": "gtin"
+      },
+      "promotion": {
+        "title": "Promotion",
+        "description": "A link to a promotion for the product.",
+        "gs1key": "gtin"
+      },
+      "recallStatus": {
+        "title": "Recall status",
+        "description": "A link to information about whether the product has been recalled or not, typically an API.",
+        "gs1key": "gtin"
+      },
+      "recipeInfo": {
+        "title": "Recipe website",
+        "description": "A link to a recipe website for the product.",
+        "gs1key": "gtin"
+      },
+      "relatedVideo": {
+        "title": "Related Video",
+        "description": "A link to a related Video (or the web UI  within which the video is embedded)",
+        "gs1key": "gtin"
+      },
+      "hasRetailers": {
+        "title": "Retailers",
+        "description": "A link to a list of retailers for this item",
+        "gs1key": "gtin"
+      },
+      "review": {
+        "title": "Review",
+        "description": "A link to one or more reviews of the product or service.",
+        "gs1key": "gtin"
+      },
+      "safetyInfo": {
+        "title": "Safety information",
+        "description": "A document, video or graphic that provides safety information about the item",
+        "gs1key": "gtin"
+      },
+      "serviceInfo": {
+        "title": "Service information",
+        "description": "A document that provides service or maintenance instructions for the item.",
+        "gs1key": "gtin"
+      },
+      "smartLabel": {
+        "title": "SmartLabel",
+        "description": "A link to the product's SmartLabel page.",
+        "gs1key": "gtin"
+      },
+      "socialMedia": {
+        "title": "Social media",
+        "description": "A link to a social media channel. The title will typically be replaced by the name of the channel.",
+        "gs1key": "gtin"
+      },
+      "smpc": {
+        "title": "Summary product characteristics (SmPC)",
+        "description": "Link to Summary Product Characteristics for healthcare professionals.",
+        "gs1key": "gtin"
+      },
+      "support": {
+        "title": "Support",
+        "description": "A link to a source of support such as a helpdesk, chat support, email etc.",
+        "gs1key": "gtin"
+      },
+      "productSustainabilityInfo": {
+        "title": "sustainability and recycling",
+        "description": "Information about the productís sustainability of manufacture, recycling information etc.",
+        "gs1key": "gtin"
+      },
+      "traceability": {
+        "title": "Traceability information",
+        "description": "A link to traceability information about the product.",
+        "gs1key": "gtin"
+      },
+      "tutorial": {
+        "title": "Tutorial",
+        "description": "A link to a tutorial or set of tutorials, such as online classes, how-to videos etc.",
+        "gs1key": "gtin"
+      }
+    }
+  }
+}

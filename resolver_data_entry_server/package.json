@@ -1,0 +1,22 @@
+{
+  "name": "resolver-data-entry-server",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./bin/www",
+  "scripts": {
+    "start": "node ./bin/www"
+  },
+  "author": "Nick Lansley",
+  "license": "ISC",
+  "dependencies": {
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "express": "~4.16.1",
+    "http-errors": "~1.6.3",
+    "http-status-codes": "^1.4.0",
+    "jade": "~1.11.0",
+    "morgan": "~1.9.1",
+    "mssql": "^6.2.0",
+    "node-fetch": "^2.6.0"
+  }
+}

@@ -1,0 +1,67 @@
+# Mongo database application
+apiVersion: v1
+kind: Service
+metadata:
+  name: resolver-mongo-service
+  labels:
+    app: resolver-mongo-server
+    tier: mongodb
+spec:
+  type: ClusterIP
+  ports:
+    - port: 27017
+      protocol: TCP
+  selector:
+    app: resolver-mongo-server
+    tier: mongodb
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: resolver-document-pv-claim
+  labels:
+    app: resolver-mongo-server
+    tier: mongodb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resolver-mongo-server
+  labels:
+    app: resolver-mongo-server
+    tier: mongodb
+spec:
+  selector:
+    matchLabels:
+      app: resolver-mongo-server
+      tier: mongodb
+  template:
+    metadata:
+      labels:
+        app: resolver-mongo-server
+        tier: mongodb
+    spec:
+      containers:
+        - name: resolver-mongo-server
+          image: <container repository>/<image name>:<version>
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: gs1resolver
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: gs1resolver
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: resolver-document-volume
+              mountPath: /data/db
+      volumes:
+        - name: resolver-document-volume
+          persistentVolumeClaim:
+            claimName: resolver-document-pv-claim

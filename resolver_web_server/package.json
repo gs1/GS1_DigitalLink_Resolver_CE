@@ -1,0 +1,22 @@
+{
+  "name": "gs1_digitallink_resolver_id_gs1_org",
+  "version": "1.0.0",
+  "description": "GS1 Digital Link Resolver Service",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node_modules/.bin/nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Nick Lansley",
+  "license": "ISC",
+  "dependencies": {
+    "http-status-codes": "^1.4.0",
+    "mongodb": "^3.5.0",
+    "node-fetch": "^2.6.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.9"
+  }
+}

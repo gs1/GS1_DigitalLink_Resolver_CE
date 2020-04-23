@@ -1,0 +1,72 @@
+# Frontend proxy server routing traffic to various container based on certain rules in nginx.conf
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: frontend-proxy-server-service
+  labels:
+    app: frontend-proxy-server
+    tier: frontend
+
+spec:
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: frontendproxy
+  selector:
+    app: frontend-proxy-server
+    tier: frontend
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: frontend-proxy-server-deployment
+  labels:
+    app: frontend-proxy-server
+    tier: frontend
+
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend-proxy-server
+      tier: frontend
+
+  template:
+    metadata:
+      labels:
+        app: frontend-proxy-server
+        tier: frontend
+
+    spec:
+      containers:
+        - name: frontend-proxy-server
+          image: <container repository>/<image name>:<version>
+          ports:
+            - containerPort: 80
+              name: frontendproxy
+
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-proxy-server-hpa
+  namespace: default
+spec:
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - resource:
+        name: cpu
+        target:
+          averageUtilization: 50
+          type: Utilization
+      type: Resource
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend-proxy-server-service

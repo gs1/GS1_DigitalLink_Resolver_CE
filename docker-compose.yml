@@ -1,0 +1,117 @@
+version: "3.6"
+
+services:
+  resolver-mongo-server:
+    build: './resolver_mongo_server'
+    container_name: resolver-mongo-server
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - resolver-document-volume:/data/db
+    networks:
+      - resolver-internal-network
+
+  resolver-sql-server:
+    build: './resolver_sql_server'
+    container_name: resolver-sql-server
+    ports:
+      - "1433:1433"
+    volumes:
+      - resolver-sql-server-volume-db-data:/var/opt/mssql/data
+      - resolver-sql-server-volume-db-log:/var/opt/mssql/log
+      - resolver-sql-server-volume-db-secrets:/var/opt/mssql/secrets
+      - resolver-sql-server-dbbackup-volume:/dbbackup
+    restart: always
+    networks:
+      - resolver-internal-network
+
+  build-sync-server:
+    build: './build_sync_server'
+    container_name: build_sync_server
+    depends_on:
+      - resolver-mongo-server
+    restart: always
+    networks:
+      - resolver-internal-network
+
+  resolver-data-entry-server:
+    build: './resolver_data_entry_server'
+    container_name: resolver-data-entry-server
+    depends_on:
+      - resolver-mongo-server
+    restart: always
+    networks:
+      - resolver-internal-network
+
+
+  resolver1-web-server:
+    build: './resolver_web_server'
+    container_name: resolver1-web-server
+    depends_on:
+      - resolver-mongo-server
+    restart: always
+    networks:
+      - resolver-internal-network
+
+  resolver2-web-server:
+    build: './resolver_web_server'
+    container_name: resolver2-web-server
+    depends_on:
+      - resolver-mongo-server
+    restart: always
+    networks:
+      - resolver-internal-network
+
+  resolver3-web-server:
+    build: './resolver_web_server'
+    container_name: resolver3-web-server
+    depends_on:
+      - resolver-mongo-server
+    restart: always
+    networks:
+      - resolver-internal-network
+
+  resolver4-web-server:
+    build: './resolver_web_server'
+    container_name: resolver4-web-server
+    depends_on:
+      - resolver-mongo-server
+    restart: always
+    networks:
+      - resolver-internal-network
+
+  resolver5-web-server:
+    build: './resolver_web_server'
+    container_name: resolver5-web-server
+    depends_on:
+      - resolver-mongo-server
+    restart: always
+    networks:
+      - resolver-internal-network
+
+  frontend-proxy-server:
+    build: './frontend_proxy_server'
+    container_name: frontend-proxy-server
+    depends_on:
+      - resolver1-web-server
+      - resolver2-web-server
+      - resolver3-web-server
+      - resolver4-web-server
+      - resolver5-web-server
+    restart: always
+    ports:
+      - "8080:80"
+    networks:
+      - resolver-internal-network
+
+networks:
+  resolver-internal-network:
+    name: resolver-internal-network
+
+volumes:
+  resolver-document-volume: {}
+  resolver-sql-server-volume-db-data: {}
+  resolver-sql-server-volume-db-log: {}
+  resolver-sql-server-volume-db-secrets: {}
+  resolver-sql-server-dbbackup-volume: {}

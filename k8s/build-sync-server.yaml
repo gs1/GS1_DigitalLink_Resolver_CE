@@ -1,0 +1,85 @@
+# This server takes changes found in SQL Server DB and applies them to Mongo DB
+# in a fast to retrieve and efficient to process form.
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: build-sync-service
+  labels:
+    app: build-sync-service
+    tier: buildsync
+
+spec:
+  type: ClusterIP
+
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: buildsyncsvr
+
+  selector:
+    app: build-sync-service
+    tier: buildsync
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: build-sync-server-deployment
+  labels:
+    app: build-sync-service
+    tier: buildsync
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: build-sync-service
+      tier: buildsync
+
+  template:
+    metadata:
+      labels:
+        app: build-sync-service
+        tier: buildsync
+
+    spec:
+      containers:
+        - name: build-sync-server
+          image: <container repository>/<image name>:<version>
+          imagePullPolicy: IfNotPresent
+
+          env:
+            - name: MONGODBCONN
+              value: "mongodb://gs1resolver:gs1resolver@resolver-mongo-service"
+            - name: SQLDBCONN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: sqldbconn
+                  key: user
+            - name: SQLDBCONN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sqldbconn
+                  key: password
+            - name: SQLDBCONN_SERVER
+              valueFrom:
+                secretKeyRef:
+                  name: sqldbconn
+                  key: server
+            - name: SQLDBCONN_DB
+              valueFrom:
+                secretKeyRef:
+                  name: sqldbconn
+                  key: database
+            - name: SQLDB_PROCESS_BATCH_SIZE
+              value: "1000"
+            - name: BUILD_INTERVAL_SECONDS
+              value: "60"
+
+          ports:
+            - containerPort: 80
+              name: buildsyncsvr

@@ -1,0 +1,89 @@
+# resolver web server that processes digital link requests
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: id-service
+  labels:
+    app: resolver-web-server
+    tier: frontend
+
+spec:
+  type: ClusterIP
+
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: idserver
+
+  selector:
+    app: resolver-web-server
+    tier: frontend
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: resolver-web-server-deployment
+  labels:
+    app: resolver-web-server
+    tier: frontend
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: resolver-web-server
+      tier: frontend
+
+  template:
+    metadata:
+      labels:
+        app: resolver-web-server
+        tier: frontend
+    spec:
+
+      containers:
+        - name: resolver-web-server
+          image: <container repository>/<image name>:<version>
+          imagePullPolicy: IfNotPresent
+
+          env:
+            - name: MONGODBCONN
+              value: "mongodb://gs1resolver:gs1resolver@resolver-mongo-service"
+            - name: BUILDSYNCSERVICE
+              value: "build-sync-service"
+            - name: PORT
+              value: "80"
+
+          ports:
+            - containerPort: 80
+              name: idserver
+
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+
+metadata:
+  name: resolver-web-server-hpa
+  namespace: default
+
+spec:
+  minReplicas: 2
+  maxReplicas: 10
+
+  metrics:
+    - resource:
+        name: cpu
+        target:
+          averageUtilization: 50
+          type: Utilization
+      type: Resource
+
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: resolver-web-server-deployment
