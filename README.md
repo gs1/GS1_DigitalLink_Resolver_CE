@@ -4,7 +4,7 @@
 Welcome! The purpose of this repository is to provide you with the ability to build a complete resolver service that will enable you to enter information about GTINs and other GS1 keys
 and resolve (that is, redirect) web clients to their appropriate destinations.
 
-This repository consists of five projects which work together to provide the resolving service:
+This repository consists of six applications which work together to provide the resolving service:
 <table border="1">
 <tr><th>Folder Name</th><th>Project</th></tr>
 <tr><td>resolver_data_entry_server</td><td>The Data Entry service <b>dataentry-web-server</b> consisting of an API that provides controlled access to Create, Read, Update and Delete (CRUD) operations on resolver records, along with 
