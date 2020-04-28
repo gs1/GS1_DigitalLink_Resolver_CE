@@ -323,7 +323,7 @@ const buildGCPDocuments = async (gcpRedirectSet, fullBuildIfTrue) =>
             }
             else
             {
-                let updateOrDeleteFlag = requestEntry['active'];
+                let updateOrDeleteFlag = gcpRedirectEntry['active'];
                 if (updateOrDeleteFlag)
                 {
                     mongoEntry = await mongodb.updateDocumentInMongoDB(doc, "gcp");
