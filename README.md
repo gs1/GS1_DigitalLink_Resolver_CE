@@ -4,6 +4,8 @@
 Welcome! The purpose of this repository is to provide you with the ability to build a complete resolver service that will enable you to enter information about GTINs and other GS1 keys
 and resolve (that is, redirect) web clients to their appropriate destinations.
 
+<b><i>UPDATE: Kubernetes compatible! Head to the bottom of this README.md file for more info</i></b> 
+
 This repository consists of six applications which work together to provide the resolving service:
 <table border="1">
 <tr><th>Folder Name</th><th>Project</th></tr>
@@ -138,3 +140,12 @@ docker volume rm gs1resolvercommunityeditionv20_resolver-sql-server-dbbackup-vol
 
 If the above volume are the ony ones in your Docker Engine then it's quicker to type:<pre>docker volume ls </pre> to confirm, then to delete all the volumes type:<pre>docker volume prune </pre> 
 
+###Fast Start: Kubernetes (Beta)
+#####DISCLAIMER: These Kubernetes YAML scripts are currently under test and experimentation to get the best results. Be careful if you run these scripts on a cloud service as it could cause them to create costly resources. You need to be skilled and experienced with Kubernetes to continue!
+The service is now ready for use with Kubernetes clusters. The container images are now maintained on Docker Hub and
+the supplied YAML files in this repository will get you up and running quickly.
+
+1. Make sure you are pointing at the correct K8s cluster context:<pre>docker context ls</pre> 
+1. Run this command to get your cluster to install the images and build the complete K8s application:<pre>kubectl apply -k ./
+1. Once your cluster is up and running, you will need to run the SQL script to create the database with some example data. To do this, you need to find the SQL Server pod:<pre>kubectl get pods</pre>...and locate a pod with 'sql-server' in its name, then use that name in this command:<pre>kubectl exec -it  POD_name_containing_sql-server /bin/bash</pre>
+...then once you have a command prompt inside the pod:<pre>/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P its@SECR3T! -i  /gs1resolver_sql_scripts/sqldb_create_script.sql</pre>... and once that script has completed, exit the pod with:<pre>exit</pre>

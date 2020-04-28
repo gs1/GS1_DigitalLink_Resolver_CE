@@ -49,7 +49,7 @@ spec:
     spec:
       containers:
         - name: resolver-sql-server
-          image: <container repository>/<image name>:<version>
+          image: nicklansley/gs1_digitallink_resolver_ce_resolver-sql-server:v2.0.0
           imagePullPolicy: IfNotPresent
           env:
             - name: SQLDBCONN_USER
@@ -72,7 +72,16 @@ spec:
                 secretKeyRef:
                   name: sqldbconn
                   key: database
-
+            - name: TZ
+              value: "Europe/London"
+            - name: MSSQL_PID
+              value: "Express"
+            - name: MSSQL_LCID
+              value: "1033"
+            - name: MSSQL_MEMORY_LIMIT_MB
+              value: "1024"
+            - name: MSSQL_AGENT_ENABLED
+              value: "true"
           ports:
             - containerPort: 1433
           volumeMounts:

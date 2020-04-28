@@ -48,7 +48,7 @@ spec:
 
       containers:
         - name: resolver-web-server
-          image: <container repository>/<image name>:<version>
+          image: nicklansley/gs1_digitallink_resolver_ce_resolver-web-server:v2.0.0
           imagePullPolicy: IfNotPresent
 
           env:
