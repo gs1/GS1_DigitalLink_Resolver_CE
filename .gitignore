@@ -1,0 +1,5 @@
+# Created by .ignore support plugin (hsz.mobi)
+.gitignore
+resolver_data_entry_server/node_modules/
+resolver_web_server/node_modules/
+build_sync_server/node_modules/

@@ -14,7 +14,7 @@
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
     "http-status-codes": "^1.4.0",
-    "jade": "~1.11.0",
+    "pug": "^2.0.4",
     "morgan": "~1.9.1",
     "mssql": "^6.2.0",
     "node-fetch": "^2.6.0"
