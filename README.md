@@ -9,7 +9,7 @@ and resolve (that is, redirect) web clients to their appropriate destinations.
 2. Code included a validateEntries() function which can be used optionally for you to add your own validation of uploaded entries before publishing.
 3. Comprehensive API with 'batch upload' facility for fast upload of large amounts of data.  
 4. Lots of optimizations, enhancements and security improvements.   
-5. Inclusion of Python Accounts Administration script program (python3.7+ and 'pip install dotmap' required)
+5. Inclusion of Python Accounts Administration script program to help you set up accounts and get your Resolver on the air (Python v3.7+ and 'pip install dotmap' required).
 
 <b><i>UPDATE: Kubernetes compatible! Head to the bottom of this README.md file for more info</i></b> 
 
@@ -47,7 +47,7 @@ before they are published. This has resulted in a data structure change that inc
 named SQL tables into which data is uploaded. A validation procvess is then kicked off which, if successful
 for each entry, copies the data into the non _prevalid suffix SQL tables.
 
-To install this new update, use the 'docker-compose build' and 'docker-compose run -d' commands over the top of your existing
+To install this new update, make sure all your data is backed up(!), then use the 'docker-compose build' and 'docker-compose run -d' commands over the top of your existing
 installation, then run the SQL create script as documented in Fast Start step 7 below. This will create a SQL database called "gs1-resolver-ce-v2-1-db" alongside
 your existing SQL database "gs1-resolver-ce-v2-db" with the updated structure. The containers point to the new SQL database but the
 Mongo database is unchanged and will continue serving existing data. You will have an extra step of copying data
