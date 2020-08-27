@@ -44,7 +44,7 @@ using the older v1.x service and transition to this version as soon as possible.
 The main upgrade of the service is to resolver_data_entry_server which has been upgraded to support batch
 uploading of data and a validation process which you can optionally harness to check uploaded entries 
 before they are published. This has resulted in a data structure change that includes '_prevalid' suffix
-named SQL tables into which data is uploaded. A validation procvess is then kicked off which, if successful
+named SQL tables into which data is uploaded. A validation process is then kicked off which, if successful
 for each entry, copies the data into the non _prevalid suffix SQL tables.
 
 To install this new update, make sure all your data is backed up(!), then use the 'docker-compose build' and 'docker-compose run -d' commands over the top of your existing
