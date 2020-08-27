@@ -1,7 +1,7 @@
 version: "3.6"
 
 services:
-  resolver-mongo-server:
+  resolver-mongo-service:
     build: './resolver_mongo_server'
     container_name: resolver-mongo-server
     restart: always
@@ -26,82 +26,41 @@ services:
     networks:
       - resolver-internal-network
 
-  build-sync-server:
+  build-sync-service:
     build: './build_sync_server'
-    container_name: build_sync_server
+    container_name: build-sync-server
     depends_on:
-      - resolver-mongo-server
+      - resolver-mongo-service
     restart: always
     networks:
       - resolver-internal-network
 
-  resolver-data-entry-server:
+  data-entry-service:
     build: './resolver_data_entry_server'
     container_name: resolver-data-entry-server
     depends_on:
-      - resolver-mongo-server
+      - resolver-mongo-service
     restart: always
     networks:
       - resolver-internal-network
 
-
-  resolver1-web-server:
+  id-service:
     build: './resolver_web_server'
-    container_name: resolver1-web-server
+    container_name: resolver-web-server
     depends_on:
-      - resolver-mongo-server
+      - resolver-mongo-service
     restart: always
     networks:
       - resolver-internal-network
 
-  resolver2-web-server:
-    build: './resolver_web_server'
-    container_name: resolver2-web-server
-    depends_on:
-      - resolver-mongo-server
-    restart: always
-    networks:
-      - resolver-internal-network
-
-  resolver3-web-server:
-    build: './resolver_web_server'
-    container_name: resolver3-web-server
-    depends_on:
-      - resolver-mongo-server
-    restart: always
-    networks:
-      - resolver-internal-network
-
-  resolver4-web-server:
-    build: './resolver_web_server'
-    container_name: resolver4-web-server
-    depends_on:
-      - resolver-mongo-server
-    restart: always
-    networks:
-      - resolver-internal-network
-
-  resolver5-web-server:
-    build: './resolver_web_server'
-    container_name: resolver5-web-server
-    depends_on:
-      - resolver-mongo-server
-    restart: always
-    networks:
-      - resolver-internal-network
-
-  frontend-proxy-server:
+  frontend-proxy-service:
     build: './frontend_proxy_server'
     container_name: frontend-proxy-server
     depends_on:
-      - resolver1-web-server
-      - resolver2-web-server
-      - resolver3-web-server
-      - resolver4-web-server
-      - resolver5-web-server
+      - id-service
     restart: always
     ports:
-      - "8080:80"
+      - "80:80"
     networks:
       - resolver-internal-network
 

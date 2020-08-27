@@ -1,7 +1,7 @@
 const GS1DigitalLinkToolkit = require("./GS1DigitalLinkToolkit");
 const Base64_encoding_and_decoding = require("./Base64_encoding_and_decoding");
 const resolverJSON_V2 = require("./resolverJSON_V2");
-const resolverutils = require("./resolver_utils");
+const db = require('./db');
 const HttpStatus = require('http-status-codes');
 const fetch = require('node-fetch');
 const fs = require('fs');
@@ -9,6 +9,8 @@ const util = require('util');
 const readFilePromise = util.promisify(fs.readFile);
 
 const headerCharRegex = /[^\t\x20-\x7e\x80-\xff]/;
+const gs1dlt = new GS1DigitalLinkToolkit();
+
 
 /**
  * getDigitalLinkStructure calls into the GS1 DigitalInk Toolkit library and
@@ -20,7 +22,6 @@ const headerCharRegex = /[^\t\x20-\x7e\x80-\xff]/;
  */
 const getDigitalLinkStructure = (uri) =>
 {
-    let gs1dlt = new GS1DigitalLinkToolkit();
     try
     {
         const structuredObject = gs1dlt.analyseURI(uri, true).structuredOutput;
@@ -32,7 +33,7 @@ const getDigitalLinkStructure = (uri) =>
         let errorObject = {};
         errorObject.result = "ERROR";
         errorObject.error = err.toString();
-        resolverutils.logThis(`getDigitalLinkStructure error:" ${errorObject.error}`);
+        console.log(`getDigitalLinkStructure error:" ${errorObject.error}`);
         return errorObject;
     }
 };
@@ -48,8 +49,8 @@ const getDigitalLinkStructure = (uri) =>
  */
 const processSpecificLinkType = (httpRequest, incomingRequestDigitalLinkStructure, resolverDBdocument, httpResponse, processStartTime) =>
 {
-    const gs1KeyCode = Object.keys(incomingRequestDigitalLinkStructure.identifiers[0])[0];
-    const gs1KeyValue = incomingRequestDigitalLinkStructure.identifiers[0][gs1KeyCode];
+    const identifierKeyType = Object.keys(incomingRequestDigitalLinkStructure.identifiers[0])[0];
+    const identifierKey = incomingRequestDigitalLinkStructure.identifiers[0][identifierKeyType];
 
     // STEP 1: FIND MATCHING QUALIFIERS (since there can be more than one in the same document as the resolverDBdocument presents the
     //         entire knowledge base for the this product, useful in certain scenarios.
@@ -87,25 +88,25 @@ const processSpecificLinkType = (httpRequest, incomingRequestDigitalLinkStructur
                     }
                     else
                     {
-                        response_NotFoundPage(gs1KeyCode, gs1KeyValue, httpResponse, processStartTime).then();
+                        response_NotFoundPage(identifierKeyType, identifierKey, httpResponse, processStartTime).then();
                     }
                 }
                 else
                 {
-                    response_NotFoundPage(gs1KeyCode, gs1KeyValue, httpResponse, processStartTime).then();
+                    response_NotFoundPage(identifierKeyType, identifierKey, httpResponse, processStartTime).then();
                 }
             }
             else
             {
-                response_NotFoundPage(gs1KeyCode, gs1KeyValue, httpResponse, processStartTime).then();
+                response_NotFoundPage(identifierKeyType, identifierKey, httpResponse, processStartTime).then();
             }
 
         }
         catch (error)
         {
             //Catches the no document found for further processing
-            resolverutils.logThis(`processSpecificLinkType error: ${error}`);
-            response_NotFoundPage(gs1KeyCode, gs1KeyValue, httpResponse, processStartTime);
+            console.log(`processSpecificLinkType error: ${error}`);
+            response_NotFoundPage(identifierKeyType, identifierKey, httpResponse, processStartTime);
         }
     }
 };
@@ -358,7 +359,7 @@ const getLinkHeaderText = (docVariant, incomingRequestDigitalLinkStructure) =>
     }
     catch(e)
     {
-        resolverutils.logThis(`getLinkHeaderText error: ${e}`);
+        console.log(`getLinkHeaderText error: ${e}`);
         return "";
     }
 };
@@ -403,7 +404,7 @@ const response_InterstitialPage = async (httpResponse, structure, resolverDBdocu
     }
     catch (error)
     {
-        resolverutils.logThis(`response_InterstitialPage: error is ${error}`);
+        console.log(`response_InterstitialPage: error is ${error}`);
         body =  JSON.stringify(resolverDBdocument);
         additionalHttpHeaders['Content-Type'] = 'application/json';
         resolverHTTPResponse(httpResponse, additionalHttpHeaders, body, 200, processStartTime);
@@ -413,13 +414,13 @@ const response_InterstitialPage = async (httpResponse, structure, resolverDBdocu
 
 /**
  * Returns a 404 Not Found page
- * @param gs1KeyCode
- * @param gs1KeyValue
+ * @param identifierKeyType
+ * @param identifierKey
  * @param httpResponse
  * @param processStartTime
  * @returns {Promise<string>}
  */
-const response_NotFoundPage = async (gs1KeyCode, gs1KeyValue, httpResponse, processStartTime) =>
+const response_NotFoundPage = async (identifierKeyType, identifierKey, httpResponse, processStartTime) =>
 {
     let html = "";
     //Get the required interstitial page template by checking the identifier key
@@ -429,16 +430,33 @@ const response_NotFoundPage = async (gs1KeyCode, gs1KeyValue, httpResponse, proc
 
         //Look for a specific string literal in the html with this template literals for gs1 key code and value,
         // and replace them with an appropriate message.
-        html = pageHtml.replace('{"gs1KeyCode"}', gs1KeyCode);
-        html = html.replace('{"gs1KeyValue"}', gs1KeyValue);
+        html = pageHtml.replace('{"identifierKeyType"}', `${convertAINumericToLabel(identifierKeyType)} (${identifierKeyType})`);
+        html = html.replace('{"identifierKey"}', identifierKey);
     }
     catch (e)
     {
-        html = `<h2>Item /${gs1KeyCode}/${gs1KeyValue}not found </h2>`;
-        resolverutils.logThis(`response_NotFoundPage error: ${e}`);
+        html = `<h2>Entry /${identifierKeyType}/${identifierKey} not found</h2>`;
+        console.log(`response_NotFoundPage error: ${e}`);
     }
-    resolverHTTPResponse(httpResponse, { 'Content-Type': 'text/html' }, html, 404, httpResponse, processStartTime);
+    resolverHTTPResponse(httpResponse, { 'Content-Type': 'text/html' }, html, 404, processStartTime);
 };
+
+
+/**
+ * Converts a numeric GS1 Identifier Into its label (shortcode) equivalent.
+ * If the incoming value is not a number, just returns it!
+ * @param aiLabel
+ * @returns {string}
+ */
+const convertAINumericToLabel = (aiNumeric) =>
+{
+    if(!isNaN(aiNumeric))
+    {
+        const aiEntry = gs1dlt.aitable.find(entry => entry.ai === aiNumeric);
+        return aiEntry.shortcode;
+    }
+    return aiNumeric;
+}
 
 
 
@@ -543,7 +561,7 @@ const processWellKnownRequest = async (httpResponse, processStartTime) =>
     }
     catch (error)
     {
-        resolverutils.logThis(`processWellKnownRequest error: ${error}`);
+        console.log(`processWellKnownRequest error: ${error}`);
     }
 };
 
@@ -560,7 +578,7 @@ const processResolverDescriptionFile = async (httpResponse, processStartTime) =>
     }
     catch (error)
     {
-        resolverutils.logThis(`processWellKnownRequest error: ${error}`);
+        console.log(`processWellKnownRequest error: ${error}`);
     }
 };
 
@@ -677,6 +695,80 @@ const calculateProcessingTime = (processStartTime) =>
     return processEndTime - processStartTime;
 };
 
+/**
+* The unixtime process allows clients to download data from the resolver in paged sections.
+* Commands are:
+* /unixtime/<unixtime>/count
+* /unixtime/<unixtime>/page/<page number/limit/<limit>
+* @param url
+* @param response
+* @param processStartTime
+* @returns {Promise<void>}
+*/
+const processUnixTime = async (url, response, processStartTime) =>
+{
+    try
+    {
+        let urlArray = url.toLowerCase().split('/');
+        let result = {};
+        if (!isNaN(urlArray[2]))
+        {
+            const minUnixTime = urlArray[2];
+            const command = urlArray[3];
+            if (command === "count")
+            {
+                const count = await db.countEntriesFromUnixTime(minUnixTime);
+                result = {count};
+            }
+            else if ((command === "page"))
+            {
+                let pageSize = 1000;
+                let pageNumber = 1;
+
+                if (urlArray.length >= 5)
+                {
+                    if (!isNaN(urlArray[3]))
+                    {
+                        pageNumber = urlArray[3];
+                    }
+                }
+                if (urlArray.length === 7 && urlArray[5] === "limit" && !isNaN(urlArray[6]))
+                {
+                    pageSize = urlArray[6];
+                }
+
+                const dataResult = await db.getPagedEntriesFromUnixTime(minUnixTime, pageNumber, pageSize);
+
+                result = {
+                    PAGE: pageNumber,
+                    LIMIT: pageSize,
+                    DATA: dataResult
+                };
+
+            }
+
+            await resolverHTTPResponse(response,
+                {'Content-Type': 'application/json'},
+                JSON.stringify(result, null, 2),
+                200,
+                processStartTime);
+        }
+        else
+        {
+            result = {MESSAGE: 'ERROR: Malformed unixtime syntax - use "/unixtime/<fromunixtime>/count" or "/unixtime/<fromunixtime>/page/<pagenumber>/limit/<limit>"'};
+
+            await resolverHTTPResponse(response,
+                {'Content-Type': 'application/json'},
+                JSON.stringify(result, null, 2)
+                , 400,
+                processStartTime);
+        }
+    }
+    catch (err)
+    {
+        console.log(`processUnixTime error: ${err}`);
+    }
+}
 
 module.exports =
     {
@@ -686,5 +778,6 @@ module.exports =
         processGCPRedirect,
         resolverHTTPResponse,
         response_NotFoundPage,
-        processWellKnownRequest
+        processWellKnownRequest,
+        processUnixTime
     };

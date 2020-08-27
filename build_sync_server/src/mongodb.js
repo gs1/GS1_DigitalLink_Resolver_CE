@@ -1,5 +1,6 @@
 const MongoClient = require('mongodb').MongoClient;
-const utils = require("./resolver_utils");
+const crypto = require('crypto');
+const utils = require("./resolverUtils");
 
 const mongoConnString = process.env.MONGODBCONN;
 
@@ -50,22 +51,20 @@ const closeDB = async () =>
 /**
  * Finds either a URI or GCP entry in the MongoDB database, as the format of the key
  * to each document is identical: "/<gs1-or-gcp-key-code>/<gs1-or-gcp-key-value>"
- * @param gs1KeyCode
- * @param gs1KeyValue
+ * @param identificationKeyType
+ * @param identificationKey
  * @param collectionName
  * @returns {Promise<null>}
  */
-const findEntryInMongoDB = async (gs1KeyCode, gs1KeyValue, collectionName) =>
+const findEntryInMongoDB = async (identificationKeyType, identificationKey, collectionName) =>
 {
-    let result = null;
     try
     {
         if(await connectToMongoDB())
         {
             let collection = mongoClient.db("gs1resolver").collection(collectionName);
-            result = await collection.findOne({"_id": "/" + gs1KeyCode + "/" + gs1KeyValue});
+            return await collection.findOne({"_id": "/" + identificationKeyType + "/" + identificationKey});
         }
-        return result;
     }
     catch (e)
     {
@@ -91,17 +90,21 @@ const getResolverDatabaseIdFromMongoDB = async () =>
             let dbId = await collection.findOne({"_id": "database_id"});
             if(dbId === null)
             {
-                let dbId = {};
-                //No DB ID record was found, so create one from this container's current HOSTNAME
+                //No DB ID record was found, so make dbId a new object
+                //and create a name using randomClusterDBNameGenerator()
+                dbId = {};
                 dbId["_id"] = "database_id";
                 dbId.databaseId = randomClusterDBNameGenerator();
-                global.syncHostName = dbId.databaseId;
-                const result = await collection.replaceOne({"_id": dbId["_id"]}, dbId, { upsert: true });
+                global.syncId = dbId.databaseId;
+
+                //Save the new name into the Mongo database
+                await collection.replaceOne({"_id": dbId["_id"]}, dbId, { upsert: true });
             }
             else
             {
-                //Obtain the sync host name from the pre-saved database record
-                global.syncHostName = dbId.databaseId;
+                //Obtain the sync Id from the pre-saved database record which remains consistent
+                //even if the build sync server is killed and re-spawned with a different Host name.
+                global.syncId = dbId.databaseId;
             }
         }
         else
@@ -124,13 +127,7 @@ const getResolverDatabaseIdFromMongoDB = async () =>
  */
 const randomClusterDBNameGenerator = () =>
 {
-    let result = '';
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    for (let i = 0; i < 12; i++)
-    {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return result;
+    return crypto.randomBytes(Math.ceil(12 / 2)).toString('hex');
 };
 
 /**
@@ -158,8 +155,7 @@ const updateDocumentInMongoDB = async (doc, collectionName) =>
     }
     catch (e)
     {
-        utils.logThis(`STOPPING PROGRAM! updateDocumentInMongoDB error: ${e}`);
-        process.exit(1);
+        utils.logThis(`updateDocumentInMongoDB error: ${e}`);
         return false;
     }
 };
@@ -194,10 +190,77 @@ const deleteDocumentInMongoDB = async (doc, collectionName) =>
 };
 
 
+/**
+ * Empties the collection of data - used when build sync server not heard by SQL DB.
+ * @param collectionName
+ * @returns {Promise<boolean>}
+ */
+const dropCollection = async (collectionName) =>
+{
+    try
+    {
+        if(await connectToMongoDB())
+        {
+            let collection = mongoClient.db("gs1resolver").collection(collectionName);
+            const dropResult = await collection.drop();
+            utils.logThis(`dropCollection: collection ${collectionName} dropped (emptied): ${dropResult}`);
+            return dropResult;  // <- equates to true or false
+        }
+        else
+        {
+            utils.logThis("dropCollection error: Unable to connect to Mongo DB");
+            return false;
+        }
+    }
+    catch (e)
+    {
+        utils.logThis(`dropCollection error: ${e}`);
+        return false;
+    }
+};
+
+
+
+
+
+
+
+/**
+ * Creates the unixtime index which is used for indexing the data
+ * @returns {Promise<boolean>}
+ */
+const createUnixTimeIndex = async () =>
+{
+    utils.logThis("Building 'unixtime' index");
+    try
+    {
+        if(await connectToMongoDB())
+        {
+            let collection = mongoClient.db("gs1resolver").collection("uri");
+            let result = await collection.createIndex({ unixtime: 1 } );
+            await mongoClient.close();
+            utils.logThis("Index 'unixtime' build completed");
+            return result.ok === 1;
+        }
+        else
+        {
+            utils.logThis("createUnixTimeIndex error: Unable to connect to Mongo DB");
+            return false;
+        }
+    }
+    catch (err)
+    {
+        utils.logThis(`createUnixTimeIndex error: ${err}`);
+        return false;
+    }
+};
+
 module.exports = {
     findEntryInMongoDB,
     updateDocumentInMongoDB,
     deleteDocumentInMongoDB,
     getResolverDatabaseIdFromMongoDB,
+    createUnixTimeIndex,
+    dropCollection,
     closeDB
 };

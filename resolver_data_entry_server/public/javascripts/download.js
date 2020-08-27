@@ -1,9 +1,45 @@
 const global_GS1dlt = new GS1DigitalLinkToolkit();
+const global_dataColumns  = [
+    "identificationKeyType",
+    "identificationKey",
+    "itemDescription",
+    "qualifierPath",
+    "linkType",
+    "ianaLanguage",
+    "context",
+    "mimeType",
+    "linkTitle",
+    "targetUrl",
+    "defaultLinktype",
+    "defaultIanaLanguage",
+    "defaultContext",
+    "defaultMimeType",
+    "fwqs",
+    "active",
+    "dateInserted",
+    "dateLastUpdated"
+];
+let global_linesDownloadedCount = 0;
 
-const global_dataColumns  = ["gs1_key_code","gs1_key_value","item_description","variant_uri","linktype",
-    "iana_language","context", "mime_type","link_title","target_url","default_linktype",
-    "default_iana_language","default_context","default_mime_type","fwqs","active",
-    "date_inserted","date_last_updated"];
+/**
+ * Allows the use to see the auth key they have typed into the authentication key textbox:
+ * (works with mouseOutPass())
+ */
+const mouseOverPass = () =>
+{
+    const obj = document.getElementById('authKey');
+    obj.type = "text";
+}
+
+/**
+ * Hides the auth key in the authentication key textbox
+ * (works with mouseOverPass())
+ */
+const mouseOutPass = () =>
+{
+    const obj = document.getElementById('authKey');
+    obj.type = "password";
+}
 
 const downloadData = async () =>
 {
@@ -31,14 +67,14 @@ const downloadData = async () =>
     let divStatus = document.getElementById("divStatus");
     divStatus.innerText = `Getting entry count`;
 
-    let fetchResponse = await fetch('/api/request/count/all', fetchParameters);
+    let fetchResponse = await fetch('/resolver/all/count', fetchParameters);
 
     if (fetchResponse.status === 200)
     {
         const countResult = await fetchResponse.json();
         let countSoFar = 0;
         let percentProgress = 0;
-        let currentLowestUriRequestId = countResult.lowestUriRequestId;
+        let currentPageNumber = 1;
         let finishedDownloadFlag = false;
 
         if (countResult.count > 0)
@@ -47,7 +83,7 @@ const downloadData = async () =>
 
             while (!finishedDownloadFlag && fetchResponse.status === 200)
             {
-                fetchResponse = await fetch(`/api/request/lowestid/${currentLowestUriRequestId}/maxrows/10`, fetchParameters);
+                fetchResponse = await fetch(`/resolver/all/page/${currentPageNumber}/size/100`, fetchParameters);
                 if (fetchResponse.status === 200)
                 {
                     //Convert the received JSON into an entries array object:
@@ -61,10 +97,10 @@ const downloadData = async () =>
 
                     countSoFar += entries.length;
                     percentProgress = Math.round(countSoFar * 100 / countResult.count);
-                    currentLowestUriRequestId = Number(entries[entries.length - 1].uri_request_id) + 1;
+                    currentPageNumber++;
 
-                    //if currentLowestUriRequestId is not a number, we've reached the end.
-                    if (isNaN(currentLowestUriRequestId))
+                    //if currentPageNumber is not a number, we've reached the end.
+                    if (isNaN(currentPageNumber))
                     {
                         finishedDownloadFlag = true;
                     }
@@ -73,8 +109,8 @@ const downloadData = async () =>
                 }
                 else if (fetchResponse.status === 404)
                 {
-                    //If we get a 404, there is no more data to download (the currentLowestUriRequestId value is higher than
-                    //any request ids for this authorised account, so none have been found.
+                    //If we get a 404, there is no more data to download (the currentPageNumber value is higher than
+                    //any entry ids for this authorised account, so none have been found.
                     finishedDownloadFlag = true;
                 }
                 else
@@ -86,12 +122,20 @@ const downloadData = async () =>
 
             if (finishedDownloadFlag)
             {
-                divStatus.innerText = `Download completed ${entriesArray.length} entries downloaded`;
                 const blobArray = new Blob([convertResolverJSONToCSV(entriesArray)], {type : 'text/plain'});
+                divStatus.innerText = `Download completed - ${entriesArray.length} entries downloaded and converted into ${global_linesDownloadedCount} CSV lines`;
                 document.getElementById('downloadLink').href = window.URL.createObjectURL(blobArray);
                 document.getElementById('divDownload').style.visibility = "visible";
             }
         }
+        else
+        {
+            divStatus.innerText = `You have no entries to download!`;
+        }
+    }
+    else
+    {
+        divStatus.innerText = `Server error code ${fetchResponse.status} trying to download your entries. Please try again.`;
     }
 };
 
@@ -107,16 +151,10 @@ const convertNumericAIToLabel = (aiNumeric) =>
     let aiLabel = aiNumeric;
     if(!isNaN(aiNumeric))
     {
-        for (let aiEntry of global_GS1dlt.aitable)
-        {
-            if (aiEntry.ai === aiNumeric)
-            {
-                aiLabel = aiEntry.label;
-                break;
-            }
-        }
+        const aiEntry = global_GS1dlt.aitable.find(entry => entry.ai === aiNumeric);
+        aiLabel = aiEntry.shortcode;
     }
-    return aiLabel.toLowerCase();
+    return aiLabel;
 }
 
 
@@ -142,23 +180,25 @@ function createHeaderLine()
 
 function convertResolverJSONToCSV(dataArray)
 {
+    global_linesDownloadedCount = 0;
     let csvFile = createHeaderLine() + '\n';
 
     for(let entry of dataArray)
     {
         let fullCSVLine = "";
-        let entryCSVRequestLine = "";
-        entryCSVRequestLine = `"${convertNumericAIToLabel(entry.gs1_key_code)}","${entry.gs1_key_value}",`;
-        entryCSVRequestLine += `"${entry.item_description}","${entry.variant_uri}",`;
+        let entryCSVEntryLine = "";
+        entryCSVEntryLine = `"${convertNumericAIToLabel(entry.identificationKeyType)}","${entry.identificationKey}",`;
+        entryCSVEntryLine += `"${entry.itemDescription}","${entry.qualifierPath}",`;
 
         for(let response of entry.responses)
         {
-            fullCSVLine = entryCSVRequestLine;
-            fullCSVLine += `"${response.linktype}","${response.iana_language}","${response.context}","${response.mime_type}","${response.link_title}","${response.target_url}",`;
-            fullCSVLine += `"${response.default_linktype ? 'Y' : 'N'}","${response.default_iana_language ? 'Y' : 'N'}","${response.default_context ? 'Y' : 'N'}",`;
-            fullCSVLine += `"${response.default_mime_type ? 'Y' : 'N'}","${response.forward_request_querystrings ? 'Y' : 'N'}","${response.active ? 'Y' : 'N'}",`;
-            fullCSVLine += `"${entry.date_inserted}","${entry.date_last_updated}"\n`;
+            fullCSVLine = entryCSVEntryLine;
+            fullCSVLine += `"${response.linkType}","${response.ianaLanguage}","${response.context}","${response.mimeType}","${response.linkTitle}","${response.targetUrl}",`;
+            fullCSVLine += `"${response.defaultLinkType ? 'Y' : 'N'}","${response.defaultIanaLanguage ? 'Y' : 'N'}","${response.defaultContext ? 'Y' : 'N'}",`;
+            fullCSVLine += `"${response.defaultMimeType ? 'Y' : 'N'}","${response.fwqs ? 'Y' : 'N'}","${response.active ? 'Y' : 'N'}",`;
+            fullCSVLine += `"${entry.dateInserted}","${entry.dateLastUpdated}"\n`;
             csvFile += fullCSVLine;
+            global_linesDownloadedCount++;
         }
     }
 

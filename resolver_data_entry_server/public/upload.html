@@ -7,6 +7,7 @@
     <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
 
     <script src="javascripts/GS1DigitalLinkToolkit.js"></script>
+    <script lang="javascript" src="javascripts/xlsx.full.min.js"></script>
     <script src="javascripts/upload.js"></script>
     <script>
 
@@ -14,34 +15,27 @@
 </head>
 <body>
 <h2>GS1 Resolver Data Entry File Uploader</h2>
-<div>Please paste your authentication key here: <input type="text" id="authKey"></div>
-<div>Select a file to upload it: <input type="file" onchange="readFile(this)"></div>
+<div>Please paste your authentication key here:
+    <input type="password" id="authKey">&nbsp;&nbsp;
+    <img src="images/eye.gif" width="30px" height="20px" alt="hover over this eye symbol to see your authentication key" onmouseover="mouseOverPass();" onmouseout="mouseOutPass();" />
+</div>
+<div id="divFileUpload">Select a file to upload it: <input type="file" onchange="readFile(this)" ></div>
 <br/>
-<div id="divStatus">Ready to upload file</div>
+<div id="divStatus">Ready </div>
 <hr/>
+<div id="divChooseSpreadsheet" style="visibility: hidden">
+    Please choose a spreadsheet from the uploaded Excel Workbook:
+    <select id="selectWorkSheet" onchange="showDataFromXLSXFile()">
+        <option value="X">-- Choose WorkSheet --</option>
+    </select>
+</div>
+
 <div id="divExtraInfo" style="visibility: hidden">
     Please use the dropdown select controls to describe each column (select IGNORE if column is not to be imported).
     <table width="500">
-        <tr>
-            <td>If the first row(s) have column headers, please select the number of rows this applies to which the
-                import can ignore:
-            </td>
-            <td>
-                <select id="selectIgnoreFirstRowCount">
-                    <option value="0">0</option>
-                    <option selected value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                </select>
-            </td>
-        </tr>
+        <caption>Upload Options</caption>
+        <th scope="col">Upload Options</th>
+        <th scope="col">Selection</th>
         <tr>
             <td>If no column is assigned as LinkType, select a LinkType value to be used for all entries in this file:
             </td>
@@ -67,14 +61,16 @@
                 </select>
             </td>
         </tr>
-        <tr>
-            <td>If no column is assigned as a GS1 Key Code then entries in this file will all be classed as:
+        <tr id="gs1KeysDefault_Hide_If_Official_Spreadsheet">
+            <td>If no column is assigned as a Identification Key Type then entries in this file will all be classed as:
             </td>
             <td>
-                <select id="selectGS1KeyCode">
+                <select id="selectIdentificationKeyType">
                     <option selected value="01">GTINs</option>
                     <option value="414">GLNs</option>
                     <option value="00">SSCCs</option>
+                    <option value="8003">GRAIs</option>
+                    <option value="7023">GIAIs</option>
                 </select>
             </td>
         </tr>
@@ -84,14 +80,14 @@
 <div id="divDataTable"></div>
 <div id="divPerformCheck" style="visibility: hidden">
     <hr/>
-    <button id="buttonCheckNow" onclick="checkData();">Check Data Now</button>
-    <div id="divCheckResults"></div>
+    <p><button id="buttonCheckNow" onclick="checkData();">Check Data Now</button></p>
+    <div id="divCheckResults">
+    </div>
 </div>
 <div id="divPerformUpload" style="visibility: hidden">
-    All checks were successful!
     <hr/>
-    <button id="buttonUploadNow" onclick="uploadData();">Upload Data Now</button>
-    <div id="divUploadResults"></div>
+    <p><button id="buttonUploadNow" onclick="uploadDataAndAwaitResults();">Upload Data Now</button></p>
+    <div id="divUploadResults" style="width: 600px"></div>
 </div>
 <p><a href="index.html">Back to the home page</a></p>
 </body>

@@ -48,7 +48,7 @@ spec:
       containers:
         - name: resolver-data-entry-server
 
-          image: nicklansley/gs1_digitallink_resolver_ce_resolver-data-entry-server:v2.0.0
+          image: nicklansley/gs1_digitallink_resolver_ce_resolver-data-entry-server:v2.1.0
           imagePullPolicy: IfNotPresent
 
           env:

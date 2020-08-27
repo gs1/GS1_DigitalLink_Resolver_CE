@@ -1,8 +1,15 @@
 ## Welcome to the GS1 Digital Link Resolver
-### Community Edition v2.0 
+### Community Edition v2.1 
 
 Welcome! The purpose of this repository is to provide you with the ability to build a complete resolver service that will enable you to enter information about GTINs and other GS1 keys
 and resolve (that is, redirect) web clients to their appropriate destinations.
+
+### Version 2.1 Features
+1. UI Upload page can Excel spreadsheets
+2. Code included a validateEntries() function which can be used optionally for you to add your own validation of uploaded entries before publishing.
+3. Comprehensive API with 'batch upload' facility for fast upload of large amounts of data.  
+4. Lots of optimizations, enhancements and security improvements.   
+5. Inclusion of Python Accounts Administration script program (python3.7+ and 'pip install dotmap' required)
 
 <b><i>UPDATE: Kubernetes compatible! Head to the bottom of this README.md file for more info</i></b> 
 
@@ -19,7 +26,7 @@ This project uses a SQL Server database to store information</td></tr>
 <tr><td>frontend_proxy_server</td><td>The frontend web server routing traffic securely to the other containers. Using NGINX, this server's config can be adjusted to support load balancing and more,</td></tr>
 </table>
 
-### Important Notes for existing users of previous version 1.0 and 1.1
+### Important Notes for existing users of previous versions 1.0 and 1.1
 This is a brand new resolving architecture, not backwards compatible with version 1.0 or 1.1
 as it is updated to reflect big changes to the design and architecture of the service.
 These changes were to provide:
@@ -32,6 +39,28 @@ These changes were to provide:
 If you are using earlier versions of Resolver, contact Nick Lansley (nick@lansley.com) for advice
 on copying the data from the old SQL format to the new much simpler SQL format. You should stop
 using the older v1.x service and transition to this version as soon as possible.
+
+### Important Notes for existing users of previous version 2.0
+The main upgrade of the service is to resolver_data_entry_server which has been upgraded to support batch
+uploading of data and a validation process which you can optionally harness to check uploaded entries 
+before they are published. This has resulted in a data structure change that includes '_prevalid' suffix
+named SQL tables into which data is uploaded. A validation procvess is then kicked off which, if successful
+for each entry, copies the data into the non _prevalid suffix SQL tables.
+
+To install this new update, dockeer-compose build and docker-compose run -d over the top of your existing
+installation, then run the SQL create script as documented in step 7. This will create a SQL database called "gs1-resolver-ce-v2-1-db" alongside
+your existing SQL database "gs1-resolver-ce-v2-db" with the updated structure. The containers point to the new SQL database but the
+Mongo database is unchanged and will continue serving existing data. You will have an extra step of copying data
+between the databases but, apart from the _prevalid tables, you will find the structure familiar. Note that
+a few column names have been changed to conform better to GS1 naming conventions for data properties, but the
+data in the columns is unchanged in format.
+
+Note also that you only see one running instance of the resolver-web-server rather than five, unlike v2.0. The running of multiple
+servers has become unnecessary thanks to the latest Node V8 engine and a lot of code optimisation. Fast!
+
+Finally, by popular request, docker-compose exposes the web service on port 80, no longer port 8080. It also exposes SQL Server and MongoDB on their default
+ports, so use your fasvourite SQL Server client and Mongo DB to connect to localhost with crednetials supplied in the SQL and Mongo Dockerfiles.
+
 
 ## Documentation
 Please refer to the document 'GS1 Resolver - Overview and Architecture.pdf' in the root of this 
@@ -52,8 +81,9 @@ It is for these reasons that this type of architecture has become so popular.
 
 ![GS1 Resolver Community Edition v2.0 Architecture](Resolver%20v2.0.jpg)
 
+#### Note: In the above diagram you will see five running resolver-web-servers. Unlike v2.0., the running of multiple web servers in v2.1 has become unnecessary thanks to the latest Node V8 engine and a lot of code optimisation! There is now just one resolver-web-server set up by docker-compose.
+                                                                              
 #### Web Servers
-
 The only outward-facing web server is <i><b>frontend-proxy-server</b></i> which proxies any client requests to the /ui/ data entry web application and /api/ API service 
 through to the <b><i>resolver_data_entry_server</i></b> which provides both services. All requests that are not /ui/ or /api/ are sent to <b><i>resolver-web-server</i></b>
 
@@ -65,8 +95,8 @@ MongoDB can perform high-speed lookups and is ideal for the high-performance rea
 
 #### Database servers
 This repository includes two extra containers for SQL Server and MongoDB. These are included to help you get up and running quickly to experiment and 
-test the service. However, you are strongly advised to move to cloud-based versions of these databases, and change the data connection
-strings as stored below:
+test the service. However, you are strongly advised to move to cloud-based versions - especially for SQL server, and change the data connection
+strings as stored below. MongoDB can be left local as long as the volume it stores data on can be made 'permanent'.
 * <b>resolver_data_entry_server</b> stores the required SQL connection resolver_data_entry_server/Dockerfile 
 * <b>build_sync_server</b> stores both SQL and MONGO connection strings in build_sync_server/Dockerfile 
 * <b>the five resolverN-web-server</b> stores their MONGO (only) string in resolver_web_server/Dockerfile 
@@ -105,27 +135,44 @@ as they will clash with Docker as it tries to start the service up. Once complet
 container, creating the database and some example data.<pre>
 docker exec -it  resolver-sql-server  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P its@SECR3T! -i  /gs1resolver_sql_scripts/sqldb_create_script.sql </pre>
 
-1. Head to http://localhost:8080/ui and select the Download page.
-1. In the authorization key box, type: "12345" and click the Download button. Save the file to your local computer.
+1. Head to http://localhost/ui and select the Download page.
+1. In the authorization key box, type: "5555555555555" and click the Download button. Save the file to your local computer.
 1. Click the link to go back to the home page, then choose the Upload page.
-1. Type in your authorization key (12345), then choose the file you just downloaded. The Upload page detects 'Download' -format file and will set all the columns correctly for you. Have  look at the example data in each column
+1. Type in your authorization key (5555555555555), then choose the file you just downloaded. The Upload page detects 'Download' -format file and will set all the columns correctly for you. Have  look at the example data in each column
 and what it means (read the final section of the PDF document for more details about these columns).
 1. Click 'Check file' followed by 'Upload file'.
-1. By now the local Mongo database should be built (a build event occurs every one minute) so try out this request in a terminal window: <pre>curl -I http://localhost:8080/gtin/05000204795370 </pre> which should result in this appearing in your terminal window:
-<pre>HTTP/1.1 307 Temporary Redirect
-     Server: nginx/1.17.10
-     Date: Tue, 21 Apr 2020 06:40:02 GMT
-     Connection: keep-alive
-     Vary: Accept-Encoding
-     Access-Control-Allow-Origin: *
-     Access-Control-Allow-Methods: HEAD, GET, OPTIONS
-     Access-Control-Expose-Headers: Link, Content-Length
-     Cache-Control: max-age=0, no-cache, no-store, must-revalidate
-     X-Resolver-ProcessTimeMS: 68
-     Link: https://www.sainsburys.co.uk/gol-ui/product/raid-fly---wasp-killer-300ml>; rel="gs1:promotion"; type="text/html"; hreflang="en"; title="Sainsburys Promotion", https://id.gs1.org/01/05000204795370>; rel="owl:sameAs"
-     Location: https://www.sainsburys.co.uk/gol-ui/product/raid-fly---wasp-killer-300ml
-</pre> This demonstrates that Resolver has found an entry for GTIN 05000204795370 and is redirecting you to the web site showin in the 'Location' header. 
-You can also see this in action if you use the same web address in your web browser - you should end up at Sainsbury's online shopping site looking at a can of fly spray.
+1. By now the local Mongo database should be built (a build event occurs every one minute) so try out this request in a terminal window: <pre> curl -I http://localhost/gtin/05000204795370 </pre> which should result in this appearing in your terminal window:<pre>HTTP/1.1 307 Temporary Redirect
+    Server: nginx/1.19.0
+    Date: Thu, 27 Aug 2020 15:24:48 GMT
+    Connection: keep-alive
+    Vary: Accept-Encoding
+    Access-Control-Allow-Origin: *
+    Access-Control-Allow-Methods: HEAD, GET, OPTIONS
+    Access-Control-Expose-Headers: Link, Content-Length
+    Cache-Control: max-age=0, no-cache, no-store, must-revalidate
+    X-Resolver-ProcessTimeMS: 8
+    Link: <https://dalgiardino.com/where-to-buy/>; rel="gs1:hasRetailers"; type="text/html"; hreflang="en"; title="Product Information Page", <https://dalgiardino.com/where-to-buy/index.html.
+    es>; rel="gs1:hasRetailers"; type="text/html"; hreflang="es"; title="Donde comprar Dal Giardino", <https://dalgiardino.com/where-to-buy/index.html.vi>; rel="gs1:hasRetailers"; type="text/
+    html"; hreflang="vi"; title="data:text/plain;charset=utf-16;base64,TgChAWkAIABiAOEAbgA=", <https://dalgiardino.com/risotto-rice-with-mushrooms/>; rel="gs1:pip"; type="text/html"; hreflang
+    ="en"; title="Product Information Page", <https://dalgiardino.com/risotto-rice-with-mushrooms/index.html.es>; rel="gs1:pip"; type="text/html"; hreflang="es"; title="Informaci¾n del Produc
+    to", <https://dalgiardino.com/risotto-rice-with-mushrooms/index.html.ja>; rel="gs1:pip"; type="text/html"; hreflang="ja"; title="Product Information Page", <https://dalgiardino.com/risott
+    o-rice-with-mushrooms/index.html.vi>; rel="gs1:pip"; type="text/html"; hreflang="vi"; title="data:text/plain;charset=utf-16;base64,VAByAGEAbgBnACAAdABoAPQAbgBnACAAdABpAG4AIABzAKMebgAgAHAA
+    aACpHm0A", <https://dalgiardino.com/about/>; rel="gs1:productSustainabilityInfo"; type="text/html"; hreflang="en"; title="Product Information Page", <https://dalgiardino.com/about/index.h
+    tml.es>; rel="gs1:productSustainabilityInfo"; type="text/html"; hreflang="es"; title="Sobre Dal Giardino", <https://dalgiardino.com/about/index.html.vi>; rel="gs1:productSustainabilityInf
+    o"; type="text/html"; hreflang="vi"; title="data:text/plain;charset=utf-16;base64,UABoAOEAdAAgAHQAcgBpAMMebgAgAGIAwR5uACAAdgDvHm4AZwAgAHYA4AAgAHQA", <https://dalgiardino.com/mushroom-squa
+    sh-risotto/>; rel="gs1:recipeInfo"; type="text/html"; hreflang="en"; title="Wild Mushroom And Butternut Squa", <https://dalgiardino.com/mushroom-squash-risotto/index.html.es>; rel="gs1:re
+    cipeInfo"; type="text/html"; hreflang="es"; title="Recetas", <https://dalgiardino.com/mushroom-squash-risotto/index.html.ja>; rel="gs1:recipeInfo"; type="text/html"; hreflang="ja"; title=
+    "data:text/plain;charset=utf-16;base64,rTDOMLMwaDAVeEQwXzDQML8w/DD9/w==", <https://dalgiardino.com/risotto-rice-with-mushrooms/lot/ABC/ser/123>; rel="gs1:traceability"; type="text/html";
+    hreflang="en"; title="Traceability (item level)", <https://id.gs1.org/01/09506000134352>; rel="owl:sameAs"
+    Location: https://dalgiardino.com/risotto-rice-with-mushrooms/index.html.vi
+
+</pre> This demonstrates that Resolver has found an entry for GTIN 09506000134352 and is redirecting you to the web site shown in the 'Location' header. 
+You can also see this in action if you use the same web address ( in your web browser - you should end up at Dal Giardino web site, this particular page written in Vietnamese!
+ The rest of the information above reveals all the alternative links available for this product depending on the context in which Resolver was called.
+
+In the folder "Example Files to Upload" you will also find an Excel spreadsheet with the same data - you can upload Excel data too! This particular spreadsheet
+is the 'official GS1 Resolver upload spreadsheet' which is recognised by the Upload page which sets all the upload columns for you. However any unencrypted
+Excel spreadsheet saved by Excel with extension .xlsx can be read by the upload page.
 
 ####Shutting down the service  
 1. To close the entire application down type this: <pre>docker-compose down</pre> Since the data is stored on Docker volumes, the data will survive the shutdown and be available when you 'up' the service again.

@@ -4,9 +4,8 @@
     <meta charset="UTF-8">
     <title id="pagetitle">GS1 Resolver</title>
     <meta name="viewport" content="width=device-width"/>
-    <link rel="stylesheet" href="https://id.gs1.org/styles/mainstyles.css"/>
     <style>
-        #maintable {
+        body {
             font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
             border-collapse: collapse;
             width: 100%;
@@ -108,7 +107,7 @@
                 }
                 //Show this URI link
                 appendToHTMLTable(table, "&nbsp;", 3);
-                appendToHTMLTable(table, "<b>Variant URI: <a href='https://id.gs1.org" + baseURI + Object.keys(resolverDoc)[key] + "'>https://id.gs1.org" + baseURI + Object.keys(resolverDoc)[key] + "</a></b>", 3);
+                appendToHTMLTable(table, "<b>Qualifiers Path: <a href='https://id.gs1.org" + baseURI + Object.keys(resolverDoc)[key] + "'>https://id.gs1.org" + baseURI + Object.keys(resolverDoc)[key] + "</a></b>", 3);
 
                 //Show item name
                 appendToHTMLTable(table, "<b>Variant Product Name: <i>" + resolverDoc[Object.keys(resolverDoc)[key]].item_name + "</i></b>", 1);

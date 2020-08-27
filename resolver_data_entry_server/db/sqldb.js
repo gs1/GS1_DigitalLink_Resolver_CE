@@ -1,18 +1,18 @@
 /**
- * sqldb.js provides the complete interface to Resolver's SQL Server database. All SQL requests are requested via this file.
+ * sqldb.js provides the complete interface to Resolver's SQL Server database. All SQL entries are requested via this file.
  * As a result, any desired database brand change from Microsoft SQL Server requires alterations only to this file.
  */
 const sql = require('mssql');
 const utils = require("../bin/resolver_utils");
 const HttpStatus = require('http-status-codes');
-let sqlConn;
+let sqlConn = null;
 
 /**
  * Gets the server config connection details from environment variables provided in the Dockerfile
  * @type {{server: string, password: string, database: string, options: {encrypt: boolean, enableArithAbort: boolean}, user: string}}
  */
 
-const sqlServerConfig = {
+const global_sqlServerConfig = {
     user: process.env.SQLDBCONN_USER,
     password: process.env.SQLDBCONN_PASSWORD,
     server: process.env.SQLDBCONN_SERVER,
@@ -24,7 +24,7 @@ const sqlServerConfig = {
         }
 };
 
-let connectedToSQLServerFlag = false;
+let global_connectedToSQLServerFlag = false;
 
 /**
  * If the SQL Server disconnects, this triggers an 'end' event which is captured here
@@ -32,7 +32,7 @@ let connectedToSQLServerFlag = false;
  */
 sql.on('end', (() =>
 {
-    connectedToSQLServerFlag = false;
+    global_connectedToSQLServerFlag = false;
     utils.logThis("SQL DB disconnected");
 }));
 
@@ -43,24 +43,24 @@ sql.on('end', (() =>
  */
 const connectToSQLServerDB = async () =>
 {
-    if(!connectedToSQLServerFlag)
+    if(!global_connectedToSQLServerFlag)
     {
         try
         {
             utils.logThis("Connecting to SQL DB");
-            sqlConn = new sql.ConnectionPool(sqlServerConfig);
+            sqlConn = new sql.ConnectionPool(global_sqlServerConfig);
             await sqlConn.connect();
             utils.logThis("Connected to SQLServer DB successfully");
-            connectedToSQLServerFlag = true;
+            global_connectedToSQLServerFlag = true;
 
         }
         catch (error)
         {
             utils.logThis(`connectToSQLServerDB Error: ${error}`);
-            connectedToSQLServerFlag = false;
+            global_connectedToSQLServerFlag = false;
         }
     }
-    return connectedToSQLServerFlag;
+    return global_connectedToSQLServerFlag;
 };
 
 
@@ -70,271 +70,264 @@ const connectToSQLServerDB = async () =>
  */
 const closeDB = async () =>
 {
-    if(connectedToSQLServerFlag)
+    if(global_connectedToSQLServerFlag)
     {
-        await sqlConn.close();
+        try
+        {
+            await sqlConn.close();
+        }
+        catch (err)
+        {
+            //This is a serious situation if we can't even close the database.
+            //We're going to terminate this node application, which will be detected
+            //by Kubernetes livenessProbe in a few seconds when it can't get
+            //a response from the API and kills the pod, replacing it.
+            utils.logThis(`closeDB error: ${err}`);
+            utils.logThis(`TERMINATING APPLICATION`);
+            process.exit(1);
+        }
     }
-    connectedToSQLServerFlag = false;
+    global_connectedToSQLServerFlag = false;
 };
 
 
 /**
- * Reads a Resolver request from the database
- * @param uriRequestId
- * @param memberPrimaryGLN
+ * This reset function is used should any DB function result in a caught exception.
+ * Note - it is only used in timeout situations
+ * @returns {Promise<void>}
+ */
+const resetDBConnection = async (errorMessage) =>
+{
+    if (errorMessage.includes('operation timed out'))
+    {
+        await closeDB();
+        await connectToSQLServerDB();
+    }
+}
+
+
+
+/**
+ * Locates all the URI Responses for a five Resolver Entry Id
+ * @param uriEntryId
  * @returns {Promise<null|*>}
  */
-const readURIRequest = async (uriRequestId, memberPrimaryGLN) =>
+const searchURIResponses = async (uriEntryId) =>
 {
     try
     {
         await connectToSQLServerDB();
         const ps = new sql.PreparedStatement(sqlConn);
-        ps.input('uriRequestId', sql.TYPES.BigInt());
-        ps.input('memberPrimaryGLN', sql.TYPES.NChar(13));
+        ps.input('uriEntryId', sql.TYPES.BigInt());
 
-        await ps.prepare('EXEC [READ_URI_Request] @uriRequestId, @memberPrimaryGLN');
-        const dbResult = await ps.execute({ uriRequestId: uriRequestId, memberPrimaryGLN: memberPrimaryGLN });
+        await ps.prepare('EXEC [GET_URI_Responses] @uriEntryId');
+        const dbResult = await ps.execute({ uriEntryId });
         await ps.unprepare();
-        return decodeSQLSafeResolverArray(dbResult.recordset);
-    }
-    catch (err)
-    {
-        utils.logThis(`readURIRequest error: ${err}`);
-        return null;
-    }
-};
 
-
-/**
- * Reads a Resolver Response from the database
- * @param uriResponseId
- * @returns {Promise<null|*>}
- */
-const readURIResponse = async (uriResponseId) =>
-{
-    try
-    {
-        await connectToSQLServerDB();
-        const ps = new sql.PreparedStatement(sqlConn);
-        ps.input('uriResponseId', sql.TYPES.BigInt());
-
-        await ps.prepare('EXEC [READ_URI_Response] @uriResponseId');
-        const dbResult = await ps.execute({ uriResponseId: uriResponseId });
-        await ps.unprepare();
-        return decodeSQLSafeResolverArray(dbResult.recordset);
-    }
-    catch (err)
-    {
-        utils.logThis(`readURIResponse error: ${err}`);
-        return null;
-    }
-};
-
-
-/**
- * Locates all the URI Responses for a five Resolver Request Id
- * @param uriRequestId
- * @returns {Promise<null|*>}
- */
-const searchURIResponses = async (uriRequestId) =>
-{
-    try
-    {
-        await connectToSQLServerDB();
-        const ps = new sql.PreparedStatement(sqlConn);
-        ps.input('uriRequestId', sql.TYPES.BigInt());
-
-        await ps.prepare('EXEC [GET_URI_Responses] @uriRequestId');
-        const dbResult = await ps.execute({ uriRequestId: uriRequestId });
-        await ps.unprepare();
-        return decodeSQLSafeResolverArray(dbResult.recordset);
+        let decodedResults = decodeSQLSafeResolverArray(dbResult.recordset);
+        return convertDBRowsToAPIFormat(decodedResults);
     }
     catch (err)
     {
         utils.logThis(`searchURIResponses error: ${err}`);
+        await resetDBConnection(err.message);
         return null;
     }
 };
 
 
 /**
- * Searches for Resolver Requests with the given memberPrimaryGLN, gs1KeyCode, gs1KeyValue
- * @param memberPrimaryGLN
- * @param gs1KeyCode
- * @param gs1KeyValue
+ * Searches for Resolver Entries with the given issuerGLN, identificationKeyType, identificationKey
+ * @param issuerGLN
+ * @param identificationKeyType
+ * @param identificationKey
  * @returns {Promise<null|*>}
  */
-const searchURIRequestsByGS1Key = async (memberPrimaryGLN, gs1KeyCode, gs1KeyValue) =>
+const searchURIEntriesByIdentificationKey = async (issuerGLN, identificationKeyType, identificationKey) =>
 {
     try
     {
-        const officialDef = utils.getGS1DigitalLinkToolkitDefinition(gs1KeyCode, gs1KeyValue);
+        const officialDef = utils.getGS1DigitalLinkToolkitDefinition(identificationKeyType, identificationKey);
 
         if (officialDef.SUCCESS)
         {
             await connectToSQLServerDB();
             const ps = new sql.PreparedStatement(sqlConn);
-            ps.input('gs1KeyCode', sql.TYPES.NVarChar(20));
-            ps.input('gs1KeyValue', sql.TYPES.NVarChar(45));
-            ps.input('memberPrimaryGLN', sql.TYPES.NChar(13));
+            ps.input('identificationKeyType', sql.TYPES.NVarChar(20));
+            ps.input('identificationKey', sql.TYPES.NVarChar(45));
+            ps.input('issuerGLN', sql.TYPES.NChar(13));
 
-            await ps.prepare('EXEC [GET_URI_Requests_using_gln_and_gs1_key_code_and_value] @gs1KeyCode, @gs1KeyValue, @memberPrimaryGLN');
+            await ps.prepare('EXEC [GET_URI_Entries_using_gln_and_identification_key] @identificationKeyType, @identificationKey, @issuerGLN');
             const dbResult = await ps.execute({
-                memberPrimaryGLN,
-                gs1KeyCode: officialDef.gs1KeyCode,
-                gs1KeyValue: officialDef.gs1KeyValue
+                issuerGLN,
+                identificationKeyType: officialDef.identificationKeyType,
+                identificationKey: officialDef.identificationKey
             });
             await ps.unprepare();
-            return decodeSQLSafeResolverArray(dbResult.recordset);
+            let decodedResults = decodeSQLSafeResolverArray(dbResult.recordset);
+            return convertDBRowsToAPIFormat(decodedResults);
         }
     }
     catch (err)
     {
-        utils.logThis(`searchURIRequestsByGS1Key error: ${err}`);
+        utils.logThis(`searchURIEntriesByIdentificationKey error: ${err}`);
+        await resetDBConnection(err.message);
         return null;
     }
 };
 
 
 /**
- * Searches for Resolver Requests with the given GLN. As this could be a large dataset, the ability
- * for clients to use lowestUriRequestId and maxRowsToReturn to batch the response. This function
- * limits the maximum batth size to 1000 Resolver Request entries
- * @param memberPrimaryGLN
- * @param lowestUriRequestId
- * @param maxRowsToReturn
+ * Searches for Resolver Entries with the given GLN. As this could be a large dataset,
+ * pageNumber and size is included allowing clients to read the data in batches
+ * until no more rows are returned. Page sizes of no larger than 1000 rows are allowed.
+ -- =============================================
+ * @param issuerGLN
+ * @param pageNumber
+ * @param pageSize
  * @returns {Promise<null|*>}
  */
-const searchURIRequestsByGLN = async (memberPrimaryGLN, lowestUriRequestId, maxRowsToReturn) =>
+const searchURIEntriesByGLN = async (issuerGLN, pageNumber, pageSize) =>
 {
     try
     {
         await connectToSQLServerDB();
         const ps = new sql.PreparedStatement(sqlConn);
-        ps.input('memberPrimaryGLN', sql.TYPES.NChar(13));
-        ps.input('lowestUriRequestId', sql.TYPES.BigInt());
-        ps.input('maxRowsToReturn', sql.TYPES.Int());
+        ps.input('issuerGLN', sql.TYPES.NChar(13));
+        ps.input('pageNumber', sql.TYPES.Int());
+        ps.input('pageSize', sql.TYPES.Int());
 
-        if(maxRowsToReturn > 1000)
+        if(pageSize > 1000)
         {
-            maxRowsToReturn = 1000;
+            pageSize = 1000;
         }
-        await ps.prepare('EXEC [GET_URI_Requests_using_member_primary_gln] @memberPrimaryGLN, @lowestUriRequestId, @maxRowsToReturn');
-        const dbResult = await ps.execute({ memberPrimaryGLN: memberPrimaryGLN, lowestUriRequestId: lowestUriRequestId, maxRowsToReturn: maxRowsToReturn });
+
+        await ps.prepare('EXEC [GET_URI_Entries_using_member_primary_gln] @issuerGLN, @pageNumber, @pageSize');
+        const dbResult = await ps.execute({ issuerGLN, pageNumber, pageSize });
         await ps.unprepare();
-        return decodeSQLSafeResolverArray(dbResult.recordset);
+
+        let decodedResults = decodeSQLSafeResolverArray(dbResult.recordset);
+        return convertDBRowsToAPIFormat(decodedResults);
     }
     catch (err)
     {
-        utils.logThis(`searchURIRequests error: ${err}`);
+        utils.logThis(`searchURIEntries error: ${err}`);
+        await resetDBConnection(err.message);
         return null;
     }
 };
 
 
-
-const countURIRequestsUsingGLN = async (memberPrimaryGLN) =>
+/**
+ * Counts the number of resolver entries belonging to the specified GLN
+ * @param issuerGLN
+ * @returns {Promise<number>}
+ */
+const countURIEntriesUsingGLN = async (issuerGLN) =>
 {
-    let countResult = { count: 0, lowestUriRequestId: 0};
+    let countResult = 0;
     try
     {
         await connectToSQLServerDB();
         const ps = new sql.PreparedStatement(sqlConn);
-        ps.input('memberPrimaryGLN', sql.TYPES.NChar(13));
-
-        await ps.prepare('EXEC [COUNT_URI_Requests_using_member_primary_gln] @memberPrimaryGLN');
-        const dbResult = await ps.execute({ memberPrimaryGLN });
+        ps.input('issuerGLN', sql.TYPES.NChar(13));
+        await ps.prepare('EXEC [COUNT_URI_Entries_using_member_primary_gln] @issuerGLN');
+        const dbResult = await ps.execute({ issuerGLN });
         await ps.unprepare();
-
-        //There should only be one entry
-        for(let record of dbResult.recordset)
+        if (Array.isArray(dbResult.recordset))
         {
-            countResult.count = record.entry_count;
-            countResult.lowestUriRequestId = record.min_uri_request_id;
+            countResult = dbResult.recordset[0]['entry_count'];
         }
         return countResult;
     }
     catch (err)
     {
-        utils.logThis(`countURIRequestsUsingGLN error: ${err}`);
+        utils.logThis(`countURIEntriesUsingGLN error: ${err}`);
+        await resetDBConnection(err.message);
         return countResult;
     }
 };
 
 
 /**
- * Creates or Updates a Resolver Request entry, returning a result object with the new (or updated) uriRequestId.
- * The decision to insert or update is made by the stored procedure [CREATE_URI_Request].
- * @param memberPrimaryGLN
- * @param resolverRequest
+ * Creates or Updates a Resolver Entry entry, returning a result object with the new (or updated) uriEntryId.
+ * The decision to insert or update is made by the stored procedure [UPSERT_URI_Entry_Prevalid].
+ * @param issuerGLN
+ * @param resolverEntry
+ * @param batchId
+ * @param lrCheckFlag
  * @returns {Promise<number|*>}
  */
-const upsertURIRequest = async (memberPrimaryGLN, resolverRequest) =>
+const upsertURIEntry = async (issuerGLN, resolverEntry, batchId, lrCheckFlag) =>
 {
     const result = {
-        uriRequestId: 0,
+        uriEntryId: 0,
         SUCCESS: false,
-        HTTPSTATUS: HttpStatus.INTERNAL_SERVER_ERROR
     };
 
-    //get official definitions for GS1 Key Code and Value
-    const officialDef = utils.getGS1DigitalLinkToolkitDefinition(resolverRequest.gs1KeyCode, resolverRequest.gs1KeyValue);
+    //get official definitions for GS1 Key Code and Value as this is what we must store in the SQL database
+    const officialDef = utils.getGS1DigitalLinkToolkitDefinition(resolverEntry.identificationKeyType, resolverEntry.identificationKey);
 
     if(officialDef.SUCCESS)
     {
-        //console.log(resolverRequest, officialDef);
-        resolverRequest.gs1KeyCode = officialDef.gs1KeyCode;
-        resolverRequest.gs1KeyValue = officialDef.gs1KeyValue;
+        //this will change any identificationKeyType as a shortcode (e.g. 'gtin') to its numeric equivalent (e.g.'01')
+        resolverEntry.identificationKeyType = officialDef.identificationKeyType;
+        resolverEntry.identificationKey = officialDef.identificationKey;
 
-        //Convert active flag into 1 or 0, and add memberPrimaryGLN just for the SQL call, convert item description to bse SQLSafe
-        resolverRequest.active = resolverRequest.active ? 1 : 0;
-        resolverRequest.memberPrimaryGLN = memberPrimaryGLN;
-        resolverRequest.itemDescription = convertTextToSQLSafe(resolverRequest.itemDescription);
+        //Convert active flag into 1 or 0, and add issuerGLN just for the SQL call, convert item description to use SQLSafe
+        resolverEntry.active = resolverEntry.active ? 1 : 0;
+        resolverEntry.issuerGLN = issuerGLN;
+        resolverEntry.itemDescription = convertTextToSQLSafe(resolverEntry.itemDescription);
+
+        //Add the batchId property ready for entry into the database
+        resolverEntry.batchId = batchId;
+
+        //Add the initial validation code - 255 (unchecked) if we are performing validation checks.
+        //or 0 if validation checks are not to be used (0 = 'passed successfully')
+        //TODO: If you are wanting to use an external validation service to check uploaded entries then set this value to 255, else leave at 0
+        resolverEntry.validationCode = 0;
 
         await connectToSQLServerDB();
         const ps = new sql.PreparedStatement(sqlConn);
-        ps.input('memberPrimaryGLN', sql.TYPES.NChar(13));
-        ps.input('gs1KeyCode', sql.TYPES.NVarChar(20));
-        ps.input('gs1KeyValue', sql.TYPES.NVarChar(45));
+        ps.input('issuerGLN', sql.TYPES.NChar(13));
+        ps.input('identificationKeyType', sql.TYPES.NVarChar(20));
+        ps.input('identificationKey', sql.TYPES.NVarChar(45));
         ps.input('itemDescription', sql.TYPES.NVarChar(200));
-        ps.input('variantUri', sql.TYPES.NVarChar(255));
+        ps.input('qualifierPath', sql.TYPES.NVarChar(255));
         ps.input('active', sql.TYPES.Bit());
+        ps.input('batchId', sql.TYPES.Int());
+        ps.input('validationCode', sql.TYPES.TinyInt());
 
         try
         {
-            await ps.prepare('EXEC [CREATE_URI_Request] @memberPrimaryGLN, @gs1KeyCode, @gs1KeyValue, @itemDescription, @variantUri, @active');
-            const dbResult = await ps.execute(resolverRequest);
+            await ps.prepare('EXEC [UPSERT_URI_Entry_Prevalid] @issuerGLN, @identificationKeyType, @identificationKey, @itemDescription, @qualifierPath, @active, @batchId, @validationCode');
+            const dbResult = await ps.execute(resolverEntry);
 
             if (dbResult.recordset)
             {
-                result.uriRequestId = dbResult.recordset[0]['uri_request_id'];
+                result.uriEntryId = dbResult.recordset[0]['uri_entry_id'];
                 result.SUCCESS = dbResult.recordset[0]['SUCCESS'];
-                if (result.SUCCESS)
-                {
-                    result.HTTPSTATUS = HttpStatus.OK;
-                }
-                else
-                {
-                    result.HTTPSTATUS = HttpStatus.BAD_REQUEST;
-                }
             }
             await ps.unprepare();
-            return result;
         }
         catch (err)
         {
-            utils.logThis(`upsertURIRequest error: ${err}`);
-            return result;
+            utils.logThis(`upsertURIEntry error: ${err}`);
         }
     }
+    else
+    {
+        //Failed the Digital Link toolkit test
+        utils.logThis(`${resolverEntry.identificationKeyType}/${resolverEntry.identificationKey} - failed the Digital Link toolkit test`);
+    }
+    return result;
 
 };
 
 
 /**
- * Creates or Updates a Resolver Request entry, returning a result object with the new (or updated) uriResponseId.
- * The decision to insert or update is made by the stored procedure [CREATE_URI_Response].
+ * Creates or Updates a Resolver Entry entry, returning a result object with the new (or updated) uriResponseId.
+ * The decision to insert or update is made by the stored procedure [UPSERT_URI_Response_Prevalid].
  * @param resolverResponse
  * @returns {Promise<{SUCCESS: boolean, uriResponseId: number, HTTPSTATUS: number}>}
  */
@@ -346,23 +339,31 @@ const upsertURIResponse = async (resolverResponse) =>
         HTTPSTATUS: HttpStatus.INTERNAL_SERVER_ERROR
     };
 
-    //Make sure that IANA Language is only two characters
-    resolverResponse.ianaLanguage = resolverResponse.ianaLanguage.substring(0,2);
-
-    //Convert flags from boolean into 1 or 0 just for the SQL call
-    resolverResponse.active = resolverResponse.active ? 1 : 0;
-    resolverResponse.fwqs = resolverResponse.fwqs ? 1 : 0;
-    resolverResponse.defaultLinkType = resolverResponse.defaultLinkType ? 1 : 0;
-    resolverResponse.defaultIanaLanguage = resolverResponse.defaultIanaLanguage ? 1 : 0;
-    resolverResponse.defaultContext = resolverResponse.defaultContext ? 1 : 0;
-    resolverResponse.defaultMimeType = resolverResponse.defaultMimeType ? 1 : 0;
-    resolverResponse.linkTitle = convertTextToSQLSafe(resolverResponse.linkTitle);
-
     try
     {
+        //Make sure that IANA Language is only two characters
+        resolverResponse.ianaLanguage = resolverResponse.ianaLanguage.substring(0,2);
+
+        //Set flags to appropriate internal values
+        resolverResponse.active = resolverResponse.active ? 1 : 0;
+        resolverResponse.fwqs = resolverResponse.fwqs ? 1 : 0;
+        resolverResponse.defaultLinkType = resolverResponse.defaultLinkType ? 1 : 0;
+        resolverResponse.defaultIanaLanguage = resolverResponse.defaultIanaLanguage ? 1 : 0;
+        resolverResponse.defaultContext = resolverResponse.defaultContext ? 1 : 0;
+        resolverResponse.defaultMimeType = resolverResponse.defaultMimeType ? 1 : 0;
+        resolverResponse.linkTitle = convertTextToSQLSafe(resolverResponse.linkTitle);
+
+        //Make sure LinkTitle never exceeds 100 characters (yes it is base64 encoded which
+        //expands the characters by approx 35%. If the base64 version is truncated,
+        //it can still decoded - it just produces truncated decoded text.
+        if (resolverResponse.linkTitle.length > 100)
+        {
+            resolverResponse.linkTitle = resolverResponse.linkTitle.substring(0,100);
+        }
+
         await connectToSQLServerDB();
         const ps = new sql.PreparedStatement(sqlConn);
-        ps.input('uriRequestId', sql.TYPES.BigInt());
+        ps.input('uriEntryId', sql.TYPES.BigInt());
         ps.input('linkType', sql.TYPES.NVarChar(100));
         ps.input('ianaLanguage', sql.TYPES.NChar(2));
         ps.input('context', sql.TYPES.NVarChar(100));
@@ -376,23 +377,15 @@ const upsertURIResponse = async (resolverResponse) =>
         ps.input('defaultContext', sql.TYPES.Bit());
         ps.input('defaultMimeType', sql.TYPES.Bit());
 
-        await ps.prepare('EXEC [CREATE_URI_Response] @uriRequestId, @linkType, @ianaLanguage, @context, @mimeType, @linkTitle, ' +
+        await ps.prepare('EXEC [UPSERT_URI_Response_Prevalid] @uriEntryId, @linkType, @ianaLanguage, @context, @mimeType, @linkTitle, ' +
             '@targetUrl, @fwqs, @active, @defaultLinkType, @defaultIanaLanguage, @defaultContext, @defaultMimeType');
 
         const dbResult = await ps.execute(resolverResponse);
 
         if(dbResult.recordset)
         {
-            result.uriResponseId = dbResult.recordset[0]['uri_response_id'];
+            result.uriResponseId = dbResult.recordset[0]['uri_response_id']; //returned by DB but we don't use it in Resolver - may have future use?
             result.SUCCESS = dbResult.recordset[0]['SUCCESS'];
-            if(result.SUCCESS)
-            {
-                result.HTTPSTATUS = HttpStatus.OK;
-            }
-            else
-            {
-                result.HTTPSTATUS = HttpStatus.BAD_REQUEST;
-            }
         }
 
         await ps.unprepare();
@@ -401,123 +394,78 @@ const upsertURIResponse = async (resolverResponse) =>
     catch (err)
     {
         utils.logThis(`upsertURIResponse error: ${err}`);
+        await resetDBConnection(err.message);
         return result;
     }
 };
 
 
 /**
- * Delete the uriRequestId if it matches the provided memberPrimaryGLN
- * @param memberPrimaryGLN
- * @param uriRequestId
- * @returns {Promise<{SUCCESS: boolean, HTTPSTATUS: number}>}
+ * Delete the uriEntryId if it matches the provided issuerGLN
+ * @returns {Promise<boolean>}
+ * @param issuerGLN
+ * @param identificationKeyType
+ * @param identificationKey
  */
-const deleteURIRequest = async (memberPrimaryGLN, uriRequestId) =>
+const deleteURIEntry = async (issuerGLN, identificationKeyType, identificationKey) =>
 {
-    const result = {
-        SUCCESS: false,
-        HTTPSTATUS: HttpStatus.INTERNAL_SERVER_ERROR
-    };
-
+    let success = false;
     try
     {
         await connectToSQLServerDB();
-
         const ps = new sql.PreparedStatement(sqlConn);
+        const officialDef = utils.getGS1DigitalLinkToolkitDefinition(identificationKeyType, identificationKey);
 
-        ps.input('uriRequestId', sql.TYPES.BigInt());
-        ps.input('memberPrimaryGLN', sql.TYPES.NChar(13));
-        await ps.prepare('EXEC [DELETE_URI_Request] @uriRequestId, @memberPrimaryGLN');
-        const dbResult = await ps.execute({ uriRequestId: uriRequestId, memberPrimaryGLN: memberPrimaryGLN });
-
-        if(dbResult.recordset)
+        if (officialDef.SUCCESS)
         {
-            result.uriRequestId = dbResult.recordset[0]['uri_request_id'];
-            result.SUCCESS = dbResult.recordset[0]['SUCCESS'];
-            if(result.SUCCESS)
+            ps.input('identificationKeyType', sql.TYPES.NVarChar(20));
+            ps.input('identificationKey', sql.TYPES.NVarChar(45));
+            ps.input('issuerGLN', sql.TYPES.NChar(13));
+            await ps.prepare('EXEC [DELETE_URI_Entry] @issuerGLN, @identificationKeyType, @identificationKey');
+            const dbResult = await ps.execute({issuerGLN, identificationKeyType, identificationKey});
+
+            if (dbResult.recordset)
             {
-                result.HTTPSTATUS = HttpStatus.OK;
+                if (dbResult.recordset[0]['SUCCESS'])
+                {
+                    success = true;
+                }
             }
-            else
-            {
-                result.HTTPSTATUS = HttpStatus.BAD_REQUEST;
-            }
+            await ps.unprepare();
         }
-        await ps.unprepare();
-        return result;
+        else
+        {
+            utils.logThis(`deleteURIEntry error: delete request for id key type ${identificationKeyType} and key ${identificationKey} failed DigitalLink ToolKit inspection`);
+        }
     }
     catch (err)
     {
-        utils.logThis(`deleteURIRequest error: ${err}`);
-        return result;
+        utils.logThis(`deleteURIEntry error: ${err}`);
+        await resetDBConnection(err.message);
     }
+
+    return success;
 };
 
 
 /**
- * Deletes the Resolver Response entry with the given uriResponseId
- * @param uriResponseId
- * @returns {Promise<{SUCCESS: boolean, HTTPSTATUS: number}>}
- */
-const deleteURIResponse = async (uriResponseId) =>
-{
-    const result = {
-        SUCCESS: false,
-        HTTPSTATUS: HttpStatus.INTERNAL_SERVER_ERROR
-    };
-
-    try
-    {
-        await connectToSQLServerDB();
-
-        const ps = new sql.PreparedStatement(sqlConn);
-
-        ps.input('uriResponseId', sql.TYPES.BigInt());
-        await ps.prepare('EXEC [DELETE_URI_Response] @uriResponseId');
-        const dbResult = await ps.execute({ uriResponseId: uriResponseId });
-
-        if(dbResult.recordset)
-        {
-            result.uriRequestId = dbResult.recordset[0]['uri_response_id'];
-            result.SUCCESS = dbResult.recordset[0]['SUCCESS'];
-            if(result.SUCCESS)
-            {
-                result.HTTPSTATUS = HttpStatus.OK;
-            }
-            else
-            {
-                result.HTTPSTATUS = HttpStatus.BAD_REQUEST;
-            }
-        }
-        await ps.unprepare();
-        return result;
-    }
-    catch (err)
-    {
-        utils.logThis(`deleteURIResponse error: ${err}`);
-        return result;
-    }
-};
-
-
-/**
- * This function takes teh provided authorization key and returns whether or not
- * the authorisation is successful or not. If successful, memberPrimaryGLN is also
+ * This function takes the provided authorization key and returns whether or not
+ * the authorisation is successful or not. If successful, issuerGLN is also
  * returned for internal use. This GLN limits the authorised client to change entries
- * linked to that memberPrimaryGLN.
+ * linked to that issuerGLN.
  * @param authKey
- * @returns {Promise<{SUCCESS: boolean, memberPrimaryGLN: string}>}
+ * @returns {Promise<{SUCCESS: boolean, issuerGLN: string}>}
  */
 const checkAuth = async (authKey) =>
 {
-    let authResponse = { SUCCESS: false, memberPrimaryGLN: "" };
+    let authResponse = { SUCCESS: false, issuerGLN: "" };
 
     try
     {
         await connectToSQLServerDB();
         const ps = new sql.PreparedStatement(sqlConn);
 
-        ps.input('authKey', sql.TYPES.NChar(64));
+        ps.input('authKey', sql.TYPES.NVarChar(64));
         await ps.prepare('EXEC [READ_Resolver_Auth] @authKey');
 
         const result = await ps.execute({ authKey: authKey });
@@ -525,7 +473,7 @@ const checkAuth = async (authKey) =>
         if(result.recordset)
         {
             authResponse.SUCCESS = result.recordset[0]['success'] === 1;
-            authResponse.memberPrimaryGLN = result.recordset[0]['member_primary_gln'];
+            authResponse.issuerGLN = result.recordset[0]['member_primary_gln'];
         }
         await ps.unprepare();
         return authResponse;
@@ -534,9 +482,136 @@ const checkAuth = async (authKey) =>
     catch (err)
     {
         utils.logThis(`checkAuth error: ${err}`);
+        await resetDBConnection(err.message);
         return authResponse;
     }
 };
+
+
+/**
+ * Commands the database to publish all entries in the given batch
+ * that passed validation
+ * @param batchId
+ * @returns {Promise<number>}
+ */
+const publishValidatedEntries = async (batchId) =>
+{
+    let entriesPublishedCount = 0;
+    try
+    {
+        await connectToSQLServerDB();
+        const ps = new sql.PreparedStatement(sqlConn);
+        ps.input('batchId', sql.TYPES.Int());
+        await ps.prepare('EXEC [VALIDATE_Publish_Validated_Entries] @batchId');
+        const dbResult = await ps.execute({ batchId });
+
+        if (dbResult.recordset && Array.isArray(dbResult.recordset))
+        {
+            entriesPublishedCount = dbResult.recordset[0]['entriesPublishedCount'];
+        }
+        await ps.unprepare();
+    }
+    catch (err)
+    {
+        utils.logThis(`publishValidatedEntries error: ${err}`);
+        await resetDBConnection(err.message);
+    }
+
+    return entriesPublishedCount;
+};
+
+
+/**
+ * Saves the result of a validation call to the database for the given entry.
+ * Note that this can affect more than one entry if there are different
+ * @param issuerGLN
+ * @param identificationKeyType
+ * @param identificationKey
+ * @param validationCode
+ * @returns {Promise<boolean>}
+ */
+const saveValidationResult = async (issuerGLN, identificationKeyType, identificationKey, validationCode) =>
+{
+    let success = false;
+    try
+    {
+        await connectToSQLServerDB();
+        const ps = new sql.PreparedStatement(sqlConn);
+        ps.input('issuerGLN', sql.TYPES.NVarChar(20));
+        ps.input('identificationKeyType', sql.TYPES.NVarChar(20));
+        ps.input('identificationKey', sql.TYPES.NVarChar(45));
+        ps.input('validationCode', sql.TYPES.TinyInt());
+
+        await ps.prepare('EXEC [VALIDATE_Save_Validation_Result] @issuerGLN, @identificationKeyType, @identificationKey, @validationCode');
+        const dbResult = await ps.execute({issuerGLN, identificationKeyType, identificationKey, validationCode});
+
+        if (dbResult.recordset)
+        {
+            if (dbResult.recordset[0]['SUCCESS'])
+            {
+                success = true;
+            }
+        }
+        await ps.unprepare();
+    }
+    catch (err)
+    {
+        utils.logThis(`saveValidationResult error: ${err}`);
+        await resetDBConnection(err.message);
+    }
+
+    return success;
+};
+
+
+/**
+ * Get the results of the validation from the database, setting up a STATUS value which can mean:
+ * 1 = Completed
+ * 5 = Failure
+ * 7 = Pending
+ * @param issuerGLN
+ * @param batchId
+ * @returns {Promise<{STATUS: number, validations: []}>}
+ */
+const getValidationResultForBatchFromDB = async (issuerGLN, batchId) =>
+{
+    let resultSet = {STATUS: 5, validations: []}
+    try
+    {
+        await connectToSQLServerDB();
+
+        const ps = new sql.PreparedStatement(sqlConn);
+        ps.input('issuerGLN', sql.TYPES.NChar(13));
+        ps.input('batchId', sql.TYPES.Int());
+        await ps.prepare('EXEC [VALIDATE_Get_Validation_Results] @issuerGLN, @batchId');
+        const dbResult = await ps.execute({ issuerGLN, batchId });
+
+        if (dbResult.recordset && Array.isArray(dbResult.recordset))
+        {
+            //if a batch is pending, the call to [VALIDATE_Get_Validation_Results] will result in a single row
+            //with column 'PENDING' set to 'Y'.
+            if (dbResult.recordset.length === 1 && dbResult.recordset[0]["PENDING"] === 'Y')
+            {
+                resultSet.STATUS = 7; //A value used by the VbG platform to denote 'pending'
+            }
+            else
+            {
+                resultSet.STATUS = 1; //A value used by the VbG platform to denote 'completed'
+                resultSet.validations = dbResult.recordset;
+            }
+        }
+        await ps.unprepare();
+    }
+    catch (err)
+    {
+        utils.logThis(`getValidationResultForBatchFromDB error: ${err}`);
+        await resetDBConnection(err.message);
+    }
+
+    return resultSet;
+};
+
+
 
 
 /**
@@ -567,11 +642,11 @@ const convertTextToSQLSafe = (incomingText) =>
  */
 const decodeSQLSafeResolverArray = (rrArray) =>
 {
-    if (rrArray.length !== undefined)
+    if (Array.isArray(rrArray))
     {
-        for (let rrElement of rrArray)
+        for (let i=0; i < rrArray.length; i++)
         {
-            rrElement = decodeSQLSafeResolverObject(rrElement);
+            rrArray[i] = decodeSQLSafeResolverObject(rrArray[i]);
         }
     }
     return rrArray;
@@ -606,17 +681,398 @@ const decodeSQLSafeResolverObject = (rrObj) =>
 };
 
 
+/**
+ * Retrieves one or all GCPs for a given issuerGLN
+ * @param issuerGLN
+ * @param identificationKeyType
+ * @param gcp
+ * @returns {Promise<*>}
+ */
+const searchGCPRedirects = async (issuerGLN, identificationKeyType, gcp) =>
+{
+    let dbResult = {};
+    try
+    {
+        await connectToSQLServerDB();
+        const ps = new sql.PreparedStatement(sqlConn);
+        ps.input('issuerGLN', sql.TYPES.NChar(13));
+
+        if (identificationKeyType && gcp)
+        {
+            ps.input('identificationKeyType', sql.TYPES.NVarChar(20));
+            ps.input('gcp', sql.TYPES.NVarChar(45));
+            await ps.prepare('EXEC [READ_GCP_Redirect] @issuerGLN, @identificationKeyType, @gcp');
+            dbResult = await ps.execute({issuerGLN, identificationKeyType, gcp});
+        }
+        else
+        {
+            await ps.prepare('EXEC [GET_GCP_Redirects] @issuerGLN');
+            dbResult = await ps.execute({issuerGLN, identificationKeyType, gcp});
+        }
+        await ps.unprepare();
+        return convertDBRowsToAPIFormat(dbResult.recordset);
+    }
+    catch (err)
+    {
+        utils.logThis(`searchGCPRedirects error: ${err}`);
+        await resetDBConnection(err.message);
+        return [];
+    }
+}
+
+
+/**
+ * Inserts or updates a GCP entry
+ * @param issuerGLN
+ * @param identificationKeyType
+ * @param gcp
+ * @param targetUrl
+ * @param active
+ * @returns {Promise<boolean>}
+ */
+const upsertGCPRedirect = async (issuerGLN, identificationKeyType, gcp, targetUrl, active) =>
+{
+    let result = false;
+    await connectToSQLServerDB();
+
+    const ps = new sql.PreparedStatement(sqlConn);
+    ps.input('issuerGLN', sql.TYPES.NChar(13));
+    ps.input('identificationKeyType', sql.TYPES.NVarChar(20));
+    ps.input('gcp', sql.TYPES.NVarChar(45));
+    ps.input('targetUrl', sql.TYPES.NVarChar(255));
+    ps.input('active', sql.TYPES.Bit());
+
+    //We store key types such as 'gtin' in its ai numeric format ('01' for gtin)
+    identificationKeyType = utils.convertAILabelToNumeric(identificationKeyType);
+    try
+    {
+        await ps.prepare('EXEC [UPSERT_GCP_Redirect] @issuerGLN, @identificationKeyType, @gcp, @targetUrl, @active');
+        const dbResult = await ps.execute( {issuerGLN, identificationKeyType, gcp, targetUrl, active });
+
+        if (dbResult.recordset)
+        {
+            result = dbResult.recordset[0]['SUCCESS'];
+        }
+        await ps.unprepare();
+    }
+    catch (err)
+    {
+        utils.logThis(`upsertGCPRedirect error: ${err}`);
+    }
+
+    return result;
+}
+
+
+const deleteGCPRedirect = async(issuerGLN, identificationKeyType, gcp) =>
+{
+    let result = false;
+
+    await connectToSQLServerDB();
+
+    const ps = new sql.PreparedStatement(sqlConn);
+    ps.input('issuerGLN', sql.TYPES.NChar(13));
+    ps.input('identificationKeyType', sql.TYPES.NVarChar(20));
+    ps.input('gcp', sql.TYPES.NVarChar(45));
+
+
+    try
+    {
+        await ps.prepare('EXEC [DELETE_GCP_Redirect] @issuerGLN, @identificationKeyType, @gcp');
+        const dbResult = await ps.execute( {issuerGLN, identificationKeyType, gcp});
+
+        if (dbResult.recordset)
+        {
+            result = dbResult.recordset[0]['SUCCESS'];
+        }
+        await ps.unprepare();
+    }
+    catch (err)
+    {
+        utils.logThis(`deleteGCPRedirect error: ${err}`);
+        await resetDBConnection(err.message);
+    }
+
+    return result;
+}
+
+
+/**
+ * Runs End of Day processing on the SQL server - set to once every 24 hours
+ * by using setInterval()
+ * @returns {Promise<void>}
+ */
+const runEndOfDaySQL = async() =>
+{
+    utils.logThis(`End Of Day SQL processing started`);
+    await connectToSQLServerDB();
+
+    const ps = new sql.PreparedStatement(sqlConn);
+
+    try
+    {
+        await ps.prepare('EXEC [END_OF_DAY]');
+        await ps.execute({});
+        await ps.unprepare();
+    }
+    catch (err)
+    {
+        utils.logThis(`runEndOfDaySQL error: ${err}`);
+        await resetDBConnection(err.message);
+    }
+
+    utils.logThis(`End Of Day SQL processing completed`);
+}
+
+
+/**
+ * Lists the Build servers that are synchronising with the SQL database
+ * @returns {Promise<null|*>}
+ */
+const getHeardBuildServers = async () =>
+{
+    try
+    {
+        await connectToSQLServerDB();
+        const ps = new sql.PreparedStatement(sqlConn);
+
+        await ps.prepare('EXEC [ADMIN_GET_Heard_Build_Servers]');
+        const dbResult = await ps.execute({ });
+        await ps.unprepare();
+
+        return convertDBRowsToAPIFormat(dbResult.recordset);
+    }
+    catch (err)
+    {
+        utils.logThis(`getHeardBuildServers error: ${err}`);
+        await resetDBConnection(err.message);
+        return null;
+    }
+};
+
+
+/**
+ * Deletes a Build Sync Server from the Sync Registry. If it is still
+ * running, that server will be forced to perform a full rebuild of
+ * its local database.
+ * @param syncServerId
+ * @returns {Promise<boolean>}
+ */
+const deleteBuildServerFromSyncRegistry = async (syncServerId) =>
+{
+    let result = false;
+    try
+    {
+        await connectToSQLServerDB();
+        const ps = new sql.PreparedStatement(sqlConn);
+        ps.input('syncServerId', sql.TYPES.NChar(13));
+        await ps.prepare('EXEC [ADMIN_DELETE_Build_Server_From_Sync_Register] @syncServerId');
+        const dbResult = await ps.execute({ syncServerId });
+        if (dbResult.recordset)
+        {
+            result = dbResult.recordset[0]['SUCCESS'];
+        }
+        await ps.unprepare();
+    }
+    catch (err)
+    {
+        utils.logThis(`deleteBuildServerFromSyncRegistry error: ${err}`);
+        await resetDBConnection(err.message);
+        return false;
+    }
+    return result;
+};
+
+
+
+/**
+ * Lists the Accounts authorised to use this service
+ * @returns {Promise<null|*>}
+ */
+const getAccounts = async () =>
+{
+    try
+    {
+        await connectToSQLServerDB();
+        const ps = new sql.PreparedStatement(sqlConn);
+
+        await ps.prepare('EXEC [ADMIN_GET_Accounts]');
+        const dbResult = await ps.execute({ });
+        await ps.unprepare();
+
+        return convertDBRowsToAPIFormat(dbResult.recordset);
+    }
+    catch (err)
+    {
+        utils.logThis(`getAccounts error: ${err}`);
+        await resetDBConnection(err.message);
+        return null;
+    }
+};
+
+
+/**
+ * Inserts, Updates or Deletes an account based on its account details
+ * @returns {Promise<boolean>}
+ * @param account
+ * @param deleteFlag
+ */
+const upsertOrDeleteAccount = async (account, deleteFlag) =>
+{
+    let result = false;
+    await connectToSQLServerDB();
+
+    const ps = new sql.PreparedStatement(sqlConn);
+    ps.input('issuerGLN', sql.TYPES.NChar(13));
+    ps.input('accountName', sql.TYPES.NVarChar(255));
+    ps.input('authenticationKey', sql.TYPES.NVarChar(64));
+
+    try
+    {
+        if (deleteFlag)
+        {
+            await ps.prepare('EXEC [ADMIN_DELETE_Account] @issuerGLN, @accountName, @authenticationKey');
+        }
+        else
+        {
+            await ps.prepare('EXEC [ADMIN_UPSERT_Account] @issuerGLN, @accountName, @authenticationKey');
+        }
+        const dbResult = await ps.execute( account );
+
+        if (dbResult.recordset)
+        {
+            result = dbResult.recordset[0]['SUCCESS'];
+        }
+        await ps.unprepare();
+    }
+    catch (err)
+    {
+        utils.logThis(`upsertOrDeleteAccount error: ${err}`);
+        await resetDBConnection(err.message);
+    }
+
+    return result;
+}
+
+
+
+/**
+ * SQL data columns are named as lowercase characters with underscores.
+ * This function processes an array of returned rows using function
+ * convertDBColumnsToAPIFormat() which performs the actual conversion.
+ * @param rrArray
+ * @returns {*}
+ */
+const convertDBRowsToAPIFormat = (rrArray) =>
+{
+    let rrOutputArray = [];
+    if (rrArray.length !== undefined)
+    {
+        for (let rrElement of rrArray)
+        {
+            rrOutputArray.push(convertDBColumnsToAPIFormat(rrElement));
+        }
+    }
+    return rrOutputArray;
+};
+
+
+/**
+ * convertDBColumnsToAPIFormat converts DB underscored column names to camel case
+ * e.g. column with name 'my_column_name' becomes 'myColumnName'.
+ * If column is named 'identificationKeyType', the value of this property
+ * has its AI numeric property such as '01' converted to the shortcode label 'gtin'.
+ * Change this property:
+ *    from its database name 'forwardRequestQuerystrings'
+ *    to its API name 'fwqs'.
+ * Delete property GLN as we don't want them surfacing via the API
+ *
+ * @param dbObject
+ * @returns {{}}
+ */
+const convertDBColumnsToAPIFormat = (dbObject) =>
+{
+    let outputObj = {};
+    let nextCharUpperCase = false;
+    let keys = Object.keys(dbObject);
+    for(let thisKey of keys)
+    {
+        let outputKeyName = "";
+        if (thisKey === 'member_primary_gln')
+        {
+            //A 'special' for member_primary_gln, keeping the 'GLN' all capitals!
+            outputKeyName = 'issuerGLN';
+        }
+        else
+        {
+            for(let char of [...thisKey])
+            {
+                if (char === '_')
+                {
+                    nextCharUpperCase = true;
+                }
+                else
+                {
+                    outputKeyName += nextCharUpperCase ? char.toUpperCase() : char.toLowerCase();
+                    nextCharUpperCase = false;
+                }
+            }
+        }
+
+        if (thisKey === 'identification_key_type')
+        {
+            outputObj[outputKeyName] = utils.convertAINumericToLabel(dbObject[thisKey]);
+        }
+        else if (thisKey === 'forward_request_querystrings')
+        {
+            outputObj['fwqs'] = dbObject[thisKey];
+        }
+        else if (thisKey === 'linktype')
+        {
+            outputObj['linkType'] = dbObject[thisKey];
+        }
+        else if (thisKey === 'default_linktype')
+        {
+            outputObj['defaultLinkType'] = dbObject[thisKey];
+        }
+        else if (thisKey === 'member_primary_gln')
+        {
+            outputObj['issuerGLN'] = dbObject[thisKey];
+        }
+        else
+        {
+            outputObj[outputKeyName] = dbObject[thisKey];
+        }
+
+
+
+    }
+
+
+    return outputObj;
+}
+
+
+
 module.exports = {
     checkAuth,
-    countURIRequestsUsingGLN,
-    readURIRequest,
-    readURIResponse,
-    searchURIRequestsByGS1Key,
-    searchURIRequestsByGLN,
+    countURIEntriesUsingGLN,
+    searchURIEntriesByIdentificationKey,
+    searchURIEntriesByGLN,
     searchURIResponses,
-    upsertURIRequest,
+    upsertURIEntry,
     upsertURIResponse,
-    deleteURIRequest,
-    deleteURIResponse,
+    deleteURIEntry,
+    publishValidatedEntries,
+    saveValidationResult,
+    getValidationResultForBatchFromDB,
+    searchGCPRedirects,
+    upsertGCPRedirect,
+    deleteGCPRedirect,
+    runEndOfDaySQL,
+    getHeardBuildServers,
+    deleteBuildServerFromSyncRegistry,
+    getAccounts,
+    upsertOrDeleteAccount,
     closeDB
 };

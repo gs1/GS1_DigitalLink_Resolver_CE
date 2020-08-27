@@ -1,15 +1,19 @@
-FROM node:latest
+FROM node:14.4-stretch
 
 ENV TZ=Europe/London
 
 # The web server will be running internally on port 80
 ENV PORT=80
 
-# SQL Azure database connection variables - DEV only
+# This is the Admin auth key for admin API functions (can be any string value).
+# You can see this key in action in 'accounts.py' in the Python Admin Clients folder
+ENV ADMIN_AUTH_KEY="MySecretAuthKey"
+
+# SQL Azure database connection variables - DEV only for use on local Docker
 ENV SQLDBCONN_USER="sa"
 ENV SQLDBCONN_PASSWORD="its@SECR3T!"
 ENV SQLDBCONN_SERVER="resolver-sql-server"
-ENV SQLDBCONN_DB="gs1-resolver-ce-v2-db"
+ENV SQLDBCONN_DB="gs1-resolver-ce-v2-1-db"
 
 # Make sure we have patches the container and instal cuel and dos2unix
 RUN apt-get update && apt-get -y install curl dos2unix && apt-get autoremove

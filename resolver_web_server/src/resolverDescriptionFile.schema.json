@@ -30,17 +30,17 @@
       }
     },
     "linkTypeDefaultCanBeAll": {
-      "description":"Boolean flag stating whether the resolver supports the option to make 'all' the default linkType.",
+      "description": "Boolean flag stating whether the resolver supports the option to make 'all' the default linkType.",
       "type": "boolean",
       "default": false
     },
     "supportsSemanticInterpretation": {
-      "description":"Boolean flag stating whether the resolver provides a semantic interpretation of request URIs",
+      "description": "Boolean flag stating whether the resolver provides a semantic interpretation of request URIs",
       "type": "boolean",
       "default": false
     },
     "validatesAIcombinations": {
-      "description":"Boolean flag stating whether the resolver validates the combination of AIs according to the GS1 General Specifications",
+      "description": "Boolean flag stating whether the resolver validates the combination of AIs according to the GS1 General Specifications",
       "type": "boolean",
       "default": false
     },
@@ -71,35 +71,35 @@
     },
     "supportsLanguageVariants": {
       "description": "A Boolean value to declare that the resolver may offer different redirections *or content) based on the user language",
-      "type":"boolean",
-      "default":true
+      "type": "boolean",
+      "default": true
     },
     "contact": {
       "description": "Contact details for the resolver operator, uses VCard",
       "type": "object",
-      "properties" : {
+      "properties": {
         "fn": {
           "description": "Full name",
           "type": "string"
         },
-        "hasAddress" : {
+        "hasAddress": {
           "description": "Address info for the resolver operator",
           "type": "object",
           "properties": {
             "streetAddress": {
-              "description":"Street address of hte operator",
-              "type":"string"
+              "description": "Street address of hte operator",
+              "type": "string"
             },
             "locality": {
               "description": "locality of the operator",
               "type": "string"
             },
-            "region" : {
+            "region": {
               "description": "region of the operator",
-              "type":"string"
+              "type": "string"
             },
             "postal-code": {
-              "decription": "post code of the operator",
+              "description": "post code of the operator",
               "type": "string"
             }
           }
@@ -118,7 +118,7 @@
     },
     "dataDump": {
       "description": "The URL of a complete set of GS1 Digital Link URIs and their associated links available from this resolver",
-      "type":"string",
+      "type": "string",
       "format": "url"
     },
     "supportedPrimaryKeys": {
@@ -126,9 +126,34 @@
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["all","01","8006","8013","8010","410","411","412","413","414","415","416","8017","8018","255","00","253","401","402","8003","8004"]
+        "enum": [
+          "all",
+          "01",
+          "8006",
+          "8013",
+          "8010",
+          "410",
+          "411",
+          "412",
+          "413",
+          "414",
+          "415",
+          "416",
+          "8017",
+          "8018",
+          "255",
+          "00",
+          "253",
+          "401",
+          "402",
+          "8003",
+          "8004"
+        ]
       }
     }
   },
-  "required" :["resolverRoot", "supportedPrimaryKeys"]
+  "required": [
+    "resolverRoot",
+    "supportedPrimaryKeys"
+  ]
 }

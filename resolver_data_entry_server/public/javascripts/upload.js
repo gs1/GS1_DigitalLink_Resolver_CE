@@ -1,10 +1,54 @@
 const global_dataColumns = [
-    "gs1_key_code", "gs1_key_value", "item_description", "variant_uri", "linktype",
-    "iana_language", "context", "mime_type", "link_title", "target_url", "default_linktype",
-    "default_iana_language", "default_context", "default_mime_type", "fwqs", "active",
-    "date_inserted", "date_last_updated"
+    "identificationKeyType",
+    "identificationKey",
+    "itemDescription",
+    "qualifierPath",
+    "linkType",
+    "ianaLanguage",
+    "context",
+    "mimeType",
+    "linkTitle",
+    "targetUrl",
+    "defaultLinktype",
+    "defaultIanaLanguage",
+    "defaultContext",
+    "defaultMimeType",
+    "fwqs",
+    "active",
+    "dateInserted",
+    "dateLastUpdated"
 ];
-let global_dataLines = null;
+
+const global_entryResponseStatusCodes = {
+    OK: 0,
+    INVALID_MO: 100,
+    RESOLVER_ENTRY_MISSING_PROPERTIES: 110,
+    FAILED_DIGITAL_LINK_TEST: 120,
+    INACTIVE_LICENSE_UNDER_MO: 200,
+    INVALID_LICENSE_UNDER_MO: 300,
+    KEY_NOT_IN_MO_RANGE: 400,
+    INVALID_KEY_TYPE: 500,
+    KEY_NOT_FOUND: 600,
+    FAILED_TO_SAVE_ENTRY: 700,
+    FAILED_TO_SAVE_RESPONSE: 800,
+    VALIDATION_ATTEMPT_FAILED: 900,
+    NOT_YET_VALIDATED: 999
+};
+
+let global_dataLines = [];
+let global_upload_batchIds = [];
+let global_data_ExcelWorkBook = null;
+let global_spreadSheetName = null;
+let global_officialGS1Template = false;
+let global_linkTypes = [];
+let global_languages = [];
+let global_contexts = [];
+let global_mediaTypes = [];
+
+
+const global_RegexAtLeast3AlphaNumerics = RegExp('/(.*[a-z]){3}/i');
+const global_EMPTYCELL_FLAG = "????????"
+const global_UploadBatchSize = 100; //This shows how many entries are uploaded in one batch
 
 const global_GS1dlt = new GS1DigitalLinkToolkit();
 
@@ -12,24 +56,128 @@ const global_GS1dlt = new GS1DigitalLinkToolkit();
 //if checks are successful:
 let global_ResolverEntries = [];
 
+
+const convertValidationCodeToText = (validationCode) =>
+{
+    return Object.keys(global_entryResponseStatusCodes).find(key => global_entryResponseStatusCodes[key] === parseInt(validationCode))
+}
+
+
+/**
+ * Allows the use to see the auth key they have typed into the authentication key textbox:
+ * (works with mouseOutPass())
+ */
+const mouseOverPass = () =>
+{
+    const obj = document.getElementById('authKey');
+    obj.type = "text";
+}
+
+/**
+ * Hides the auth key in the authentication key textbox
+ * (works with mouseOverPass())
+ */
+const mouseOutPass = () =>
+{
+    const obj = document.getElementById('authKey');
+    obj.type = "password";
+}
+
+
+/**
+ * Reads the file presented for upload
+ * @param input
+ */
 const readFile = (input) =>
 {
+    let fileType;
     let divStatus = document.getElementById("divStatus");
 
     let file = input.files[0];
     let reader = new FileReader();
-    reader.readAsText(file);
+
+    if(file.name.toLowerCase().endsWith(".csv"))
+    {
+        fileType = "CSV";
+    }
+    else if(file.name.toLowerCase().endsWith("xlsx"))
+    {
+        fileType = "XLSX";
+    }
+    else
+    {
+        divStatus.innerText = `${file.name} is not compatible with this upload application - please use text '.csv' or Excel '.xlsx' files`;
+        return;
+    }
+
+    if(fileType === "XLSX")
+    {
+        reader.readAsArrayBuffer(file);
+    }
+    else
+    {
+        reader.readAsText(file);
+    }
 
     reader.loadstart = function ()
     {
         divStatus.innerText = `Reading file ${file.name} - please wait`;
     };
 
+
     reader.onload = async function (e)
     {
-        global_dataLines = e.target.result.split("\n");
-        divStatus.innerText = `File ${file.name} read successfully! Processing ${global_dataLines.length} lines.`;
-        showDataFromFile();
+        //Hide the file uploader
+        document.getElementById("divFileUpload").style.visibility="hidden";
+
+        if (fileType === "XLSX")
+        {
+            try
+            {
+                const data = e.target.result;
+
+                //Read as an Excel Workbook
+                global_data_ExcelWorkBook = XLSX.read(data, {type: "array"});
+
+                //Set the global_officialGS1Template flag to true if this the official GS1 template spreadsheet
+                if (global_data_ExcelWorkBook.Sheets['Instructions'] !== undefined &&
+                    global_data_ExcelWorkBook.Sheets['Instructions']['A1'] !== undefined &&
+                    global_data_ExcelWorkBook.Sheets['Instructions']['A1']['v'] !== undefined
+                )
+                {
+                    global_officialGS1Template = global_data_ExcelWorkBook.Sheets['Instructions']['A1']['v'] === 'GS1Templatev0.2';
+                }
+                else
+                {
+                    global_officialGS1Template = false;
+                }
+                divStatus.innerText = `${global_officialGS1Template ? 'Official GS1 Template' : 'Your'} Excel file '${file.name}' was read successfully`;
+
+                //At this point we load the official lists from the official GS1 Template spreadsheet
+                if (global_officialGS1Template)
+                {
+                    loadLanguagesFromOfficialGS1Template();
+                    loadContextsFromOfficialGS1Template();
+                    loadMediaTypesFromOfficialGS1Template();
+
+                    //We also hide the 'set default key type' setting as we already know it!
+                    document.getElementById('gs1KeysDefault_Hide_If_Official_Spreadsheet').style.visibility='hidden';
+                }
+
+                selectExcelSpreadSheet();
+            }
+            catch (err)
+            {
+                divStatus.innerText = `Spreadsheet ${file.name} could not be read. Please refresh this page and try upload again! Error is: ${err}. `;
+            }
+        }
+        else
+        {
+            global_dataLines = e.target.result.split("\n");
+            divStatus.innerText = `File ${file.name} read successfully! Processing ${global_dataLines.length} lines.`;
+            showDataFromCSVFile(false);
+        }
+
         //Set up the list of linktypes select control
         setTimeout(populateLinkTypesSelectControl, 500);
     };
@@ -45,19 +193,206 @@ const readFile = (input) =>
 
 
 /**
+ * Sets up a SELECT control with all the spreadsheet names in this Excel Workbook
+ */
+const selectExcelSpreadSheet = () =>
+{
+    let selectWorkSheet = document.getElementById("selectWorkSheet");
+    for (let sheetName of global_data_ExcelWorkBook.SheetNames)
+    {
+        //If this spreadsheet is NOT the officia; GS1 template then add all spraadsheet names to the select control
+        //OR (as it is the official template) only those names in all capital letters are chosen.
+        if (!global_officialGS1Template || (sheetName.trim().toUpperCase() === sheetName.trim()))
+        {
+            let thisOption = document.createElement("option");
+            thisOption.text = sheetName.trim();
+            thisOption.value = sheetName.trim();
+            selectWorkSheet.appendChild(thisOption);
+        }
+    }
+    //make the spreadsheet chooser visible:
+    document.getElementById("divChooseSpreadsheet").style.visibility = "visible";
+}
+
+
+/**
+ * Loads languages from the official GS1 Template spreadsheet
+ */
+const loadLanguagesFromOfficialGS1Template = () =>
+{
+    global_languages = [];
+    const langSheet = global_data_ExcelWorkBook.Sheets['Languages'];
+    for (let row = 1; row <200; row++)
+    {
+        if (langSheet['A' + row] && langSheet['B' + row])
+        {
+            const ianaLanguage = langSheet['A' + row]['w'];
+            const userReadable = langSheet['B' + row]['w'];
+            global_languages.push({iana: ianaLanguage, user: userReadable});
+        }
+    }
+}
+
+
+/**
+ * Loads contexts from the official GS1 Template spreadsheet
+ */
+const loadContextsFromOfficialGS1Template = () =>
+{
+    global_contexts = [];
+    const langSheet = global_data_ExcelWorkBook.Sheets['Contexts'];
+    for (let row = 1; row <300; row++)
+    {
+        if (langSheet['A' + row] && langSheet['B' + row])
+        {
+            const countryName = langSheet['A' + row]['w'];
+            const countryCode = langSheet['B' + row]['w'];
+            global_contexts.push({countryCode, countryName});
+        }
+    }
+}
+
+
+
+/**
+ * Loads media (MIME) types from the official GS1 Template spreadsheet
+ */
+const loadMediaTypesFromOfficialGS1Template = () =>
+{
+    global_mediaTypes = [];
+    const langSheet = global_data_ExcelWorkBook.Sheets['MediaTypes'];
+    for (let row = 1; row <100; row++)
+    {
+        if (langSheet['A' + row] && langSheet['B' + row])
+        {
+            const mediaTypeName = langSheet['A' + row]['w'];
+            const mimeType = langSheet['B' + row]['w'];
+            global_mediaTypes.push({mimeType, mediaTypeName});
+        }
+    }
+}
+
+
+
+
+/**
+ * Shows data from the Excel spreadsheet file
+ */
+const showDataFromXLSXFile = () =>
+{
+    //Now the user has chosen the sheet name, we can make this section invisible:
+    document.getElementById("divChooseSpreadsheet").style.visibility = "hidden";
+
+    //Get the chosen sheetName
+    global_spreadSheetName = document.getElementById("selectWorkSheet").value;
+    document.getElementById("divStatus").innerHTML = `Spreadsheet chosen: <b>${global_spreadSheetName}</b>`;
+
+    //This array of alphabetic capital letters will be used as an index to the spreadsheet's columns.
+    //We don't need to do the same for the spreadsheet's rows because
+    const columnNamesArray = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+
+    //The sheetRangeArray stores the active cell range in this wprksheet
+    //from 'top-left' to bottom-right, e.g. "A1:R14"
+    let sheetRangeArray = global_data_ExcelWorkBook.Sheets[global_spreadSheetName]["!ref"].split(":");
+
+    //using the example "A1:R14", this value will be "A"
+    let sheetRangeLowestColumn = sheetRangeArray[0].substr(0,1);
+
+    //using the example "A1:R14", this value will be "R"
+    let sheetRangeHighestColumn = sheetRangeArray[1].substr(0,1);
+
+    //The official GS1 Template has the starting row as 3
+    let sheetRangeLowestRow = 3;
+    if (!global_officialGS1Template)
+    {
+        //using the example "A1:R14", this value will be 1.
+        sheetRangeLowestRow = parseInt(sheetRangeArray[0].substr(1));
+    }
+
+    //using the example "A1:R14", this value will be 14
+    let sheetRangeHighestRow = parseInt(sheetRangeArray[1].substr(1));
+
+    //This flag will be turned on when we are 'in range'.
+    let wantedColumnFlag = false;
+
+    //The lowest to highest rows are numeric so we can use a conventional numeric
+    //loop for each row:
+    for (let row = sheetRangeLowestRow; row <= sheetRangeHighestRow; row++)
+    {
+        let csvRow = "";
+
+        //Columns in Excel are letters, not numbers. The array columnNamesArray stores letters A thru Z
+        //in which the active columns can be found.
+        for (let column of columnNamesArray)
+        {
+            //We have found the lowest column value so we switch on the wantedColumnFlag
+            if (column === sheetRangeLowestColumn)
+            {
+                wantedColumnFlag = true;
+            }
+
+            if (wantedColumnFlag)
+            {
+                //This block adds a CSV column to csvRow.
+                // If the data in the cell is HELLO then it builds this: "HELLO",
+                csvRow += '"';
+                let cellId = column + row;
+                let cell = global_data_ExcelWorkBook.Sheets[global_spreadSheetName][cellId];
+
+                //Cells which do not have any data are missing in the data, but we need to note that they would
+                //have existed to maintain consistency. For example, If there is no CSV for some GTIN entries, the
+                //CSV cell for that GTIN's row is empty. But we need to have a placeholder for it so it doesn't shift
+                //the next cell's data to the left! For now we mark it with the value in global variable
+                //global_EMPTYCELL_FLAG which we will use later to detect intentionally blank data.
+                if (cell === undefined || cell['w'].trim().length === 0)
+                {
+                    csvRow += global_EMPTYCELL_FLAG;
+                }
+                else
+                {
+                    //Add the data from the cell
+                    csvRow += cell['w'];
+                }
+                csvRow += '",'
+
+                //We have reached the top end of columns, se switch off the flag
+                if ((column === sheetRangeHighestColumn))
+                {
+                    wantedColumnFlag = false;
+                }
+            }
+        }
+        //Add all but the final character from csvRow (which is a comma) to the global_dataLines array.
+        //after checking that it is not identical to the previous row (as long as there are more than 0 rows
+        //in global_dataLines):
+        const csvRowToStore = csvRow.substr(0, csvRow.length - 1);
+        if (csvRowToStore.length === 0 || csvRowToStore !== global_dataLines[global_dataLines.length - 1])
+        {
+            global_dataLines.push(csvRow.substr(0, csvRow.length - 1))
+        }
+    }
+
+    //Now we have filled global_dataLines, we run the CSV processing function which expects
+    //to find its data there:
+    showDataFromCSVFile(global_officialGS1Template);
+};
+
+
+/**
  * Shows a table with example data which the user uses to select which one contains 'required' columns
  */
-const showDataFromFile = () =>
+const showDataFromCSVFile = (officialExcelSpreadsheetWasSourceFlag) =>
 {
     let htmlTable = "<table>";
     let counter = 0;
     let firstColumnFlag = true;
-    let detectedDataFlag = false; //Set true when a data line rather than a header line is detected.
 
-    let selectHeaderLines = document.getElementById("selectIgnoreFirstRowCount");
-
-    for (let dataLine of global_dataLines)
+    for (let rawDataLine of global_dataLines)
     {
+        //Remove any CR or LF characters (at most one of either/both may occur at the end of each line)
+        //so no need for regex search:
+        const dataLine = rawDataLine.replace('\n','').replace('\r', '');
+
         //Create table columns
         //First, aim to split on "," where all columns are double-quoted.
         let dataColumns = dataLine.split('","');
@@ -67,20 +402,11 @@ const showDataFromFile = () =>
             dataColumns = dataLine.split(',');
         }
 
-        //Attempt to detect if this line is a header line. If it has the beginnings of a web address
-        //then it is somewhat unlikely! If the detectedDataFlag is true because it previously found
-        //a data line then don't don't detect again.
-        if (!detectedDataFlag && (dataLine.includes('http://') || dataLine.includes('https://')))
-        {
-            selectHeaderLines.value = counter; //counter is still 1 behind the current line number
-            detectedDataFlag = true; //data line not header line has been detected.
-        }
-
-        //This section only runs only on the first column, which is is usually a headers column.
+        //This section only runs only on the first column, which is  usually a headers column.
         if (firstColumnFlag)
         {
             htmlTable += "<tr>";
-            for (let dataColumnIndex in dataColumns)
+            for (let dataColumnIndex=0; dataColumnIndex < dataColumns.length; dataColumnIndex++)
             {
                 htmlTable += "<td>" + attributesListAsSelectControlHTMLSource(dataColumnIndex) + "</td>";
             }
@@ -88,7 +414,11 @@ const showDataFromFile = () =>
             firstColumnFlag = false;
 
             //See if we can detect that this is a file in the same format as the download file.
-            if (detectOfficialDownloadFormat(dataLine))
+            if (officialExcelSpreadsheetWasSourceFlag)
+            {
+                setTimeout(setSelectControlsToOfficialExcelFileFormat, 1000);
+            }
+            else if (detectOfficialDownloadFormat(dataLine))
             {
                 //If so, set all the select controls automatically using this function
                 //which will be sent into the event loop so that all the controls actaslly
@@ -123,31 +453,69 @@ const showDataFromFile = () =>
 
 
 /**
- * Populates the list of LinkTypes from an API call to /api/ref/linktypes
+ * Returns true if the data line includes an instance from this Non-exhaustive list
+ * of URI schemes most likely to be used in an upload file.
+ * This function is used as a simple way of detecting a data line since a target url
+ * is a mandatory item of data to upload.
+ * @param dataLine
+ * @returns {boolean}
+ */
+const lineIncludesInternetURIScheme = (dataLine) =>
+{
+    return dataLine.includes('http://')  || //unencrypted web address
+           dataLine.includes('https://') || //encrypted web address
+           dataLine.includes('ftp://')   || //file transfer protocol (file download)
+           dataLine.includes('sftp://')  || //secure file transfer protocol (file download)
+           dataLine.includes('rtsp://')  || //media streaming protocol
+           dataLine.includes('sip:')     || //internet telephone number
+           dataLine.includes('tel:')     || //standard telephone number
+           dataLine.includes('mailto:')     // create an email to send
+}
+
+
+/**
+ * Populates the list of LinkTypes from an API call to /reference/linktypes
  * @returns {Promise<void>}
  */
 const populateLinkTypesSelectControl = async () =>
 {
-    console.log("Populating link types");
     let selectDefaultLinkType = document.getElementById("selectDefaultLinkType");
-    const fetchResponse = await fetch("/api/ref/linktypes");
-    if (fetchResponse.status === 200)
-    {
-        const linkTypesList = await fetchResponse.json();
-        for (let [key, value] of Object.entries(linkTypesList))
-        {
-            let linkTypeOption = document.createElement("option");
-            linkTypeOption.value = `https://gs1.org/voc/${key}`;
-            linkTypeOption.text = value['title'];
-            if (key === "pip")
-            {
-                linkTypeOption.selected = true;
-            }
-            selectDefaultLinkType.add(linkTypeOption);
-            //console.log(key, value);
-        }
 
-        setDefaultLinkTitle();
+    try
+    {
+        const fetchResponse = await fetch("/reference/linktypes");
+        if (fetchResponse.status === 200)
+        {
+            global_linkTypes = await fetchResponse.json();
+            setDefaultLinkTitle();
+        }
+        else if (fetchResponse.status === 404)
+        {
+            //the Fetch API failed (in design mode the page has no access to the API)
+            let linkTypeOption = document.createElement("option");
+            linkTypeOption.value = `https://gs1.org/voc/pip`;
+            linkTypeOption.text = 'Product Information Page';
+            linkTypeOption.selected = true;
+            selectDefaultLinkType.add(linkTypeOption);
+            document.getElementById("defaultLinkText").value = 'Product Information Page';
+        }
+    }
+    catch
+    {
+        //the Fetch API failed (in design mode the page has no access to the API)
+        global_linkTypes.push({
+            curie: 'gs1:pip',
+            description: 'Product Information Page',
+            title: 'Product Information Page',
+            url: 'https://gs1.org/voc/pip'
+        });
+
+        let linkTypeOption = document.createElement("option");
+        linkTypeOption.value = `https://gs1.org/voc/pip`;
+        linkTypeOption.text = 'Product Information Page';
+        linkTypeOption.selected = true;
+        selectDefaultLinkType.add(linkTypeOption);
+        document.getElementById("defaultLinkText").value = 'Product Information Page';
     }
 }
 
@@ -159,20 +527,26 @@ const populateLinkTypesSelectControl = async () =>
 const setDefaultLinkTitle = () =>
 {
     const select = document.getElementById("selectDefaultLinkType");
-    const linkTypeText = select.options[select.selectedIndex].text;
-    document.getElementById("defaultLinkText").value = linkTypeText;
+    document.getElementById("defaultLinkText").value = select.options[select.selectedIndex].text;
 }
 
 
 /**
- * Cleans up the value in a data column by removing any double quotes, single quotes, line and cariiage return
- * characters, and superfluous spaces
+ * Cleans up the value in a data column by removing any double quotes, single quotes, line and carriage return
+ * characters, and trims spaces.
+ * If the dataColumn value matches the constant value in global_EMPTYCELL_FLAG, return an empty string.
  * @param dataColumn
  * @returns {string}
  */
 const cleanDataColumn = (dataColumn) =>
 {
-    return dataColumn.replace("\n", "").replace("\r", "").replace('"', '').replace('"', '').trim();
+    return dataColumn
+        .replace("\n", "")
+        .replace("\r", "")
+        .replace(global_EMPTYCELL_FLAG, '')
+        .replace('"', '')
+        .replace('"', '')
+        .trim();
 };
 
 
@@ -187,24 +561,29 @@ const attributesListAsSelectControlHTMLSource = (selectControlNumber) =>
     htmlSelect += '<option value="X">* Choose column type *</option>';
     htmlSelect += '<option value="< IGNORE >">IGNORE</option>';
     htmlSelect += '<option value="X">-----</option>';
-    htmlSelect += '<option value="gs1_key_code">GS1 Key Code</option>';
-    htmlSelect += '<option value="gs1_key_value">GS1 Key Value</option>';
-    htmlSelect += '<option value="variant_uri">Variant URI</option>';
+    htmlSelect += '<option value="identificationKeyType">Id Key Type</option>';
+    htmlSelect += '<option value="identificationKey">Identification Key</option>';
+    htmlSelect += '<option value="qualifierPath">Qualifier Path</option>';
     htmlSelect += '<option value="X">-----</option>';
-    htmlSelect += '<option value="item_description">Item Description</option>';
+    htmlSelect += '<option value="itemDescription">Item Description</option>';
     htmlSelect += '<option value="X">-----</option>';
-    htmlSelect += '<option value="target_url">Target URL</option>';
-    htmlSelect += '<option value="link_title">Link Title</option>';
+    htmlSelect += '<option value="targetUrl">Target URL</option>';
+    htmlSelect += '<option value="linkTitle">Link Title</option>';
     htmlSelect += '<option value="X">-----</option>';
-    htmlSelect += '<option value="linktype">LinkType</option>';
-    htmlSelect += '<option value="iana_language">Language</option>';
+    htmlSelect += '<option value="cpv">CPV (GTIN)</option>';
+    htmlSelect += '<option value="batch">Batch / Lot# (GTIN)</option>';
+    htmlSelect += '<option value="serial">Serial# (GTIN)</option>';
+    htmlSelect += '<option value="glnx">GLN-X (GLN)</option>';
+    htmlSelect += '<option value="X">-----</option>';
+    htmlSelect += '<option value="linkType">LinkType</option>';
+    htmlSelect += '<option value="ianaLanguage">Language</option>';
     htmlSelect += '<option value="context">Context</option>';
-    htmlSelect += '<option value="mime_type">MIME Type</option>';
+    htmlSelect += '<option value="mimeType">MIME Type</option>';
     htmlSelect += '<option value="X">-----</option>';
-    htmlSelect += '<option value="default_linktype">Default LinkType (Y/N)</option>';
-    htmlSelect += '<option value="default_iana_language">Default Language (Y/N)</option>';
-    htmlSelect += '<option value="default_context">Default Context (Y/N)</option>';
-    htmlSelect += '<option value="default_mime_type">Default MIME-Type (Y/N)</option>';
+    htmlSelect += '<option value="defaultLinktype">Default LinkType (Y/N)</option>';
+    htmlSelect += '<option value="defaultIanaLanguage">Default Language (Y/N)</option>';
+    htmlSelect += '<option value="defaultContext">Default Context (Y/N)</option>';
+    htmlSelect += '<option value="defaultMimeType">Default MIME-Type (Y/N)</option>';
     htmlSelect += '<option value="fwqs">Forward QueryStrings (Y/N)</option>';
     htmlSelect += '<option value="active">Make Active (Y/N)</option>';
     htmlSelect += "</select>";
@@ -244,10 +623,6 @@ const detectOfficialDownloadFormat = (dataLine) =>
  */
 const setSelectControlsToDownloadFileFormat = () =>
 {
-    //Set the header lines control to 1 (a single header line)
-    let headerLinesControl = document.getElementById('selectIgnoreFirstRowCount');
-    headerLinesControl.value = "1";
-
     for (let selectControlNumber = 0; selectControlNumber < global_dataColumns.length; selectControlNumber++)
     {
         let selectControl = document.getElementById(`SELECTCOLUMN_${selectControlNumber}`);
@@ -264,8 +639,83 @@ const setSelectControlsToDownloadFileFormat = () =>
 
 
 /**
+ * If the file to upload has been assessed as being in 'download' format, auto-set the various
+ * select controls to help the user:
+ */
+const setSelectControlsToOfficialExcelFileFormat = () =>
+{
+    for (let selectControlNumber = 0; selectControlNumber < global_dataColumns.length; selectControlNumber++)
+    {
+        let selectControl = document.getElementById(`SELECTCOLUMN_${selectControlNumber}`);
+        if (selectControl !== undefined && selectControl !== null)
+        {
+            if (global_dataColumns[selectControlNumber].startsWith("date"))
+            {
+                selectControl.value = '< IGNORE >';
+            }
+            else
+            {
+                switch (selectControlNumber)
+                {
+                    case 0:
+                        selectControl.value = "identificationKey";
+                        break;
+
+                    case 1:
+                        selectControl.value = "itemDescription";
+                        break;
+
+                    case 2:
+                        selectControl.value = "targetUrl";
+                        break;
+
+                    case 3:
+                        selectControl.value = "linkType";
+                        break;
+
+                    case 4:
+                        selectControl.value = "linkTitle";
+                        break;
+
+                    case 5:
+                        selectControl.value = "defaultLinktype";
+                        break;
+
+                    case 6:
+                        selectControl.value = "cpv";
+                        break;
+
+                    case 7:
+                        selectControl.value = "batch";
+                        break;
+
+                    case 8:
+                        selectControl.value = "serial";
+                        break;
+
+                    case 9:
+                        selectControl.value = "ianaLanguage";
+                        break;
+
+                    case 10:
+                        selectControl.value = "context";
+                        break;
+
+                    case 11:
+                        selectControl.value = "mimeType";
+                        break;
+
+                }
+            }
+        }
+    }
+};
+
+
+/**
  * Loop through all indexed instances of the Select control SELECTCOLUMN_(n)
- * looking for values set to 'X' or until we run out of controls
+ * looking for values set to 'X' or until we run out of controls.
+ * Returns true if all controls are set, else false
  * @returns {boolean}
  */
 const checkAllSelectControlsHaveBeenSet = () =>
@@ -287,31 +737,340 @@ const checkAllSelectControlsHaveBeenSet = () =>
         }
         columnIndex++;
     }
-    return controlNotSetFlag;
+    return !controlNotSetFlag;
 };
 
 
+const buildResolverEntry = (dataColumns, resolverEntry, resolverResponse) =>
+{
+    for (let dataColumnNumber = 0; dataColumnNumber < dataColumns.length; dataColumnNumber++)
+    {
+        //Take dataColumns[columnIndex] and make sure that the column's value has no carriage-return or linefeed,
+        //no single-quote, and is trimmed of start/end spaces before adding it to a local variable in this block:
+        let dataColumnValue = cleanDataColumn(dataColumns[dataColumnNumber]);
+
+        //Gets the drop down SELECT control for this column
+        let columnTypeSelectControl = document.getElementById(`SELECTCOLUMN_${dataColumnNumber}`);
+
+        if (columnTypeSelectControl !== null)
+        {
+            //Gets the value selected for this current column set by the drop-down SELECT control
+            //and sees if it can match its value - if so, assigning the data in the column to the
+            //appropriate resolverEntry or resolverResponse object instance:
+            let columnType = columnTypeSelectControl.value;
+
+            switch (columnType)
+            {
+                case "identificationKeyType":
+                    resolverEntry.identificationKeyType = dataColumnValue.toLowerCase();
+                    break;
+
+                case "identificationKey":
+                    resolverEntry.identificationKey = dataColumnValue;
+                    break;
+
+                case "qualifierPath":
+                    //This logic copes with some variants being blank, as end users may not 'get' that
+                    //they should be supplying the root variant if no other variant is needed.
+                    if (dataColumnValue !== '')
+                    {
+                        resolverEntry.qualifierPath = dataColumnValue;
+                    }
+                    else
+                    {
+                        resolverEntry.qualifierPath = '/';
+                    }
+                    break;
+
+                //It is important that cpv, batch_lot and serial are in this order for GTIN, and that
+                //batch_lot and serial can be appended to any existing qualifierPath data:
+                case "cpv":
+                    if (dataColumnValue.length > 0)
+                    {
+                        resolverEntry.qualifierPath += `/cpv/${dataColumnValue}`;
+                    }
+                    break;
+
+                case "batch":
+                    if (dataColumnValue.length > 0)
+                    {
+                        resolverEntry.qualifierPath += `/lot/${dataColumnValue}`;
+                    }
+                    break;
+
+                case "serial":
+                    if (dataColumnValue.length > 0)
+                    {
+                        resolverEntry.qualifierPath += `/ser/${dataColumnValue}`;
+                    }
+                    break;
+
+
+                //glnx is used by GLN
+                case "glnx":
+                    if (dataColumnValue.length > 0)
+                    {
+                        resolverEntry.qualifierPath += `/${dataColumnValue}`;
+                    }
+                    break;
+
+
+                case "linkType":
+                    resolverResponse.linkType = dataColumnValue;
+                    break;
+
+                case "ianaLanguage":
+                    if (dataColumnValue.length === 2)
+                    {
+                        resolverResponse.ianaLanguage = dataColumnValue;
+                    }
+                    else
+                    {
+                        let findLanguage = global_languages.find(language => language.user === dataColumnValue.trim());
+                        if (findLanguage)
+                        {
+                            resolverResponse.ianaLanguage = findLanguage['iana'];
+                        }
+                    }
+                    break;
+
+                case "context":
+                    //Here we enforce context as a 2-char country / territory in GS1 Resolver
+                    if (dataColumnValue.length === 2)
+                    {
+                        resolverResponse.context = dataColumnValue;
+                    }
+                    else
+                    {
+                        let findContext = global_contexts.find(language => language.user === dataColumnValue.trim());
+                        if (findContext)
+                        {
+                            resolverResponse.context = findContext['iana'];
+                        }
+                    }
+                    break;
+
+                case "mimeType":
+                    //here we look for the presence of a '/' as in 'text/html' or 'application/json'
+                    if (dataColumnValue.includes('/'))
+                    {
+                        resolverResponse.mimeType = dataColumnValue;
+                    }
+                    else
+                    {
+                        let findMediaType = global_mediaTypes.find(mediaType => mediaType.mediaTypeName === dataColumnValue.trim());
+                        if (findMediaType)
+                        {
+                            resolverResponse.mimeType = findMediaType['mimeType'];
+                        }
+                    }
+                    break;
+
+                case "targetUrl":
+                    resolverResponse.targetUrl = dataColumnValue;
+                    break;
+
+                case "defaultLinktype":
+                    resolverResponse.defaultLinkType = dataColumnValue.toUpperCase() === 'Y' || dataColumnValue.toUpperCase() === 'YES' || dataColumnValue === '1';
+                    break;
+
+                case "defaultIanaLanguage":
+                    resolverResponse.defaultIanaLanguage = dataColumnValue.toUpperCase() === 'Y' || dataColumnValue.toUpperCase() === 'YES' || dataColumnValue === '1';
+                    break;
+
+                case "defaultContext":
+                    resolverResponse.defaultContext = dataColumnValue.toUpperCase() === 'Y' || dataColumnValue.toUpperCase() === 'YES' || dataColumnValue === '1';
+                    break;
+
+                case "defaultMimeType":
+                    resolverResponse.defaultMimeType = dataColumnValue.toUpperCase() === 'Y' || dataColumnValue.toUpperCase() === 'YES' || dataColumnValue === '1';
+                    break;
+
+                case "active":
+                    resolverResponse.active = dataColumnValue.toUpperCase() === 'Y' || dataColumnValue.toUpperCase() === 'YES' || dataColumnValue === '1';
+                    break;
+
+                case "fwqs":
+                    resolverResponse.fwqs = dataColumnValue.toUpperCase() === 'Y' || dataColumnValue === '1';
+                    break;
+
+                case "itemDescription":
+                    //Note that descriptions can be built from several columns:
+                    resolverEntry.itemDescription += " " + dataColumnValue;
+                    break;
+
+                case "linkTitle":
+                    resolverResponse.linkTitle = dataColumnValue;
+                    break;
+            }
+        }
+    }
+
+    //Finally trim any extraneous spaces from itemDescription (which can be built from several columns)
+    resolverEntry.itemDescription = resolverEntry.itemDescription.trim();
+}
+
+
+function performResolverEntryCheck(resolverEntry, divCheckResults, counter, dataLine, dataOKFlag, resolverResponse)
+{
+    //Removes any empty cell designators
+    while(dataLine.includes(global_EMPTYCELL_FLAG))
+    {
+        dataLine = dataLine.replace(global_EMPTYCELL_FLAG,'');
+    }
+
+    //Just ensure that qualifierPath does not start with a '//' value:
+    resolverEntry.qualifierPath = resolverEntry.qualifierPath.replace('//', '/');
+
+    if (resolverEntry.identificationKeyType === "")
+    {
+        if (global_officialGS1Template)
+        {
+            resolverEntry.identificationKeyType = global_spreadSheetName.toLowerCase();
+        }
+        else
+        {
+            resolverEntry.identificationKeyType = document.getElementById("selectIdentificationKeyType").value.toLowerCase();
+            if (resolverEntry.identificationKeyType === "")
+            {
+                divCheckResults.innerHTML += `<div style="color: red;">Line ${counter}: Error: No GS1 Key Code column, and no default value set</div><p>${dataLine}</p><hr />`;
+                dataOKFlag = false;
+            }
+        }
+    }
+
+    //call into Digital Link toolkit
+    const gs1CheckResult = runDigitalLinkCheck(resolverEntry.identificationKeyType, resolverEntry.identificationKey, resolverEntry.qualifierPath);
+    if (gs1CheckResult.result === "ERROR")
+    {
+        divCheckResults.innerHTML += `<div style="color: red;">Line ${counter}: Error: ${resolverEntry.identificationKeyType}, ${resolverEntry.identificationKey}: ${gs1CheckResult.error}</div><p>${dataLine}</p><hr />`;
+        dataOKFlag = false;
+    }
+
+    if (resolverResponse.targetUrl === "")
+    {
+        divCheckResults.innerHTML += `<div style="color: red;">Line ${counter}: Error: No Target URL</div><p>${dataLine}</p><hr />`;
+        dataOKFlag = false;
+    }
+    else if (!lineIncludesInternetURIScheme(resolverResponse.targetUrl))
+    {
+        divCheckResults.innerHTML += `<div style="color: red;">Line ${counter}: Error: Target URL -> ${resolverResponse.targetUrl} <- does not match web standards</div><p>${dataLine}</p><hr />`;
+        dataOKFlag = false;
+    }
+
+
+    if (global_RegexAtLeast3AlphaNumerics.test(resolverEntry.itemDescription))
+    {
+        divCheckResults.innerHTML += `<div style="color: red;">Line ${counter}: Error: Item Description must have at at least 3 alphanumeric characters (a-z, A-Z, 0-9)</div><p>${dataLine}</p><hr />`;
+        dataOKFlag = false;
+    }
+
+    //Fill in any 'blanks' from the web page selections
+    if (resolverResponse.linkType === "")
+    {
+        //Set it to the value in selectDefaultLinkType control:
+        resolverResponse.linkType = document.getElementById("selectDefaultLinkType").value;
+        //Is it still blank?
+        if (resolverResponse.linkType === "")
+        {
+            //Show an error:
+            divCheckResults.innerHTML += `<div style="color: red;">Line ${counter}: Error: Blank LinkType, and no default value set</div><p>${dataLine}</p><hr />`;
+            dataOKFlag = false;
+        }
+        else
+        {
+            //Show 'default' info'
+            divCheckResults.innerHTML += `<div style="color: blue;">Line ${counter}: Info: Blank LinkType set to default of '${resolverResponse.linkType}'</div><p>${dataLine}</p><hr />`;
+
+        }
+    }
+    else
+    {
+        //Check that the linktype is 'allowed': To this, we check if it in the list stored.
+        //We check if it is a URI or CURIE. If so, there is nothing more we need to do as resolverResponse.linkType is 'API ready'.
+        //If isTitle instead (which we test lowercase/trimmed versions for max compatibility, we quietly convert the linkType to its CURIE value.
+        //If not any of the three, it's an erro
+        const isCURIE = global_linkTypes.find(linkType => linkType.curie.toLowerCase().trim() === resolverResponse.linkType.toLowerCase().trim());
+        const isURI = global_linkTypes.find(linkType => linkType.url.toLowerCase().trim() === resolverResponse.linkType.toLowerCase().trim());
+        const isTitle = global_linkTypes.find(linkType => linkType.title.toLowerCase().trim() === resolverResponse.linkType.toLowerCase().trim());
+
+        if (!isCURIE && !isURI && !isTitle)
+        {
+            divCheckResults.innerHTML += `<div style="color: red;">Line ${counter}: Error: LinkType '${resolverResponse.linkType}' is not in the official list of LinkTypes for this Resolver</div><p>${dataLine}</p>`;
+            dataOKFlag = false;
+        }
+        else if (typeof isURI === 'object')
+        {
+            //set the linktype to its CURIE version
+            resolverResponse.linkType = isURI['curie'];
+        }
+        else if (typeof isTitle === 'object')
+        {
+            //set the linktype to its CURIE version
+            resolverResponse.linkType = isTitle['curie'];
+        }
+        else if (typeof isCURIE === 'object')
+        {
+            //set the linktype to its CURIE version
+            resolverResponse.linkType = isCURIE['curie'];
+        }
+        else
+        {
+            //It's unlikely we would end up here but we have code to deal with this as we are definitely in a data error.
+            divCheckResults.innerHTML += `<div style="color: red;">Line ${counter}: Error: LinkType ${resolverResponse.linkType} is not known</div><p>${dataLine}</p>`;
+            dataOKFlag = false;
+        }
+    }
+    if (resolverResponse.mimeType === "" || resolverResponse.mimeType === global_EMPTYCELL_FLAG)
+    {
+        resolverResponse.mimeType = document.getElementById("selectMIMEType").value;
+        if (resolverResponse.mimeType === "")
+        {
+            divCheckResults.innerHTML += `<div style="color: red;">Line ${counter}: Error: No MIME (document) column, and no default value set</div><p>${dataLine}</p><hr />`;
+            dataOKFlag = false;
+        }
+    }
+
+    if (resolverResponse.linkTitle === "")
+    {
+        resolverResponse.linkTitle = document.getElementById("defaultLinkText").value;
+        if (resolverResponse.linkTitle === "")
+        {
+            divCheckResults.innerHTML += `<div style="color: red;">Line ${counter}: Error: Empty Link Text, and no default value set</div><p>${dataLine}</p><hr />`;
+            dataOKFlag = false;
+        }
+    }
+    return dataOKFlag;
+}
+
 /**
  * Checks the incoming data
+ * @returns {Promise<void>}
  */
 const checkData = async () =>
 {
     let dataOKFlag = true;
+    let dataLineCount = 0;
+    let nonDataLineCount = 0;
     let divCheckResults = document.getElementById("divCheckResults");
-    divCheckResults.innerHTML = "Checking...</br>";
-    //empty out he global array of entries:
+    divCheckResults.innerHTML = "";
+
+    //Display a spinning circle GIF
+    divCheckResults.appendChild(imgRotatingCircleGIF('rotatingcircle_check'));
+
+
+    //empty out the global array of entries:
     global_ResolverEntries = [];
 
     //First check all select controls have been set. If any values are 'X' it
     //means that some controls have not been set.
-    if (checkAllSelectControlsHaveBeenSet())
+    if (!checkAllSelectControlsHaveBeenSet())
     {
-        window.alert("You need to set all the column description dropdown boxes to a value (even if it is 'IGNORE') before continuing!");
+        divCheckResults.innerHTML = "You need to set all the column description dropdown boxes to a value (even if it is 'IGNORE') before continuing";
+        window.alert("You need to set all the column description dropdown boxes to a value (even if it is 'IGNORE') before continuing");
         return;
     }
     let counter = 0;
-
-    let ignoreRowCount = Number(document.getElementById("selectIgnoreFirstRowCount").value);
 
     for (let dataLine of global_dataLines)
     {
@@ -319,254 +1078,145 @@ const checkData = async () =>
         //execute a 'continue' which jumps execution back up to here:
         counter += 1;
 
-        //if we have essentially an empty line, or one that starts with a comment # or // tag, ignore it and move on.
-        if (dataLine.trim().length < 20 || dataLine.startsWith("#") || dataLine.startsWith("//"))
+        //'Sleep' for 0.1 seconds every 1000 rows to update the UI
+        if (counter % 1000 === 0)
         {
+            divCheckResults.innerHTML = `Checking...${counter} lines so far...`;
+            await sleepForSeconds(0.1);
+        }
+
+        //if we have essentially an empty line, or one that starts with a comment # or // tag, or there
+        //is not even one numeric digit (for example, it's a header line) then ignore this line and move on.
+        //Regex /^([^0-9]*)$/g returns no match (null) if there is one or more digits in the string.
+        //For us, one or more digits is a good thing because there has to be some (e.g. the GTIN) so if
+        //dataLine.match(/^([^0-9]*)$/g) is not null then we have no numbers in our line.
+        if (dataLine.trim().length < 20 || dataLine.startsWith("#") || dataLine.startsWith("//") || dataLine.match(/^([^0-9]*)$/g) !== null)
+        {
+            nonDataLineCount++;
             continue;
+        }
+        else
+        {
+            dataLineCount ++;
         }
 
 
-        //Create resolverRequest and resolverResponse objects ready to be populated:
+        //Create resolverEntry and resolverResponse objects ready to be populated:
+        let resolverEntry = {
+            "identificationKeyType": "",
+            "identificationKey": "",
+            "itemDescription": "",
+            "qualifierPath": "/",
+            "active": true,
+            "responses": []
+        };
+
+        let resolverResponse = {
+            "linkType": "",
+            "ianaLanguage": "xx",
+            "context": "xx",
+            "mimeType": "",
+            "linkTitle": "",
+            "targetUrl": "",
+            "fwqs": true,
+            "active": true,
+            "defaultLinkType": true,
+            "defaultIanaLanguage": true,
+            "defaultContext": true,
+            "defaultMimeType": true
+        };
+
+
+        //First, check if the line has double double-quotes, replacing with single double-quotes, as in:
+        // """grai"",""04012345111118"",""RTI Test"",""/"",""https://gs1.org/voc/pip"" ...
+        dataLine = dataLine.replace(/"",""/g, '","').replace(/"""/g, '"');
+
+        //Split the line by "," - if that fails, just split on comma
+        let dataColumns = dataLine.split('","');
+        if (dataColumns.length < 3)
         {
-            let resolverRequest = {
-                "gs1KeyCode": "",
-                "gs1KeyValue": "",
-                "itemDescription": "",
-                "variantUri": "/",
-                "active": true
-            };
+            dataColumns = dataLine.split(',');
+        }
 
-            let resolverResponse = {
-                "uriRequestId": 0,
-                "linkType": "",
-                "ianaLanguage": "xx",
-                "context": "xx",
-                "mimeType": "",
-                "linkTitle": "",
-                "targetUrl": "",
-                "fwqs": true,
-                "active": true,
-                "defaultLinkType": true,
-                "defaultIanaLanguage": true,
-                "defaultContext": true,
-                "defaultMimeType": true
-            };
+        //loop through each column building the resolverEntry and resolverResponse:
+        buildResolverEntry(dataColumns, resolverEntry, resolverResponse);
 
+        //Now perform checks:
+        dataOKFlag = performResolverEntryCheck(resolverEntry, divCheckResults, counter, dataLine, dataOKFlag, resolverResponse);
 
-            if (counter <= ignoreRowCount)
-            {
-                console.log("Header line ignored");
-                continue; //jump to the next for loop instance
-            }
+        //if we have reached here, the line passed its checks and the data is added to the ready-to-upload
+        // resolver entries list:
+        if (dataOKFlag)
+        {
+            //Add the resolverResponse to the resolverEntry.responses[] array
+            resolverEntry.responses.push(resolverResponse);
 
-            //First, check if the line has double double-quotes, replacing with single double-quotes, as in:
-            // """grai"",""04012345111118"",""RTI Test"",""/"",""https://gs1.org/voc/pip"" ...
-            dataLine = dataLine.replace(/"",""/g, '","').replace(/"""/g, '"');
-
-            //Split the line by "," - if that fails, just split on comma
-            let dataColumns = dataLine.split('","');
-            if (dataColumns.length < 3)
-            {
-                dataColumns = dataLine.split(',');
-            }
-
-            //loop through each column
-            for (let dataColumnNumber in dataColumns)
-            {
-                //Ensures columnIndex is a number (may not be needed)
-                let columnIndex = Number(dataColumnNumber);
-
-                //Take dataColumns[columnIndex] and make sure that the column's value has no carriage-return or linefeed,
-                //no single-quote, and is trimmed of start/end spaces before adding it to a local variable in this block:
-                let dataColumnValue = cleanDataColumn(dataColumns[columnIndex]);
-
-                //Gets the drop down SELECT control for this column
-                let columnTypeSelectControl = document.getElementById(`SELECTCOLUMN_${columnIndex}`);
-
-                if (columnTypeSelectControl !== null)
-                {
-                    //Gets the value selected for this current column set by the drop-down SELECT control
-                    //and sees if it can match its value - if so, assigning the data in the column to the
-                    //appropriate resolverRequest or resolverResponse object instance:
-                    let columnType = columnTypeSelectControl.value;
-
-                    switch (columnType)
-                    {
-                        case "gs1_key_code":
-                            resolverRequest.gs1KeyCode = dataColumnValue.toLowerCase();
-                            break;
-
-                        case "gs1_key_value":
-                            resolverRequest.gs1KeyValue = dataColumnValue;
-                            break;
-
-                        case "variant_uri":
-                            //This logic copes with some variants being blank, as end users may not 'get' that
-                            //they should be supplying the root variant if no other variant is needed.
-                            if (dataColumnValue !== '')
-                            {
-                                resolverRequest.variantUri = dataColumnValue;
-                            }
-                            else
-                            {
-                                resolverRequest.variantUri = '/';
-                            }
-                            break;
-
-                        case "linktype":
-                            resolverResponse.linkType = dataColumnValue;
-                            break;
-
-                        case "iana_language":
-                            resolverResponse.ianaLanguage = dataColumnValue;
-                            break;
-
-                        case "context":
-                            resolverResponse.context = dataColumnValue;
-                            break;
-
-                        case "mime_type":
-                            resolverResponse.mimeType = dataColumnValue;
-                            break;
-
-                        case "target_url":
-                            resolverResponse.targetUrl = dataColumnValue;
-                            break;
-
-                        case "default_linktype":
-                            resolverResponse.defaultLinkType = dataColumnValue.toUpperCase() === 'Y' || dataColumnValue === '1';
-                            break;
-
-                        case "default_iana_language":
-                            resolverResponse.defaultIanaLanguage = dataColumnValue.toUpperCase() === 'Y' || dataColumnValue === '1';
-                            break;
-
-                        case "default_context":
-                            resolverResponse.defaultContext = dataColumnValue.toUpperCase() === 'Y' || dataColumnValue === '1';
-                            break;
-
-                        case "default_mime_type":
-                            resolverResponse.defaultMimeType = dataColumnValue.toUpperCase() === 'Y' || dataColumnValue === '1';
-                            break;
-
-                        case "active":
-                            resolverResponse.active = dataColumnValue.toUpperCase() === 'Y' || dataColumnValue === '1';
-                            break;
-
-                        case "fwqs":
-                            resolverResponse.fwqs = dataColumnValue.toUpperCase() === 'Y' || dataColumnValue === '1';
-                            break;
-
-                        case "item_description":
-                            //Note that descriptions can be built from several columns:
-                            resolverRequest.itemDescription += " " + dataColumnValue;
-                            break;
-
-                        case "link_title":
-                            resolverResponse.linkTitle = dataColumnValue;
-                            break;
-                    }
-                }
-            }
-
-            //Now perform checks:
-
-            if (resolverRequest.gs1KeyCode === "")
-            {
-                resolverRequest.gs1KeyCode = document.getElementById("selectGS1KeyCode").value;
-                if (resolverRequest.gs1KeyCode === "")
-                {
-                    divCheckResults.innerHTML += `Line ${counter}: No GS1 Key Code column, and no default value set<p>${dataLine}</p>`;
-                    dataOKFlag = false;
-                }
-            }
-
-            //call into Digital Link toolkit
-            const gs1CheckResult = runDigitalLinkCheck(resolverRequest.gs1KeyCode, resolverRequest.gs1KeyValue, resolverRequest.variantUri);
-            if (gs1CheckResult.result === "ERROR")
-            {
-                divCheckResults.innerHTML += `Line ${counter}: ${resolverRequest.gs1KeyCode}, ${resolverRequest.gs1KeyValue}: ${gs1CheckResult.error}<p>${dataLine}</p>`;
-                dataOKFlag = false;
-            }
-
-            if (resolverResponse.targetUrl === "")
-            {
-                divCheckResults.innerHTML += `Line ${counter}: No Target URL<p>${dataLine}</p>`;
-                dataOKFlag = false;
-            }
-
-            if (resolverRequest.itemDescription === "")
-            {
-                divCheckResults.innerHTML += `Line ${counter}: No Item Description<p>${dataLine}</p>`;
-                dataOKFlag = false;
-            }
-
-            //Fill in any 'blanks' from the web page selections
-            if (resolverResponse.linkType === "")
-            {
-                resolverResponse.linkType = document.getElementById("selectDefaultLinkType").value;
-                if (resolverResponse.linkType === "")
-                {
-                    divCheckResults.innerHTML += `Line ${counter}: No LinkType column, and no default value set<p>${dataLine}</p>`;
-                    dataOKFlag = false;
-                }
-            }
-
-            if (resolverResponse.mimeType === "")
-            {
-                resolverResponse.mimeType = document.getElementById("selectMIMEType").value;
-                if (resolverResponse.mimeType === "")
-                {
-                    divCheckResults.innerHTML += `Line ${counter}: No MIME (document) column, and no default value set<p>${dataLine}</p>`;
-                    dataOKFlag = false;
-                }
-            }
-
-            if (resolverResponse.linkTitle === "")
-            {
-                resolverResponse.linkTitle = document.getElementById("defaultLinkText").value;
-                if (resolverResponse.linkTitle === "")
-                {
-                    divCheckResults.innerHTML += `Line ${counter}: Empty Link Text, and no default value set<p>${dataLine}</p>`;
-                    dataOKFlag = false;
-                }
-            }
-
-            //if we have reached here, the line passed its checks and the data is added to the ready-to-upload
-            // resolver entries list:
-            if (dataOKFlag)
-            {
-                global_ResolverEntries.push({resolverRequest, resolverResponse});
-            }
+            //Add the resulting resolverEntry object to the global_ResolverEntries array.
+            global_ResolverEntries.push(resolverEntry);
         }
 
     }
+    if(document.getElementById("rotatingcircle_check"))
+    {
+        document.getElementById("rotatingcircle_check").style.visibility = "hidden";
+    }
+
     if (dataOKFlag)
     {
+        //All is well - we are ready to upload!
+        //First let's get null the original data object array as it could be many MB in size:
+        global_dataLines = null;
+
+        //Switch the display to show the Upload button
         document.getElementById("divPerformCheck").style.visibility = "hidden";
         document.getElementById("divPerformUpload").style.visibility = "visible";
+        let divUploadResults = document.getElementById("divUploadResults");
+        if (dataLineCount === 0)
+        {
+            divUploadResults.innerHTML = `No data lines could be found! Please check your file, refresh this page and try again.`;
+            document.getElementById("buttonUploadNow").style.visibility = "hidden";
+            return;
+        }
+        else
+        {
+            divUploadResults.innerHTML = `All local checks were successful<br />${dataLineCount} recognised Resolver data lines `
+        }
+        if (nonDataLineCount > 0)
+        {
+            divUploadResults.innerHTML += `and ${nonDataLineCount} non-recognised (header or blank?) lines `;
+        }
+        divUploadResults.innerHTML += "were counted."
+
+        if (document.getElementById('authKey').value.length === 0)
+        {
+            divUploadResults.innerHTML += "<br />Please paste your authentication key into the box at the top of this window then click 'Upload Data Now' button to upload.";
+        }
+        else
+        {
+            divUploadResults.innerHTML += "<br />Click 'Upload Data Now' button to upload.";
+        }
     }
 };
 
 
 /**
  * Consults the Digital Link toolkit to see if the current entry is valis
- * @param gs1KeyCode
- * @param gs1KeyValue
- * @param variantUri
+ * @param identificationKeyType
+ * @param identificationKey
+ * @param qualifierPath
  * @returns {string|{}}
  */
-const runDigitalLinkCheck = (gs1KeyCode, gs1KeyValue, variantUri) =>
+const runDigitalLinkCheck = (identificationKeyType, identificationKey, qualifierPath) =>
 {
-    let uriToTest = `https://id.gs1.org/${gs1KeyCode}/${gs1KeyValue}`;
-    if (variantUri.startsWith('/'))
+    let uriToTest = `https://id.gs1.org/${identificationKeyType}/${identificationKey}`;
+    if (qualifierPath.startsWith('/'))
     {
-        uriToTest += variantUri;
+        uriToTest += qualifierPath;
     }
     else
     {
         //Add a preceding forward-slash
-        uriToTest += `/${variantUri}`;
+        uriToTest += `/${qualifierPath}`;
     }
 
     try
@@ -585,49 +1235,295 @@ const runDigitalLinkCheck = (gs1KeyCode, gs1KeyValue, variantUri) =>
 };
 
 
-const uploadData = async () =>
+//This function takes each of the resolverEntry / resolverResponse entry pairs and groups them
+//such that different resolverResponses for the same resolverEntry are joined together as
+//resolverEntry.responses[] array.
+const groupResolverEntries = async () =>
 {
+    let divUploadResults = document.getElementById("divUploadResults");
+    let groupedResolverEntriesArray = [];
     let counter = 0;
-    let failCount = 0;
-    let success = false;
+    for (let resolverEntry of global_ResolverEntries)
+    {
+        counter ++;
+        //'Sleep' for 1 second every 1000 rows to update the UI
+        if (counter % 1000 === 0)
+        {
+            divUploadResults.innerHTML = `Creating upload format - ${counter} entries so far...`;
+            await sleepForSeconds(0.1);
+        }
+
+        //Is the resolverEntry already in groupedResolverEntriesArray?
+        //Find out using its unique combination of ID Key Type, ID key and qualifier path.
+        //Note: If uploading many thousands of entries, this .find() will get slower and
+        //      slower as the array grows in size:
+        let storedResolverEntry = groupedResolverEntriesArray.find(element =>
+            element.identificationKeyType === resolverEntry.identificationKeyType &&
+            element.identificationKey === resolverEntry.identificationKey &&
+            element.qualifierPath === resolverEntry.qualifierPath
+        );
+
+        if (storedResolverEntry === undefined)
+        {
+            //The resolver entry is not in the groupedResolverEntriesArray so push it all straight in:
+            groupedResolverEntriesArray.push(resolverEntry);
+        }
+        else
+        {
+            //search for the entry in groupedResolverEntriesArray and update it.
+            for (let i = 0; i < groupedResolverEntriesArray.length; i++)
+            {
+                if (groupedResolverEntriesArray[i].identificationKeyType === resolverEntry.identificationKeyType &&
+                    groupedResolverEntriesArray[i].identificationKey === resolverEntry.identificationKey &&
+                    groupedResolverEntriesArray[i].qualifierPath === resolverEntry.qualifierPath
+                )
+                {
+                    //Only push the response section into the reslverEntry.response array:
+                    groupedResolverEntriesArray[i].responses.push(resolverEntry.responses[0]);
+                    break;
+                }
+            }
+        }
+    }
+    //Now replace the global array with our new grouped array
+    global_ResolverEntries = groupedResolverEntriesArray;
+}
+
+
+const imgRotatingCircleGIF = (imgControlId) =>
+{
+    const rotatingCircleGIF = document.createElement("img");
+    rotatingCircleGIF.id = imgControlId;
+    rotatingCircleGIF.src = "images/rotatingcircle.gif";
+    rotatingCircleGIF.width = "50";
+    rotatingCircleGIF.height = "50";
+    rotatingCircleGIF.alt = "Spinning circle indicating 'please wait!'. Attribution: Gray_circles.svg: Nevit Dilmen (talk)derivative work: Nevit Dilmen / CC BY-SA (https://creativecommons.org/licenses/by-sa/3.0)";
+    return rotatingCircleGIF
+}
+
+/**
+ * Controls Upload the data prepared by the checking process, and also controls
+ * waiting for all validation results still pending.
+ * @returns {Promise<void>}
+ */
+const uploadDataAndAwaitResults = async () =>
+{
+    const divUploadResults = document.getElementById('divUploadResults')
+    divUploadResults.innerHTML = '';
+
+
     let authKey = document.getElementById("authKey").value;
     if (authKey === "")
     {
         window.alert("Please paste in your authentication key to continue!");
-        return;
+        return; //This function is cancelled out here if there is no authentication key
     }
 
-    let divUploadResults = document.getElementById("divUploadResults");
-    for (let entry of global_ResolverEntries)
+    //Hide the upload button and show the rotating circle
+    document.getElementById("buttonUploadNow").style.visibility = "hidden";
+    divUploadResults.appendChild(imgRotatingCircleGIF('rotatingcircle_upload'));
+
+    if (await uploadData(authKey))
     {
-        success = false;
-        while (!success)
+        await pollForPendingResults(authKey);
+        displayValidationErrors();
+    }
+    else
+    {
+        document.getElementById("buttonUploadNow").style.visibility = "visible";
+    }
+    //Hide the rotating circle
+    if (document.getElementById("rotatingcircle_upload"))
+    {
+        document.getElementById("rotatingcircle_upload").style.visibility = "hidden";
+    }
+}
+
+
+
+
+
+/**
+ * Uploads resolver entry data to the API
+ * @returns {Promise<boolean>}
+ */
+const uploadData = async (authKey) =>
+{
+    let batchUploadCounter = 1;
+    let failCount = 0;
+    let success = false;
+    let entriesBatch = [];
+
+    //We can feedback to the human what we're doing. They like that sort of thing:
+    let divUploadResults = document.getElementById("divUploadResults");
+
+
+    //Group the resolverEntries and their resolverResponses together such that each
+    //resolverEntry has all its resolverResponses in resolverEntry.response[] array.
+    await groupResolverEntries();
+
+    //Let's get the uploading underway by batching the array of entries:
+    for (let i=0; i < global_ResolverEntries.length; i++)
+    {
+        entriesBatch.push(global_ResolverEntries[i]);
+
+        //Upload the batch if the 'i' count equals the batch size, or we've reached
+        //the final entry.
+        if ((i % global_UploadBatchSize === 0 && i > 0) || i >= global_ResolverEntries.length - 1)
         {
-            success = await uploadToAPI(entry.resolverRequest, entry.resolverResponse, authKey);
-            if (success)
+            success = false;
+            while (!success)
             {
-                counter++;
-                divUploadResults.innerText = `Uploaded ${counter} entries...`;
-                failCount = 0; //Success so reset the fail counter
-            }
-            else
-            {
-                divUploadResults.innerText = `An error occurred uploading entry ${counter} - trying again: ${failCount}`;
-                failCount++; //upload attempt failed, adding 1 to the fail count
-                await sleepForSeconds(1);
+                if (global_ResolverEntries.length <= global_UploadBatchSize)
+                {
+                    //No need to talk about batches if there is only one batch!
+                    divUploadResults.innerText = `Uploading ${global_ResolverEntries.length} entries...`;
+                }
+                else
+                {
+                    divUploadResults.innerText = `Uploading batch ${batchUploadCounter} (${Math.round((batchUploadCounter * global_UploadBatchSize * 100) / global_ResolverEntries.length)}%) of ${global_ResolverEntries.length} entries...`;
+                }
+                let results = await uploadToAPI(entriesBatch, authKey);
+                if (results.STATUS === 200)
+                {
+                    success = true;
+                    batchUploadCounter++;
+                    failCount = 0; //Success so reset the fail batchUploadCounter
+
+                    //Save the batchId and any immediately 'bad' entries returned in the API response body.
+                    // We'll fill in the validationResults[] later when we poll for pending processing updates@
+                    global_upload_batchIds.push(
+                        {
+                            batchId: results.responseArray['batchId'],
+                            batchStatusPending: true,
+                            badEntries: results.responseArray['badEntries'],
+                            validationResults: []
+                        });
+                }
+                else if (results.STATUS === 401)
+                {
+                    divUploadResults.innerText  = 'Your authentication key has been rejected!<br />Please paste the key sent to you by GS1 Global Office.';
+                    return false;
+                }
+                else
+                {
+                    divUploadResults.innerText = `An error occurred uploading entries - trying again: ${failCount}`;
+                    failCount++; //upload attempt failed, adding 1 to the fail count
+                    await sleepForSeconds(1);
+                }
+
+                if (failCount > 10)
+                {
+                    //too many failures - something is seriously wrong at the server end. Stopping the upload.
+                    divUploadResults.innerText = `An error occurred uploading entries - too many failures - stopping upload`;
+                    return false;
+                }
             }
 
-            if (failCount > 10)
-            {
-                //too many failures - something is seriously wrong at the server end. Stopping the upload.
-                divUploadResults.innerText = `An error occurred uploading entry ${counter} - too many failures - stopping upload`;
-                return;
-            }
+            //Empty the batchEntries array ready for filling up again!
+            entriesBatch = [];
         }
     }
     divUploadResults.innerText = `Upload completed`;
-
+    return success;
 };
+
+
+/**
+ * Once all the data has been uploaded, this function is called to poll for pending results. It works by going
+ * through the array of global_upload_batchIds and asking the Data Entry API for updated information.
+ * This function finished when all the results are in.
+ */
+const pollForPendingResults = async (authKey) =>
+{
+    let divUploadResults = document.getElementById("divUploadResults");
+    divUploadResults.innerText = "Waiting for validation to complete...";
+
+    let counter = 0;
+    let finishFlag = false;
+    while(!finishFlag)
+    {
+        //global_upload_batchIds array was set up by uploadData(), now we go through it
+        //taking each batch and see if it is complete by asking the getBatchStatus() function:
+        for (let i=0; i< global_upload_batchIds.length; i++)
+        {
+            if (global_upload_batchIds[i].batchStatusPending)
+            {
+                let response = await getBatchStatus(global_upload_batchIds[i].batchId, authKey);
+                if (response.SUCCESS && response.results.STATUS === 1)
+                {
+                    //This batch has completed validations so save the resulting validations[] array
+                    global_upload_batchIds[i].validationResults = response.results.validations;
+
+                    //Set batchStatusPending to false. If all the batchStatusPending entries are false
+                    //we will come out of the loop shortly.
+                    global_upload_batchIds[i].batchStatusPending = false;
+                }
+            }
+        }
+
+        //See if there any entries with batchStatusPending set to true.
+        //If not, .filter() returns an empty array
+        let pendingBatchesArray = global_upload_batchIds.filter((entry) => entry.batchStatusPending);
+        if (pendingBatchesArray.length === 0)
+        {
+            //Completed! Time to end the loop
+            finishFlag = true;
+            divUploadResults.innerText = "Validation completed";
+        }
+        else
+        {
+            //Wait for 5 seconds then loop again
+            counter ++;
+            divUploadResults.innerText = `Waiting for validation to complete... ${Math.round(pendingBatchesArray.length * 100 / global_upload_batchIds.length)}`;
+            await sleepForSeconds(5);
+        }
+    }
+}
+
+
+/**
+ * Displays any validation errors that were uncovered
+ */
+const displayValidationErrors = () =>
+{
+    /*
+        batchId: results.responseArray['batchId'],
+        batchStatusPending: true,
+        badEntries: results.responseArray['badEntries'],
+        validationResults: []
+     */
+    let divUploadResults = document.getElementById("divUploadResults");
+    divUploadResults.innerText = "";
+
+    for (let batchEntry of global_upload_batchIds)
+    {
+        //We will only display invalid entries:
+        let validationErrorArray = batchEntry.validationResults.filter((entry) => entry.validationCode > 0);
+        if (!validationErrorArray)
+        {
+            validationErrorArray = [];
+        }
+        if (batchEntry.badEntries.length + validationErrorArray.length === 0)
+        {
+            divUploadResults.innerHTML += `BatchId: ${batchEntry.batchId} passed all validations<br />`;
+        }
+        else
+        {
+            divUploadResults.innerHTML += `BatchId: ${batchEntry.batchId} had ${batchEntry.badEntries.length + validationErrorArray.length} failed validations <br />`;
+        }
+        for (let badEntry of batchEntry.badEntries)
+        {
+            divUploadResults.innerHTML += `/${badEntry.identificationKeyType}/${badEntry.identificationKey} error code: ${convertValidationCodeToText(badEntry.validationCode)} (${badEntry.validationCode})<br />`
+        }
+        for (let badEntry of validationErrorArray)
+        {
+            divUploadResults.innerHTML += `/${badEntry.identificationKeyType}/${badEntry.identificationKey} error code: ${convertValidationCodeToText(badEntry.validationCode)} (${badEntry.validationCode})<br />`
+        }
+    }
+    divUploadResults.innerHTML += `<br />All upload processing completed<hr /><a href="upload.html">Click here to refresh the page and upload more data</a>`;
+}
+
 
 
 //Sleep function
@@ -637,9 +1533,19 @@ const sleepForSeconds = async (seconds) =>
 }
 
 
-const uploadToAPI = async (resolverRequest, resolverResponse, authKey) =>
+/**
+ *
+ * @param resolverEntriesArray
+ * @param authKey
+ * @returns {Promise<{responseArray: [], STATUS: number}>}
+ */
+const uploadToAPI = async (resolverEntriesArray, authKey) =>
 {
-    let success = false;
+    let result = {
+        STATUS: 0,
+        responseArray: []
+    }
+
     try
     {
         const fetchParameters = {
@@ -653,31 +1559,61 @@ const uploadToAPI = async (resolverRequest, resolverResponse, authKey) =>
             },
             redirect: 'follow',
             referrerPolicy: 'no-referrer',
-            body: JSON.stringify(resolverRequest)
+            body: JSON.stringify(resolverEntriesArray)
         };
 
-        //upload the resolverRequest
-        let fetchResponse = await fetch('/api/request', fetchParameters);
-
-        if (fetchResponse.status === 200)
+        //upload the resolverEntry
+        const fetchResponse = await fetch('/resolver', fetchParameters);
+        result.STATUS = fetchResponse.status;
+        if (result.STATUS === 200)
         {
-            //The resolverRequest was accepted successfully, now send extract the returned uriRequestId and
-            //use it in the resolverResponse.
-            const requestResult = await fetchResponse.json();
-            resolverResponse.uriRequestId = requestResult.uriRequestId;
-            fetchParameters.body = JSON.stringify(resolverResponse);
-
-            fetchResponse = await fetch('/api/response', fetchParameters);
-            if (fetchResponse.status === 200)
-            {
-                success = true;
-            }
+            result.responseArray = await fetchResponse.json();
         }
+
+        return result;
     }
     catch (err)
     {
         console.log(`uploadToAPI error: ${err}`);
+        return result;
     }
+};
 
-    return success;
+
+/**
+ * Asks the API for the status of a given batch Id.
+ * @param batchId
+ * @param authKey
+ * @returns {Promise<{SUCCESS: boolean, results: {}}>}
+ */
+const getBatchStatus = async (batchId, authKey) =>
+{
+    let result = {SUCCESS: false, results: {}}
+    try
+    {
+        const fetchParameters = {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authKey}`,
+            },
+            redirect: 'follow',
+            referrerPolicy: 'no-referrer'
+        };
+
+        const fetchResponse = await fetch(`/resolver/validation/batch/${batchId}`, fetchParameters);
+        if (fetchResponse.ok)
+        {
+            result.SUCCESS = true;
+            result.results = await fetchResponse.json();
+        }
+        return result;
+    }
+    catch (err)
+    {
+        console.log(`getBatchStatus error: ${err}`);
+    }
 };

@@ -1,10 +1,10 @@
 /**
- * sqldb.js provides the complete interface to Resolver's SQL Server database. All SQL requests are requested via this file.
+ * sqldb.js provides the complete interface to Resolver's SQL Server database. All SQL entries are requested via this file.
  * As a result, any desired database brand change from Microsoft SQL Server requires alterations only to this file.
  */
 
 const sql = require('mssql');
-const utils = require("./resolver_utils");
+const utils = require("./resolverUtils");
 let sqlConn;
 
 /**
@@ -13,7 +13,7 @@ let sqlConn;
  */
 
 
-const sqlServerConfig = {
+const global_sqlServerConfig = {
     user: process.env.SQLDBCONN_USER,
     password: process.env.SQLDBCONN_PASSWORD,
     server: process.env.SQLDBCONN_SERVER,
@@ -25,22 +25,9 @@ const sqlServerConfig = {
         }
 };
 
-/*
-const sqlServerConfig = {
-    user: "Res-SQLAdm1n",
-    password: "Jf95-5!bPlN98q1",
-    server: "gs1-eu1-pd-resolver-sqlsrv01.database.windows.net",
-    database: "gs1-eu1-pd-resolver-db01",
-    options:
-        {
-            encrypt: true,
-            enableArithAbort: true
-        }
-};
 
-*/
 
-let connectedToSQLServerFlag = false;
+let global_connectedToSQLServerFlag = false;
 
 /**
  * If the SQL Server disconnects, this triggers an 'end' event which is captured here
@@ -48,57 +35,56 @@ let connectedToSQLServerFlag = false;
  */
 sql.on('end', (() =>
 {
-    connectedToSQLServerFlag = false;
+    global_connectedToSQLServerFlag = false;
     utils.logThis("SQL DB disconnected");
 }));
 
 
 /**
  * Connects to the Microsoft SQL Server database storing Resolver's data entry record
- * @returns {Promise<boolean>}
+ * @returns {Promise<void>}
  */
 const connectToSQLServerDB = async () =>
 {
-    if(!connectedToSQLServerFlag)
+    if(!global_connectedToSQLServerFlag)
     {
         try
         {
             utils.logThis("Connecting to SQL DB");
-            sqlConn = new sql.ConnectionPool(sqlServerConfig);
+            sqlConn = new sql.ConnectionPool(global_sqlServerConfig);
             await sqlConn.connect();
             utils.logThis("Connected to SQLServer DB successfully");
-            connectedToSQLServerFlag = true;
+            global_connectedToSQLServerFlag = true;
 
         }
         catch (error)
         {
             utils.logThis(`connectToSQLServerDB Error: ${error}`);
-            connectedToSQLServerFlag = false;
+            global_connectedToSQLServerFlag = false;
         }
     }
-    return connectedToSQLServerFlag;
 };
 
 
 const closeDB = async () =>
 {
-    if(connectedToSQLServerFlag)
+    if(global_connectedToSQLServerFlag)
     {
         await sqlConn.close();
     }
-    connectedToSQLServerFlag = false;
+    global_connectedToSQLServerFlag = false;
 };
 
 
 /**
- * Executes the SQL stored procedure BUILD_Get_Changed_URI_Requests to get the next batch of URI entries from a given Sync ID.
+ * Executes the SQL stored procedure BUILD_Get_Changed_URI_Entries to get the next batch of URI entries from a given Sync ID.
  * Forces batch size to be no bigger than 1000 entries
  * @param lastHeardDateTime
- * @param lowestUriRequestId
+ * @param lowestUriEntryId
  * @param maxRowsToReturn
  * @returns {Promise<*>}
  */
-const getURIRequests = async (lastHeardDateTime, lowestUriRequestId, maxRowsToReturn) =>
+const getURIEntries = async (lastHeardDateTime, lowestUriEntryId, maxRowsToReturn) =>
 {
     try
     {
@@ -108,20 +94,26 @@ const getURIRequests = async (lastHeardDateTime, lowestUriRequestId, maxRowsToRe
         }
 
         await connectToSQLServerDB();
-        const ps = new sql.PreparedStatement(sqlConn);
-        ps.input('lastHeardDateTime', sql.TYPES.NVarChar(30));
-        ps.input('lowestUriRequestId', sql.TYPES.BigInt());
-        ps.input('maxRowsToReturn', sql.TYPES.Int());
+        if (global_connectedToSQLServerFlag)
+        {
+            const ps = new sql.PreparedStatement(sqlConn);
+            ps.input('lastHeardDateTime', sql.TYPES.NVarChar(30));
+            ps.input('lowestUriEntryId', sql.TYPES.BigInt());
+            ps.input('maxRowsToReturn', sql.TYPES.Int());
 
-        await ps.prepare('EXEC [BUILD_Get_URI_Requests] @lastHeardDateTime, @lowestUriRequestId, @maxRowsToReturn');
-        const dbResult = await ps.execute({ lastHeardDateTime, lowestUriRequestId, maxRowsToReturn });
-        await ps.unprepare();
-        return decodeSQLSafeResolverArray(dbResult.recordset);
-
+            await ps.prepare('EXEC [BUILD_Get_URI_Entries] @lastHeardDateTime, @lowestUriEntryId, @maxRowsToReturn');
+            const dbResult = await ps.execute({lastHeardDateTime, lowestUriEntryId, maxRowsToReturn});
+            await ps.unprepare();
+            return decodeSQLSafeResolverArray(dbResult.recordset);
+        }
+        else
+        {
+            return null;
+        }
     }
     catch (err)
     {
-        utils.logThis(`getURIRequests error: ${err}`);
+        utils.logThis(`getURIEntries error: ${err}`);
         return null;
     }
 };
@@ -140,20 +132,27 @@ const getGCPRedirects = async (lastHeardDateTime, lowestGCPRedirectId, maxRowsTo
     try
     {
         await connectToSQLServerDB();
-        const ps = new sql.PreparedStatement(sqlConn);
-        ps.input('lastHeardDateTime', sql.TYPES.NVarChar(30));
-        ps.input('lowestGCPRedirectId', sql.TYPES.BigInt());
-        ps.input('maxRowsToReturn', sql.TYPES.Int());
-
-        if(maxRowsToReturn > 1000)
+        if (global_connectedToSQLServerFlag)
         {
-            maxRowsToReturn = 1000;
-        }
+            const ps = new sql.PreparedStatement(sqlConn);
+            ps.input('lastHeardDateTime', sql.TYPES.NVarChar(30));
+            ps.input('lowestGCPRedirectId', sql.TYPES.BigInt());
+            ps.input('maxRowsToReturn', sql.TYPES.Int());
 
-        await ps.prepare('EXEC [BUILD_Get_GCP_Redirects] @lastHeardDateTime, @lowestGCPRedirectId, @maxRowsToReturn');
-        const dbResult = await ps.execute({ lastHeardDateTime, lowestGCPRedirectId,  maxRowsToReturn });
-        await ps.unprepare();
-        return dbResult.recordset;
+            if (maxRowsToReturn > 1000)
+            {
+                maxRowsToReturn = 1000;
+            }
+
+            await ps.prepare('EXEC [BUILD_Get_GCP_Redirects] @lastHeardDateTime, @lowestGCPRedirectId, @maxRowsToReturn');
+            const dbResult = await ps.execute({lastHeardDateTime, lowestGCPRedirectId, maxRowsToReturn});
+            await ps.unprepare();
+            return dbResult.recordset;
+        }
+        else
+        {
+            return null;
+        }
     }
     catch (err)
     {
@@ -164,22 +163,29 @@ const getGCPRedirects = async (lastHeardDateTime, lowestGCPRedirectId, maxRowsTo
 
 
 /**
- * Executes the SQL stored procedure GET_URI_Responses to get all the URI responses for a given Request ID
- * @param uriRequestId
+ * Executes the SQL stored procedure GET_URI_Responses to get all the URI responses for a given Entry ID
+ * @param uriEntryId
  * @returns {Promise<null|*>}
  */
-const getURIResponses = async (uriRequestId) =>
+const getURIResponses = async (uriEntryId) =>
 {
     try
     {
         await connectToSQLServerDB();
-        const ps = new sql.PreparedStatement(sqlConn);
-        ps.input('uriRequestId', sql.TYPES.BigInt());
+        if (global_connectedToSQLServerFlag)
+        {
+            const ps = new sql.PreparedStatement(sqlConn);
+            ps.input('uriEntryId', sql.TYPES.BigInt());
 
-        await ps.prepare('EXEC [GET_URI_Responses] @uriRequestId');
-        const dbResult = await ps.execute({ uriRequestId });
-        await ps.unprepare();
-        return decodeSQLSafeResolverArray(dbResult.recordset);
+            await ps.prepare('EXEC [GET_URI_Responses] @uriEntryId');
+            const dbResult = await ps.execute({uriEntryId});
+            await ps.unprepare();
+            return decodeSQLSafeResolverArray(dbResult.recordset);
+        }
+        else
+        {
+            return null;
+        }
     }
     catch (err)
     {
@@ -194,26 +200,35 @@ const getURIResponses = async (uriRequestId) =>
  * The hostname is a randomly-generated 12-char string created by the Docker-Engine or Kubernetes runtime.
  * Only the first 12 characters are used in any case so the host must be unique within that limit if
  * manually created.
+ * @param syncId
  * @param hostName
  * @returns {Promise<*>}
  */
-const registerSyncServer = async (hostName) =>
+const registerSyncServer = async (syncId, hostName) =>
 {
-    if(hostName.length > 12)
+    if(syncId.length > 12)
     {
-        hostName = hostName.substring(0, 12);
+        syncId = syncId.substring(0, 12);
     }
 
     try
     {
         await connectToSQLServerDB();
-        const ps = new sql.PreparedStatement(sqlConn);
-        ps.input('hostName', sql.TYPES.NChar(12));
+        if (global_connectedToSQLServerFlag)
+        {
+            const ps = new sql.PreparedStatement(sqlConn);
+            ps.input('syncId', sql.TYPES.NChar(12));
+            ps.input('hostName', sql.TYPES.NVarChar(100));
 
-        await ps.prepare('EXEC [BUILD_Register_Sync_Server] @hostName');
-        const dbResult = await ps.execute({ hostName });
-        await ps.unprepare();
-        return dbResult.recordset;
+            await ps.prepare('EXEC [BUILD_Register_Sync_Server] @syncId, @hostName');
+            const dbResult = await ps.execute({syncId, hostName});
+            await ps.unprepare();
+            return dbResult.recordset;
+        }
+        else
+        {
+            return null;
+        }
     }
     catch (err)
     {
@@ -230,11 +245,11 @@ const registerSyncServer = async (hostName) =>
  */
 const decodeSQLSafeResolverArray = (rrArray) =>
 {
-    if (rrArray.length !== undefined)
+    if (Array.isArray(rrArray))
     {
-        for (let rrElement of rrArray)
+        for (let i=0; i < rrArray.length; i++)
         {
-            rrElement = decodeSQLSafeResolverObject(rrElement);
+            rrArray[i] = decodeSQLSafeResolverObject(rrArray[i]);
         }
     }
     return rrArray;
@@ -269,23 +284,31 @@ const decodeSQLSafeResolverObject = (rrObj) =>
 };
 
 
-const getURIRequestsForGS1KeyCodeAndValue = async (gs1KeyCode, gs1KeyValue) =>
+const getURIEntriesUsingIdentificationKeyValue = async (identificationKeyType, identificationKey) =>
 {
     try
     {
         await connectToSQLServerDB();
-        const ps = new sql.PreparedStatement(sqlConn);
-        ps.input('gs1KeyCode', sql.TYPES.NVarChar(20));
-        ps.input('gs1KeyValue', sql.TYPES.NVarChar(45));
+        if (global_connectedToSQLServerFlag)
+        {
+            const ps = new sql.PreparedStatement(sqlConn);
+            ps.input('identificationKeyType', sql.TYPES.NVarChar(20));
+            ps.input('identificationKey', sql.TYPES.NVarChar(45));
 
-        await ps.prepare('EXEC [BUILD_GET_URI_Requests_using_gs1_key_code_and_value] @gs1KeyCode, @gs1KeyValue');
-        const dbResult = await ps.execute({ gs1KeyCode, gs1KeyValue });
-        await ps.unprepare();
-        return decodeSQLSafeResolverArray(dbResult.recordset);
+            await ps.prepare('EXEC [BUILD_GET_URI_Entries_using_identification_key] @identificationKeyType, @identificationKey');
+            const dbResult = await ps.execute({ identificationKeyType, identificationKey });
+            await ps.unprepare();
+            return decodeSQLSafeResolverArray(dbResult.recordset);
+
+        }
+        else
+        {
+            return null;
+        }
     }
     catch (err)
     {
-        utils.logThis(`getURIRequestsForGS1KeyCodeAndValue error for /${gs1KeyCode}/${gs1KeyValue} : ${err}`);
+        utils.logThis(`getURIEntriesUsingIdentificationKeyValue error for /${identificationKeyType}/${identificationKey} : ${err}`);
         return null;
     }
 };
@@ -295,8 +318,8 @@ const getURIRequestsForGS1KeyCodeAndValue = async (gs1KeyCode, gs1KeyValue) =>
 module.exports = {
     registerSyncServer,
     getURIResponses,
-    getURIRequests,
+    getURIEntries,
     getGCPRedirects,
-    getURIRequestsForGS1KeyCodeAndValue,
+    getURIEntriesUsingIdentificationKeyValue,
     closeDB
 };

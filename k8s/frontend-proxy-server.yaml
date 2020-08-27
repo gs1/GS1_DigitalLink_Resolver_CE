@@ -45,7 +45,7 @@ spec:
     spec:
       containers:
         - name: frontend-proxy-server
-          image: nicklansley/gs1_digitallink_resolver_ce_frontend-proxy-server:v2.0.0
+          image: nicklansley/gs1_digitallink_resolver_ce_frontend-proxy-server:v2.1.0
           ports:
             - containerPort: 80
               name: frontendproxy

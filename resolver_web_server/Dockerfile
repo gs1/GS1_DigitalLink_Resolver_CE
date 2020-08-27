@@ -1,9 +1,8 @@
-FROM node:latest
+FROM node:14.4-stretch
 
 ENV TZ=Europe/London
 # These two environment variables must point to the K8s DNS Service name for Mongo and Build Dync servers
-ENV MONGODBCONN="mongodb://gs1resolver:gs1resolver@resolver-mongo-server"
-ENV BUILDSYNCSERVICE="build-sync-server"
+ENV MONGODBCONN="mongodb://gs1resolver:gs1resolver@resolver-mongo-service"
 ENV PORT=80
 
 RUN apt-get update && apt-get -y install curl dos2unix && apt-get autoremove

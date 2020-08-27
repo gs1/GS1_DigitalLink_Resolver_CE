@@ -4,7 +4,7 @@ secretGenerator:
       - user=sa
       - password=its@SECR3T!
       - server=resolver-sql-service
-      - database=gs1-resolver-ce-v2-db
+      - database=gs1-resolver-ce-v2-1-db
 
 resources:
   - k8s/resolver-sql-server.yaml

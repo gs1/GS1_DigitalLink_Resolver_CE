@@ -1,12 +1,19 @@
 const createError = require('http-errors');
 const express = require('express');
+const bodyParser = require('body-parser');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 
-const resolverRequest = require('./routes/resolverRequest');
-const resolverResponse = require('./routes/resolverResponse');
-const resolverReference = require('./routes/ref');
+
+//loading the globalVariables.js script adds some lookup arrays within to global object context
+require('./bin/globalVariables');
+
+const daemonServices = require('./bin/daemonServices');
+const resolverDataEntryAPI = require('./routes/resolverDataEntry');
+const resolverGCPRedirectAPI = require('./routes/resolverGCPRedirect');
+const resolverReferenceAPI = require('./routes/ref');
+const resolverAdminAPI = require('./routes/admin');
 
 const app = express();
 
@@ -20,42 +27,32 @@ app.use(express.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+//Set the maximum size limit to 10 MB
+app.use(bodyParser.json({limit: '10mb', extended: true, parameterLimit: 100000}))
+app.use(bodyParser.urlencoded({limit: '10mb', extended: true, parameterLimit: 100000}))
+
+//Set up the API and UI endpoints
 app.use('/ui', express.static('public'));
-app.use('/api/request', resolverRequest);
-app.use('/api/response', resolverResponse);
-app.use('/api/ref', resolverReference);
+app.use('/resolver', resolverDataEntryAPI);
+app.use('/redirect', resolverGCPRedirectAPI);
+app.use('/reference', resolverReferenceAPI);
+app.use('/admin', resolverAdminAPI);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next)
 {
-    next(createError(404));
+    res.sendStatus(404);
 });
 
 // error handler
 app.use(function (err, req, res, next)
 {
-    // set locals, only providing error in development
-    res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-    // render the error page
-    res.status(err.status || 500);
-    res.render('error');
+    res.sendStatus(err.status || 500);
 });
 
+//Set up and launch any daemons required:
+daemonServices.endOfDay_d();
+daemonServices.updateLinktypes_d();
+
+
 module.exports = app;
-
-/**
- * These functions exist to shut down the service gracefully when a SIGINT or SIGUSR(n) from Docker Engine is received.
- */
-const serverShutDown = async () =>
-{
-    console.info("Shutdown in progress - closing databases");
-    console.info("Shutdown completed");
-    process.exit(0);
-};
-
-process.on('SIGINT',  async () => await serverShutDown());
-process.on('SIGUSR1', async () => await serverShutDown());
-process.on('SIGUSR2', async () => await serverShutDown());
-process.on('SIGWINCH', async () => await serverShutDown());

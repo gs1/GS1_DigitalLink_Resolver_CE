@@ -1,4 +1,4 @@
-FROM node:latest
+FROM node:14.4-stretch
 
 ENV TZ=Europe/London
 # These two environment variables ensure that the installation of the packages we need is all automatic and doesn't need
@@ -6,16 +6,16 @@ ENV TZ=Europe/London
 ENV DEBIAN_FRONTEND=noninteractive
 ENV ACCEPT_EULA=Y
 
-# The user and password for Mongo is set in resolver_mongo_server/Dockerfile
-ENV MONGODBCONN="mongodb://gs1resolver:gs1resolver@resolver-mongo-server"
+# This MongoDb connection is to the local Mongo database within the cluster
+ENV MONGODBCONN="mongodb://gs1resolver:gs1resolver@resolver-mongo-service"
 
-# The USER and PASSWORD for SQL server is set in resolver_sql_server/Dockerfile
+# SQL Azure database connection variables - DEV only for use on local Docker
 ENV SQLDBCONN_USER="sa"
 ENV SQLDBCONN_PASSWORD="its@SECR3T!"
 ENV SQLDBCONN_SERVER="resolver-sql-server"
-ENV SQLDBCONN_DB="gs1-resolver-ce-v2-db"
+ENV SQLDBCONN_DB="gs1-resolver-ce-v2-1-db"
 
-# This batch size is how many entries fromo the data entry db will be processed in a batch table rows.
+# This batch size is how many entries from the data entry db will be processed in a batch table rows.
 # Smaller sizes keep the amount of sata transferred by each request lower as well as keep the data entry
 # database better performing, but smaller numbers will cause the processing to take longer overall.
 ENV SQLDB_PROCESS_BATCH_SIZE=1000

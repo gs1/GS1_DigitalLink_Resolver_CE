@@ -146,7 +146,7 @@ const requestHandler = async (request, response) =>
     }
     else if (request.url.toLowerCase() === "/gs1logo.png")
     {
-        sendGS1LogoPNG(response);
+        await sendGS1LogoPNG(response);
     }
     else if (request.url.toLowerCase().includes("/.well-known/gs1resolver"))
     {
@@ -155,6 +155,10 @@ const requestHandler = async (request, response) =>
     else if (request.url.toLowerCase().includes("/resolverdescriptionfile.schema.json"))
     {
         await resolver.processResolverDescriptionFile(response, processStartTime);
+    }
+    else if (request.url.toLowerCase().startsWith("/unixtime"))
+    {
+        await resolver.processUnixTime(request.url, response, processStartTime);
     }
     else
     {
@@ -189,4 +193,3 @@ const serverShutDown = async () =>
 process.on('SIGINT',  async () => await serverShutDown());
 process.on('SIGUSR1', async () => await serverShutDown());
 process.on('SIGUSR2', async () => await serverShutDown());
-process.on('SIGWINCH', async () => await serverShutDown());

@@ -9,7 +9,10 @@
 </head>
 <body>
 <h1>GS1 Resolver - Download Your Data</h1>
-<div>Please paste your authentication key here: <input type="text" id="authKey"></div>
+<div>Please paste your authentication key here:
+    <input type="password" id="authKey">&nbsp;&nbsp;
+    <img src="images/eye.gif" width="30px" height="20px" alt="hover over this eye symbol to see your authentication key" onmouseover="mouseOverPass();" onmouseout="mouseOutPass();" />
+</div>
 <br/>
 <div>
     <button id="buttonDownload" onclick="downloadData();">Download Data Now</button>

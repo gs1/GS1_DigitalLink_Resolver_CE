@@ -8,7 +8,7 @@ const http = require('http');
 const build = require('./build');
 const sqldb = require('./sqldb');
 const mongodb = require('./mongodb');
-const utils = require("./resolver_utils");
+const utils = require("./resolverUtils");
 
 const port = process.env.PORT || 80;
 const buildSecs = process.env.BUILD_INTERVAL_SECONDS || 10;
@@ -49,17 +49,17 @@ const requestHandler = async (request, response) =>
     if (request.url.toLowerCase().startsWith("/buildkey"))
     {
         //Here we are building from entries for a specific GS1 Key Code and GS1 Key Value
-        //which is in the format /buildkey/<gs1KeyCode>/<gs1KeyValue>
+        //which is in the format /buildkey/<identificationKeyType>/<identificationKey>
         const requestCodes = request.url.split("/");
         response.writeHead(200, {'Content-Type': 'application/json'});
         if(requestCodes.length === 4)
         {
-            const gs1KeyCode = requestCodes[2];
-            const gs1KeyValue = requestCodes[3];
-            utils.logThis(`Update Build Requested for just GS1 Key Code: ${gs1KeyCode} and GS1 Key Value: ${gs1KeyValue}`);
+            const identificationKeyType = requestCodes[2];
+            const identificationKey = requestCodes[3];
+            utils.logThis(`Update Build Requested for just GS1 Key Code: ${identificationKeyType} and GS1 Key Value: ${identificationKey}`);
             {
                 //TODO: Manage the load should entries that are simply not in the SQL database keep getting asked for - e.g. a MongoDB '404' placeholder for this gs1 key code and value which goes stale after a week?
-                const success = await build.performGS1KeyCodeAndValueURIDocumentBuild(gs1KeyCode, gs1KeyValue);
+                const success = await build.performIdKeyTypeAndValueURIDocumentBuild(identificationKeyType, identificationKey);
                 if(success)
                 {
                     response.end('{"SUCCESS": "Y"}');
@@ -72,7 +72,7 @@ const requestHandler = async (request, response) =>
         }
         else
         {
-            response.end('{"ERROR": "Invalid buildkey request - format is /buildkey/<gs1KeyCode>/<gs1KeyValue>" }')
+            response.end('{"ERROR": "Invalid buildkey request - format is /buildkey/<identificationKeyType>/<identificationKey>" }')
         }
     }
     else if (request.url.toLowerCase() === "/healthcheck")
@@ -81,11 +81,11 @@ const requestHandler = async (request, response) =>
         response.writeHead(200, {'Content-Type': 'application/json'});
         if(global.buildRunningFlag)
         {
-            response.end(`{"STATUS": "OK - SERVER HOSTNAME [${global.syncHostName}] - BUILD IN PROGRESS SINCE ${global.buildRunningSince} - SERVER UP SINCE ${global.serverRunningSince}" }`);
+            response.end(`{"STATUS": "OK - SERVER SYNC ID [${global.syncId}] HOSTNAME [${process.env.HOSTNAME}] - BUILD IN PROGRESS SINCE ${global.buildRunningSince} - SERVER UP SINCE ${global.serverRunningSince}" }`);
         }
         else
         {
-            response.end(`{"STATUS": "OK - SERVER HOSTNAME [${global.syncHostName}] - NO BUILD RUNNING AT PRESENT - SERVER UP SINCE ${global.serverRunningSince}"}`);
+            response.end(`{"STATUS": "OK - SERVER SYNC ID [${global.syncId}] HOSTNAME [${process.env.HOSTNAME}] - NO BUILD RUNNING AT PRESENT - SERVER UP SINCE ${global.serverRunningSince}"}`);
         }
     }
     else
@@ -108,9 +108,9 @@ server.listen(port, async (err) =>
 
     if (err)
     {
-        return utils.logThis(`GS1 DigitalLink Build Sync Server [${global.syncHostName}] listen error:`, err);
+        return utils.logThis(`GS1 DigitalLink Build Sync Server SYNC ID [${global.syncId}] HOSTNAME [${process.env.HOSTNAME}] listen error:`, err);
     }
-    utils.logThis(`GS1 DigitalLink Build Sync Server [${global.syncHostName}] is listening on ${port} with Build event interval every ${buildSecs} seconds`);
+    utils.logThis(`GS1 DigitalLink Build Sync Server SYNC ID [${global.syncId}] HOSTNAME [${process.env.HOSTNAME}] is listening on ${port} with Build event interval every ${buildSecs} seconds`);
 });
 
 
@@ -144,6 +144,6 @@ const serverShutDown = async () =>
 };
 
 process.on('SIGINT',  async () => await serverShutDown());
+process.on('SIGTERM', async () => await serverShutDown());
 process.on('SIGUSR1', async () => await serverShutDown());
 process.on('SIGUSR2', async () => await serverShutDown());
-process.on('SIGWINCH', async () => await serverShutDown());

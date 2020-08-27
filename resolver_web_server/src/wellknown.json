@@ -2,6 +2,7 @@
   "_id": "gs1resolver.json",
   "name": "The GS1 AISBL Resolver",
   "resolverRoot": "https://id.gs1.org",
+  "termsOfUse": "https://www.gs1.org/standards/resolver/terms-of-use",
   "supportedLinkType": [
     {
       "namespace": "http://gs1.org/voc/",

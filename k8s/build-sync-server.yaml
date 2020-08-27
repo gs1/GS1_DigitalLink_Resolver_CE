@@ -49,7 +49,7 @@ spec:
     spec:
       containers:
         - name: build-sync-server
-          image: nicklansley/gs1_digitallink_resolver_ce_build-sync-server:v2.0.0
+          image: nicklansley/gs1_digitallink_resolver_ce_build-sync-server:v2.1.0
           imagePullPolicy: IfNotPresent
 
           env:

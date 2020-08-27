@@ -32,8 +32,6 @@ ENV MSSQL_AGENT_ENABLED=true
 # Copy the scripts and convert them to unix format
 RUN apt-get update -y && apt-get dist-upgrade -y && apt-get install -y dos2unix
 COPY sqldb_create_script.sql /gs1resolver_sql_scripts/sqldb_create_script.sql
-COPY backupdb_script.sh /gs1resolver_sql_scripts/backupdb_script.sh
-COPY restoredb_script.sh /gs1resolver_sql_scripts/restoredb_script.sh
 
 # Convert any Windows formatted text files to unix format.
 RUN find  /gs1resolver_data/setup/* -type f -print0 | xargs -0 dos2unix

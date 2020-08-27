@@ -3860,31 +3860,6 @@ class GS1DigitalLinkToolkit
             "regex": "([\\x21-\\x22\\x25-\\x2F\\x30-\\x39\\x41-\\x5A\\x5F\\x61-\\x7A]{0,90})"
         }];
 
-        // Element Strings with predefined length using GS1 Application Identifiers, as defined in GS1 Gen Specs - see Figure 7.8.4-2 of GS1 Gen Specs v18 at https://www.gs1.org/docs/barcodes/GS1_General_Specifications.pdf
-        const fixedLengthTable = {
-            "00": 20,
-            "01": 16,
-            "02": 16,
-            "03": 16,
-            "04": 18,
-            "11": 8,
-            "12": 8,
-            "13": 8,
-            "14": 8,
-            "15": 8,
-            "16": 8,
-            "17": 8,
-            "18": 8,
-            "19": 4,
-            "20": 4,
-            "31": 10,
-            "32": 10,
-            "33": 10,
-            "34": 10,
-            "35": 10,
-            "36": 10,
-            "41": 16
-        };
 
         // tableP indicates for any initial two digits, what is the total length of the numeric AI key, e.g. "80":4 --> all AI keys beginning with 80 are four digit AI keys, 80xx
         const tableP = {
@@ -4902,22 +4877,6 @@ class GS1DigitalLinkToolkit
             return ai.fixedLength == false;
         }
 
-        function getMatchesKeyword(keyword)
-        {
-            return function (ai)
-            {
-                return ai.title.indexOf(keyword) > -1;
-            }
-        }
-
-        function getMatchesAI(num)
-        {
-            return function (el)
-            {
-                return el.ai == num;
-            }
-        }
-
         function byLength(length)
         {
             return function (element)
@@ -4996,159 +4955,6 @@ class GS1DigitalLinkToolkit
         aiMaps.variableLength = Object.keys(variableLengthMap);
 
 
-        // TODO - not yet making checks on invalid and mandatory associations of GS1 Application Identifiers
-
-        // from GS1 Gen Specs Figure 4.14.1-1. Invalid pairs of element strings
-        // this table is symmetrical
-        const invalidAssociations = [
-            {
-                "rule": "All occurrences of GTIN SHALL have one value.  It is for example not allowed to include GTINs of other packaging levels.",
-                "condition1": "01",
-                "condition2": ["01"]
-            },
-            {
-                "rule": "GTIN of contained trade items is intended to list the trade items contained in a logistic unit, and SHALL NOT be used to identify the contents of a trade item",
-                "condition1": "02",
-                "condition2": ["01"]
-            },
-            {
-                "rule": "The count of units contained SHALL only be used with GTIN of contained trade items.",
-                "condition1": "37",
-                "condition2": ["01"]
-            },
-            {"rule": "A trade item SHALL NOT be identified as a coupon.", "condition1": "255", "condition2": ["01"]},
-            {
-                "rule": "Only one ship to postal code SHALL be applied on the same physical entity",
-                "condition1": "420",
-                "condition2": ["421"]
-            },
-            {
-                "rule": "Country of origin, initial processing, processing, or disassembly SHALL NOT be used in combination with country of full porcessing, since this would lead to ambiguous data.",
-                "condition1": "426",
-                "condition2": ["422", "423", "424", "425"]
-            },
-            {
-                "rule": "The element strings coupon value, percentage discount of a coupon and loyalty points of a coupon SHALL NOT be applied in combination.",
-                "condition1": "390\d",
-                "condition2": ["394\d", "8111"]
-            },
-            {
-                "rule": "Only one amount patable element string SHALL be applied on a payment slip.",
-                "condition1": "391\d",
-                "condition2": ["390\d"]
-            },
-            {
-                "rule": "Only one amount payable element string SHALL be applied on a variable measure trade item.",
-                "condition1": "392\d",
-                "condition2": ["393\d"]
-            },
-            {
-                "rule": "The element strings percentage discount of a coupon and the loyalty points of a coupon SHALL NOT be applied in combination.",
-                "condition1": "394\d",
-                "condition2": ["8111"]
-            },
-            {
-                "rule": "The GTIN SHALL NOT be used in combination with the identification of an individual trade item piece.  The GTIN of the trade item to which the individual trade item piece belongs is contained in the element string",
-                "condition1": "8006",
-                "condition2": ["01"]
-            },
-            {
-                "rule": "Only one Global Service Relation Number (recipient of provider) SHALL be applied at one time for identification of an individual in a given service relationship",
-                "condition1": "8018",
-                "condition2": ["8017"]
-            },
-        ];
-
-        // need to also have mandatory association table and forbidden association table from GS1 Gen Specs
-
-        // from Figure 4.14.2-1. Mandatory association of element strings
-        // this table is not symmetrical - it's one-way, given condition, require OR, AND, XOR to be satisfied where specified
-        const mandatoryAssociations = [
-            {
-                "designation": "GTIN of a variable measure trade item scanned at POS",
-                "rule": "The GTIN of a variable measure trade item scanned at POS SHALL occur in combination with: * variable count of items; or * a trade measure ; Note: Master data will be needed to determine whether the GTIN represents a variable measure trade item scanned at POS. Also see the note below this table.",
-                "condition": ["01"],
-                "conditionN1": "0",
-                "OR": ["30", "3\d{3}"]
-            },
-
-            {
-                "designation": "GTIN of a variable measure trade item not scanned at POS",
-                "rule": "The GTIN of a variable measure trade item not scanned at POS SHALL occur in combination with: * variable count of items; or * a trade measure; or * the dimensions of a roll product. Note: The first position of the GTIN is '9' for such trade items. Also see the note below this table.",
-                "condition": ["01", "02"],
-                "conditionN1": "9",
-                "OR": ["30", "3\d{3}", "8001"]
-            },
-            {
-                "designation": "GTIN of a custom trade item.",
-                "rule": "The GTIN of a custom trade item SHALL be used in combination with the Made-to-Order variation number. Note: The first position of the GTIN is '9' for such trade items.",
-                "condition": ["01"],
-                "conditionN1": "9",
-                "EXACTLY": ["242"]
-            },
-
-            {
-                "designation": "GTIN of contained trade items",
-                "rule": "The GTIN of contained trade items SHALL occur in combination with an SSCC and the count of the trade items.",
-                "condition": ["02"],
-                "AND": ["00", "37"]
-            },
-            {
-                "designation": "Batch/lot number",
-                "rule": "Batch/lot number SHALL occur in combination with: * a GTIN; or * a GTIN of contained trade items; or * the identification of an individual trade item piece.",
-                "condition": ["10"],
-                "XOR": ["01", "02", "8006"]
-            },
-            {
-                "designation": "Production date, packaging date, best before date, sell by date, expiration date (of a trade item)",
-                "rule": "These dates SHALL occur in combination with: * a GTIN; or * a GTIN of contained trade items; or * the identification of an individual trade item piece.",
-                "condition": ["11", "13", "15", "16", "17"],
-                "XOR": ["01", "02", "8006"]
-            },
-
-            {
-                "designation": "Due date",
-                "rule": "The due date SHALL occur in combination with the payment slip reference number and the GLN of the invoicing party",
-                "condition": ["12"],
-                "AND": ["8020", "415"]
-            },
-
-            {
-                "designation": "Expiration date (of a coupon)",
-                "rule": "The expiration date of a coupon SHALL occur in combination with the GCN.",
-                "condition": ["17"],
-                "EXACTLY": ["255"]
-            },
-
-            {"designation": "", "rule": "", "condition": ["20"], "XOR": ["01", "02", "8006"]},
-            {"designation": "", "rule": "", "condition": ["21"], "XOR": ["01", "8006"]},
-
-            {"designation": "", "rule": "", "condition": ["22"], "EXACTLY": ["01"]},
-            {"designation": "", "rule": "", "condition": ["240"], "XOR": ["01", "02", "8006"]},
-            {"designation": "", "rule": "", "condition": ["241"], "XOR": ["01", "02", "8006"]},
-
-            // *** 242 rule has N1=9 condition on 01,02,8006
-
-            {"designation": "", "rule": "", "condition": ["243"], "EXACTLY": ["01"]},
-
-            {"designation": "", "rule": "", "condition": ["250"], "AND": ["21"], "XOR": ["01", "8006"]},
-
-            {"designation": "", "rule": "", "condition": ["251"], "XOR": ["01", "8006"]},
-
-            {"designation": "", "rule": "", "condition": ["254"], "EXACTLY": ["414"]},
-
-            {"designation": "", "rule": "", "condition": ["30"], "XOR": ["01", "02"]},
-            {"designation": "", "rule": "", "condition": ["3\d{3}"], "XOR": ["01", "02"]},
-            {"designation": "", "rule": "", "condition": ["3\d{3}"], "OR": ["00", "01"]},
-            {"designation": "", "rule": "", "condition": ["337\d"], "EXACTLY": ["01"]},
-            {"designation": "", "rule": "", "condition": ["37"], "EXACTLY": ["02"]},
-            {"designation": "", "rule": "", "condition": ["390\d"], "AND": ["8020", "415"]},
-            {"designation": "", "rule": "", "condition": ["390\d"], "EXACTLY": ["255"]},
-
-
-        ];
-
-
         const shortCodeToNumeric = {};
         for (let key in aiShortCode)
         {
@@ -5210,7 +5016,6 @@ class GS1DigitalLinkToolkit
     calculateCheckDigit(ai, gs1IDValue)
     {
         let counter = 0;
-        let reversed = "";
         let total = 0;
         let l;
         if (this.aiCheckDigitPosition[ai] == "L")
@@ -5264,7 +5069,6 @@ class GS1DigitalLinkToolkit
 
             if (actualCheckDigit !== expectedCheckDigit)
             {
-                rv = false;
                 throw new Error("INVALID CHECK DIGIT:  An invalid check digit was found for the primary identification key (" + ai + ")" + gs1IDValue + " ; the correct check digit should be " + expectedCheckDigit + " at position " + checkDigitPosition);
             }
 
@@ -5552,17 +5356,14 @@ class GS1DigitalLinkToolkit
         let identifiers = [];
         let qualifiers = [];
         let attributes = [];
-        let fixedLengthValues = [];
-        let variableLengthValues = [];
         let otherKeys = [];
 
-        let valid = true;
         let path = "";
         let queryStringArray = [];
         let queryString = "";
         let webURI = "";
         let canonicalStem = "https://id.gs1.org";
-        let rv = {};
+
 
         // Need to remove unwanted trailing slash
         if ((uriStem !== undefined) && (uriStem !== null) && (uriStem !== "") && (uriStem.endsWith("/")))
@@ -5591,12 +5392,10 @@ class GS1DigitalLinkToolkit
             }
             if (this.aiMaps.fixedLength.includes(a))
             {
-                fixedLengthValues.push(a);
                 other = false;
             }
             if (this.aiMaps.variableLength.includes(a))
             {
-                variableLengthValues.push(a);
                 other = false;
             }
             if (other)
@@ -5610,7 +5409,6 @@ class GS1DigitalLinkToolkit
 
         if (identifiers.length !== 1)
         {
-            valid = false;
             throw new Error("The element string should contain exactly one primary identification key - it contained " + identifiers.length + " " + JSON.stringify(identifiers) + "; please check for a syntax error");
         }
         else
@@ -5716,12 +5514,12 @@ class GS1DigitalLinkToolkit
 
             if (otherKeys.length > 0)
             {
-                let queryStringArray = [];
+                queryStringArray = [];
                 for (let iok in otherKeys)
                 {
                     queryStringArray.push(otherKeys[iok] + "=" + gs1AIarray[otherKeys[iok]]);
                 }
-                if (queryString == "")
+                if (queryString === "")
                 {
                     webURI += "?" + queryStringArray.join("&");
                 }
@@ -5733,14 +5531,14 @@ class GS1DigitalLinkToolkit
 
             if ((nonGS1keyvaluePairs !== {}) && (Object.keys(nonGS1keyvaluePairs).length > 0))
             {
-                let queryStringArray = [];
+                queryStringArray = [];
                 let keys = Object.keys(nonGS1keyvaluePairs);
                 for (let iok in keys)
                 {
                     let key = keys[iok];
                     queryStringArray.push(key + "=" + nonGS1keyvaluePairs[key]);
                 }
-                if (queryString == "")
+                if (queryString === "")
                 {
                     webURI += "?" + queryStringArray.join("&");
                 }
@@ -5767,11 +5565,6 @@ class GS1DigitalLinkToolkit
         map.qualifiers = [];
         map.dataAttributes = [];
         map.other = [];
-
-        let valid = true;
-        let path = "";
-        let queryStringArray = [];
-        let rv = {};
 
         for (let a in gs1AIarray)
         {
@@ -5804,7 +5597,6 @@ class GS1DigitalLinkToolkit
         // need exactly one identifier key
         if (map.identifiers.length !== 1)
         {
-            valid = false;
             throw new Error("The element string should contain exactly one primary identification key - it contained " + map.identifiers.length + " " + JSON.stringify(map.identifiers) + "; please check for a syntax error");
         }
         else
@@ -6017,7 +5809,7 @@ class GS1DigitalLinkToolkit
                 let bareValue = elementStrings[qvK[i]];
                 let fourthDigit = qvK[i].charAt(3);
                 let value = bareValue;
-                for (let i = 0; i < fourthDigit; i++)
+                for (let j = 0; j < fourthDigit; j++)
                 {
                     value = value / 10;
                 }
@@ -6222,14 +6014,14 @@ class GS1DigitalLinkToolkit
 
 
                 var lastDay = 31;
-                if ((month == "04") || (month == "06") || (month == "09") || (month == "11"))
+                if ((month === "04") || (month === "06") || (month === "09") || (month === "11"))
                 {
                     lastDay = 30;
                 }
-                if (month == "02")
+                if (month === "02")
                 {
                     lastDay = 28;
-                    if (((intendedYear % 400) == 0) || (((intendedYear % 4) == 0) && !((intendedYear % 100) == 0)))
+                    if (((intendedYear % 400) === 0) || (((intendedYear % 4) === 0) && ((intendedYear % 100) !== 0)))
                     {
                         lastDay = 29;
                     }
@@ -6243,7 +6035,7 @@ class GS1DigitalLinkToolkit
 
                 var intendedDate;
 
-                if (day == "00")
+                if (day === "00")
                 {
                     intendedDate = intendedYear + "-" + month + "-" + lastDay;
                 }
@@ -6319,8 +6111,6 @@ class GS1DigitalLinkToolkit
         let relevantPathComponents = [];
         let uriStemPathComponents = [];
         let pcr = pathComponents.reverse();
-        let pcl = pathComponents.length;
-        let pci = pcl;
         let searching = true;
         let numericPrimaryIdentifier = "";
         for (let i in pcr)
@@ -6344,7 +6134,6 @@ class GS1DigitalLinkToolkit
                 if (this.aiMaps.identifiers.indexOf(numkey) > -1)
                 {
                     searching = false;
-                    pci = pcl - i;
                     numericPrimaryIdentifier = numkey;
                     relevantPathComponents = pcr.slice(0, (parseInt(i) + 1)).reverse();
                     uriStemPathComponents = pcr.slice(parseInt(i) + 1).reverse();
@@ -6496,8 +6285,6 @@ class GS1DigitalLinkToolkit
 
 
         let s = this.analyseURI(gs1DigitalLinkURI, false);
-        let queryString = s.queryString;
-        let uriPathInfo = s.uriPathInfo;
         let pathCandidates = s.pathCandidates;
         let queryStringCandidates = s.queryStringCandidates;
         let nonGS1queryStringCandidates = {};
@@ -6578,7 +6365,6 @@ class GS1DigitalLinkToolkit
     {
         // initialise internal variables
         let objGS1 = {};
-        let objOther = {};
         let rv = {};
 
         // set cursor to 0 = start reading from the left-most part of the gs1 Digital Link URI provided as input
@@ -6586,8 +6372,6 @@ class GS1DigitalLinkToolkit
 
         let queryString = s.queryString;
         let uriPathInfo = s.uriPathInfo;
-        let candidates = s.pathCandidates;
-        let queryStringCandidates = s.queryStringCandidates;
         let nonGS1queryStringCandidates = {};
 
         if (queryString !== "")
@@ -6758,8 +6542,8 @@ class GS1DigitalLinkToolkit
                 }
 
                 // append any found attributes to the elementStrings array
-                let sortedAttributes = attributes.sort();
-                for (let a in sortedAttributes)
+                attributes.sort();
+                for (let a in attributes)
                 {
                     elementStrings = elementStringsPush(elementStrings, "(" + attributes[a] + ")", gs1AIarray[attributes[a]], "");
                 }
@@ -6773,8 +6557,6 @@ class GS1DigitalLinkToolkit
 
             let fixedLengthPrimaryIdentifier = [];
             let fixedLengthValuesOther = fixedLengthValues.slice(0);
-            ;
-
 
             for (let i in fixedLengthValuesOther)
             {
@@ -6811,27 +6593,27 @@ class GS1DigitalLinkToolkit
         return elementStrings.join("");
 
 
-        function elementStringsPush(elementStrings, ai, value, gs)
+        function elementStringsPush(theseElementStrings, ai, value, gs)
         {
-            let newvalue = value;
+            let newValue = value;
             // always pad the value of any GTIN [ AI (01) or (02) ] to 14 digits in element string representation
-            if ((ai == "01") || (ai == "(01)") || (ai == "02") || (ai == "(02)"))
+            if ((ai === "01") || (ai === "(01)") || (ai === "02") || (ai === "(02)"))
             {
-                if (value.length == 8)
+                if (value.length === 8)
                 {
-                    newvalue = '000000' + value;
+                    newValue = '000000' + value;
                 }
-                if (value.length == 12)
+                if (value.length === 12)
                 {
-                    newvalue = '00' + value;
+                    newValue = '00' + value;
                 }
-                if (value.length == 13)
+                if (value.length === 13)
                 {
-                    newvalue = '0' + value;
+                    newValue = '0' + value;
                 }
             }
-            elementStrings.push(ai + newvalue + gs);
-            return elementStrings;
+            theseElementStrings.push(ai + newValue + gs);
+            return theseElementStrings;
         }
 
     }
@@ -6894,11 +6676,10 @@ class GS1DigitalLinkToolkit
         // this method converts a string charstr into binary, using n bits per character and decoding from the supplied alphabet or from ASCII when n=7
         // this is almost the inverse method to buildString
         let binValue = "";
-        let binLength = n * charstr.length;
         for (let i = 0; i < charstr.length; i++)
         {
             let index;
-            if (n == 7)
+            if (n === 7)
             {
                 // set index to the ASCII code for each character
                 index = charstr.charAt(i).charCodeAt(0);
@@ -6971,31 +6752,31 @@ class GS1DigitalLinkToolkit
         rv.cursor = cursor;
         return rv;
 
-        function buildString(numChars, alphabet, cursor, multiplier, binstr)
+        function buildString(theseNumChars, alphabet, thisCursor, multiplier, thisBinstr)
         {
             // this is almost the inverse function to buildBinaryValue
 
-            let rv = {};
+            let thisRv = {};
             let s = "";
-            let numBitsForValue = multiplier * numChars;
-            let rbv = binstr.substr(cursor, numBitsForValue);
-            cursor += numBitsForValue;
-            for (let i = 0; i < numChars; i++)
+            let numBitsForValue = multiplier * theseNumChars;
+            let rbv = thisBinstr.substr(thisCursor, numBitsForValue);
+            thisCursor += numBitsForValue;
+            for (let i = 0; i < theseNumChars; i++)
             {
                 let index = parseInt(rbv.substr(multiplier * i, multiplier), 2);
                 // assume 6 bits encode an index 0-63 within the URI-safe base 64 alphabet
-                if (multiplier == 7)
+                if (multiplier === 7)
                 {
-                    s += String.fromCharCode(parseInt(index));
+                    s += String.fromCharCode(index);
                 }
                 else
                 {
                     s += alphabet.substr(index, 1);
                 }
             }
-            rv.cursor = cursor;
-            rv.s = s;
-            return rv;
+            thisRv.cursor = thisCursor;
+            thisRv.s = s;
+            return thisRv;
         }
 
     }
@@ -7017,7 +6798,6 @@ class GS1DigitalLinkToolkit
             let h1 = this.binstrToHex(binstr.substr(cursor, 4));
             let h2 = this.binstrToHex(binstr.substr(4 + cursor, 4));
             let h3 = "";
-            let h4 = "";
             let ai = "";
 
             let h1h2 = "" + h1 + h2;
@@ -7050,7 +6830,7 @@ class GS1DigitalLinkToolkit
                         }
                         ai = h1h2 + h3;
                     }
-                    if (l == 4)
+                    if (l === 4)
                     {
                         let h4 = this.binstrToHex(binstr.substr(cursor, 4));
                         cursor += 4;
@@ -7087,8 +6867,8 @@ class GS1DigitalLinkToolkit
                     let seq = this.tableOpt[h1h2];
                     for (let i in seq)
                     {
-                        let ai = seq[i];
-                        let tmp = this.decodeBinaryValue(ai, gs1AIarray, binstr, cursor);
+                        let thisAi = seq[i];
+                        let tmp = this.decodeBinaryValue(thisAi, gs1AIarray, binstr, cursor);
                         gs1AIarray = tmp.gs1AIarray;
                         cursor = tmp.cursor;
                     }
@@ -7097,10 +6877,9 @@ class GS1DigitalLinkToolkit
                 else
                 {
 
-                    if (h1 == "F")
+                    if (h1 === "F")
                     {
                         // handle decompression of non-GS1 key=value pairs
-                        let bitsIncludingF = binstr.substr(cursor - 8, 11);
                         let keyLength = parseInt(binstr.substr(cursor - 4, 7), 2);
                         cursor += 3;  // 3 extra bits beyond h2
 
@@ -7146,7 +6925,7 @@ class GS1DigitalLinkToolkit
 
     decodeBinaryValue(key, gs1AIarray, binstr, cursor)
     {
-        let rv = {};
+        let thisRv = {};
         gs1AIarray[key] = "";
 
         if (this.tableF.hasOwnProperty(key))
@@ -7215,26 +6994,21 @@ class GS1DigitalLinkToolkit
 
             }
         }
-        rv.gs1AIarray = gs1AIarray;
-        rv.cursor = cursor;
-        return rv;
+        thisRv.gs1AIarray = gs1AIarray;
+        thisRv.cursor = cursor;
+        return thisRv;
     }
 
 
     compressGS1AIarrayToBinary(gs1AIarray, useOptimisations, nonGS1keyvaluePairs)
     {
         let binstr = "";
-        let cursor;
-        let value;
         // identify candidate optimisations from tableOpt
         let akeysa = Object.keys(gs1AIarray).sort();
         let optimisations = [];
 
         if (useOptimisations)
         {
-
-            let akeys = JSON.stringify(akeysa);
-
             let candidatesFromTableOpt;
 
             do
@@ -7244,8 +7018,6 @@ class GS1DigitalLinkToolkit
                 // pick candidatesFromTableOpt that can save the highest number of AI key characters
 
                 let bestCandidate = findBestOptimisationCandidate(candidatesFromTableOpt);
-
-                let v = this.tableOpt[bestCandidate];
 
                 if (bestCandidate !== "")
                 {
@@ -7268,9 +7040,9 @@ class GS1DigitalLinkToolkit
             let key = optimisations[i];
             binstr += this.binaryEncodingOfGS1AIKey(key);
             let optArray = this.tableOpt[key];
-            for (let i in optArray)
+            for (let j in optArray)
             {
-                let k = optArray[i];
+                let k = optArray[j];
                 binstr += this.binaryEncodingOfValue(gs1AIarray, k);
             }
         }
@@ -7316,7 +7088,7 @@ class GS1DigitalLinkToolkit
         return binstr;
 
 
-        function findCandidatesFromTableOpt(akeysa, tableOpt)
+        function findCandidatesFromTableOpt(thisAkeysa, tableOpt)
         {
             let candidatesFromTableOpt = {};
             for (let i in tableOpt)
@@ -7325,7 +7097,7 @@ class GS1DigitalLinkToolkit
                 let b = true;
                 for (let j in a)
                 {
-                    if (akeysa.indexOf(a[j]) == -1)
+                    if (thisAkeysa.indexOf(a[j]) === -1)
                     {
                         b = false;
                     }
@@ -7353,17 +7125,17 @@ class GS1DigitalLinkToolkit
             return maxkey;
         }
 
-        function removeOptimisedKeysFromAIlist(akeysa, v)
+        function removeOptimisedKeysFromAIlist(thisAkeys, v)
         {
             for (let i in v)
             {
-                let ind = akeysa.indexOf(v[i]);
+                let ind = thisAkeys.indexOf(v[i]);
                 if (ind > -1)
                 {
-                    akeysa.splice(ind, 1);
+                    thisAkeys.splice(ind, 1);
                 }
             }
-            return akeysa;
+            return thisAkeys;
         }
 
     }
@@ -7469,20 +7241,10 @@ class GS1DigitalLinkToolkit
 
     buildCompressedGS1digitalLink(gs1AIarray, useShortText, uriStem, useOptimisations, compressOtherKeyValuePairs, nonGS1keyvaluePairs)
     {
-
-        let identifiers = [];
-        let qualifiers = [];
-        let attributes = [];
-        let fixedLengthValues = [];
-        let variableLengthValues = [];
-
-        let valid = true;
         let path = "";
-        let queryStringArray = [];
         let queryString = "";
         let webURI = "";
         let canonicalStem = "https://id.gs1.org";
-        let rv = {};
 
         if (!(compressOtherKeyValuePairs))
         {

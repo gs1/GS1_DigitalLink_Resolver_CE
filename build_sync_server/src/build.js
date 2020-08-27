@@ -5,7 +5,7 @@
 
 const sqldb = require("./sqldb");
 const mongodb = require("./mongodb");
-const utils = require("./resolver_utils");
+const utils = require("./resolverUtils");
 const GS1DigitalLinkToolkit = require("./GS1DigitalLinkToolkit");
 
 const rowBatchSize = process.env.SQLDB_PROCESS_BATCH_SIZE || 1000;
@@ -32,8 +32,20 @@ const run = async () =>
 
     //If this server has not been heard from before, lastHeardDataTime will be 1st January 2020.
     const fullBuildFlag = String(lastHeardDateTime).includes('2020-01-01');
-    await performSyncURIDocumentBuild(lastHeardDateTime, fullBuildFlag);
+    if(fullBuildFlag)
+    {
+        utils.logThis("This sync server has not been heard from before, so a full build of the MongoDB will now commence");
+        await mongodb.dropCollection('gcp');
+        await mongodb.dropCollection('uri');
+    }
+    else
+    {
+        utils.logThis(`This sync server was last heard by the data-entry sqldb on ${lastHeardDateTime}`);
+    }
+
+    //build GCPs before URIs as there are far fewer entries to build with GCP.
     await performSyncGCPDocumentBuild(lastHeardDateTime, fullBuildFlag);
+    await performSyncURIDocumentBuild(lastHeardDateTime, fullBuildFlag);
 
     utils.logThis("closing database connections");
     await sqldb.closeDB();
@@ -46,24 +58,24 @@ const run = async () =>
 /**
  * Updates the resolver URI document with the included variant entry, inserting it if
  * does not exist already.
- * @param requestEntry
- * @param variantUri
+ * @param entryEntry
+ * @param qualifierPath
  * @param mongoEntry
- * @param gs1Key
- * @param gs1Value
+ * @param identKeyType
+ * @param identKey
  * @returns {Promise<*>}
  */
-const updateUriDocument = async (requestEntry, variantUri, mongoEntry, gs1Key, gs1Value) =>
+const updateUriDocument = async (entryEntry, qualifierPath, mongoEntry, identKeyType, identKey) =>
 {
     try
     {
-        //First get the responses for this uri_request_id
-        const responseSet = await sqldb.getURIResponses(requestEntry.uri_request_id);
+        //First get the responses for this uri_entry_id
+        const responseSet = await sqldb.getURIResponses(entryEntry.uri_entry_id);
         if (responseSet !== null)
         {
             //This is an update so we will go ahead and build the record.
-            //Build a variant record for this request entry and its responses.
-            let variantRecord = createVariantRecord(variantUri, requestEntry, responseSet);
+            //Build a variant record for this entry entry and its responses.
+            let variantRecord = createVariantRecord(qualifierPath, entryEntry, responseSet);
 
             if (variantRecord !== null)
             {
@@ -71,7 +83,7 @@ const updateUriDocument = async (requestEntry, variantUri, mongoEntry, gs1Key, g
                 {
                     //Create a brand new document
                     mongoEntry = variantRecord;
-                    mongoEntry["_id"] = "/" + gs1Key + "/" + gs1Value;
+                    mongoEntry["_id"] = "/" + identKeyType + "/" + identKey;
                 }
                 else
                 {
@@ -87,31 +99,34 @@ const updateUriDocument = async (requestEntry, variantUri, mongoEntry, gs1Key, g
                 mongoEntry = formattUriDocument(mongoEntry);
 
                 //update in the database
-                let result = await mongodb.updateDocumentInMongoDB(mongoEntry, 'uri');
-                //utils.logThis(`${mongoEntry["_id"]} full update: ${result}`);
+                let success = await mongodb.updateDocumentInMongoDB(mongoEntry, 'uri');
+                if (!success)
+                {
+                    utils.logThis('Failed to update Mongo database with entry: ' + JSON.stringify(mongoEntry));
+                }
             }
             else
             {
-                //A request with no responses has been found in the database, so this safety feature kicks in
+                //A entry with no responses has been found in the database, so this safety feature kicks in
                 //to remove the variant from the record (or the entire record) in MongoDB (if mongoEntry isn't
                 //null, which would be the case if no record exists in MongoDB anyway).
                 if (mongoEntry !== null)
                 {
-                    if (mongoEntry[variantUri] !== null)
+                    if (mongoEntry[qualifierPath] !== null)
                     {
-                        delete mongoEntry[variantUri];
+                        delete mongoEntry[qualifierPath];
                     }
                     if (Object.keys(mongoEntry).length < 3)
                     {
                         //Now we've removed that variant, there are no variants left! Delete the record.
                         let result = mongodb.deleteDocumentInMongoDB(mongoEntry, "uri");
-                        //utils.logThis(`${mongoEntry["_id"]} delete all: ${result}`);
+                        utils.logThis(`${mongoEntry["_id"]} delete all: ${result}`);
                     }
                     else
                     {
                         //There is still at least one variant left, so update the record which has had this variant removed.
                         let result = mongodb.deleteDocumentInMongoDB(mongoEntry, "uri");
-                        //utils.logThis(`${mongoEntry["_id"]} delete variant: ${result}`);
+                        utils.logThis(`${mongoEntry["_id"]} delete variant: ${result}`);
                     }
                 }
             }
@@ -136,17 +151,17 @@ const updateUriDocument = async (requestEntry, variantUri, mongoEntry, gs1Key, g
  * Deletes the URI variant entry from the resolver document for this gs1 keyy acode and value.
  * If there are no URI entries left, deletes the whole document
  * @param mongoEntry
- * @param variantUri
+ * @param qualifierPath
  * @returns {Promise<void>}
  */
-const deleteUriVariantEntry = async (mongoEntry, variantUri) =>
+const deleteUriVariantEntry = async (mongoEntry, qualifierPath) =>
 {
-    //DELETE request entry
-    //We need to remove this request from the list in the MongoDB record
+    //DELETE entry entry
+    //We need to remove this entry from the list in the MongoDB record
     if (mongoEntry !== null)
     {
         //Remove from the document
-        delete mongoEntry[variantUri];
+        delete mongoEntry[qualifierPath];
 
         //Let's see if that there are any more variants left after deleting that variant.
         //if not then delete the entire document, otherwise update it.
@@ -196,77 +211,80 @@ const formattUriDocument = (doc) =>
 
 
 /**
- * buildURIDocuments takes a requestSet of request rows and processes them into MongoDB by building each document.
+ * buildURIDocuments takes a entrySet of entry rows and processes them into MongoDB by building each document.
  * If fullBuildIfTrue = true, this function will always process this entry as an update. If false, the added column
- * 'update_or_delete_flag' is examined (it is part of the request record).
- * @param requestSet
+ * 'update_or_delete_flag' is examined (it is part of the entry record).
+ * @param entrySet
  * @param fullBuildIfTrue
- * @returns {Promise<{db_attributeId: *, requestEntry: *}>}
+ * @returns {Promise<{db_attributeId: *, entryEntry: *}>}
  */
-const buildURIDocuments = async (requestSet, fullBuildIfTrue) =>
+const buildURIDocuments = async (entrySet, fullBuildIfTrue) =>
 {
-    //try
-    //{
+    try
+    {
         let processCounter = 0;
-        utils.logThis(`Processing batch of ${requestSet.length} request entries`);
-        for (let requestEntry of requestSet)
+        utils.logThis(`Processing batch of ${entrySet.length} entry entries`);
+        for (let entryEntry of entrySet)
         {
             processCounter++;
             if (processCounter % 100 === 0)
             {
-                utils.logThis(`Processed count: ${processCounter} of ${requestSet.length}`);
+                utils.logThis(`Processed count: ${processCounter} of ${entrySet.length}`);
             }
 
-            //Get the variant_uri
-            let variantUri =  requestEntry["variant_uri"].trim();
-            if (variantUri === "" || variantUri.includes("undefined"))
+            //Get the qualifier_path
+            let qualifierPath =  entryEntry["qualifier_path"].trim();
+            if (qualifierPath === "" || qualifierPath.includes("undefined"))
             {
                 //There are no variant attributes so we'll just define this entry as the 'root variant' denoted by '/':
-                variantUri = "/";
+                qualifierPath = "/";
             }
 
-            //test that the request is DigitalLink compliant
-            let urlToTest = "https://id.gs1.org/" + requestEntry.gs1_key_code.trim() + "/" + requestEntry.gs1_key_value.trim() + variantUri;
+            //test that the entry is DigitalLink compliant
+            let urlToTest = "https://id.gs1.org/" + entryEntry.identification_key_type.trim() + "/" + entryEntry.identification_key.trim() + qualifierPath;
             let structure = getDigitalLinkStructure(urlToTest);
             if (structure.result === "OK")
             {
-                //These are the gs1KeyCodes and values as the official GS1 Digital Link Toolkit understands them,
+                //These are the identificationKeyTypes and values as the official GS1 Digital Link Toolkit understands them,
                 //which is the same toolkit also used by id_web_server to gain that same understanding.
                 //by having both servers rely on the toolkit, we get consistency of data (e.g. '01' and not 'gtin').
-                const gs1KeyCode = Object.keys(structure.identifiers[0])[0];
-                const gs1KeyValue = structure.identifiers[0][gs1KeyCode];
+                const identificationKeyType = Object.keys(structure.identifiers[0])[0];
+                const identificationKey = structure.identifiers[0][identificationKeyType];
 
-                //variantUri is now rebuilt according to the values in structure.qualifiers
-                variantUri = '';
-                for(let qualifier of structure.qualifiers)
+                //qualifierPath is now rebuilt according to the values in structure.qualifiers, and we build
+                //in the order of .sortedQualifiers[] if it exists:
+                qualifierPath = '';
+                const theseQualifiers = structure.sortedQualifiers ? structure.sortedQualifiers : structure.qualifiers;
+
+                for(let qualifier of theseQualifiers)
                 {
                     let qualifierKey = Object.keys(qualifier);
                     let qualifierValue = qualifier[qualifierKey];
-                    variantUri += `/${qualifierKey}/${qualifierValue}`;
+                    qualifierPath += `/${qualifierKey}/${qualifierValue}`;
                 }
 
-                if(variantUri === '')
+                if(qualifierPath === '')
                 {
-                    variantUri = '/';
+                    qualifierPath = '/';
                 }
 
                 //Go and get the existing entry from the MongoDB database
-                let mongoEntry = await mongodb.findEntryInMongoDB(gs1KeyCode, gs1KeyValue, "uri");
+                let mongoEntry = await mongodb.findEntryInMongoDB(identificationKeyType, identificationKey, "uri");
 
                 if(fullBuildIfTrue)
                 {
-                    mongoEntry = await updateUriDocument(requestEntry, variantUri, mongoEntry, gs1KeyCode, gs1KeyValue);
+                    await updateUriDocument(entryEntry, qualifierPath, mongoEntry, identificationKeyType, identificationKey);
                 }
                 else
                 {
-                    let updateOrDeleteFlag = requestEntry['active'];
+                    let updateOrDeleteFlag = entryEntry['active'];
                     if (updateOrDeleteFlag)
                     {
-                        mongoEntry = await updateUriDocument(requestEntry, variantUri, mongoEntry, gs1KeyCode, gs1KeyValue);
+                        await updateUriDocument(entryEntry, qualifierPath, mongoEntry, identificationKeyType, identificationKey);
                     }
                     else
                     {
-                        await deleteUriVariantEntry(mongoEntry, variantUri);
+                        await deleteUriVariantEntry(mongoEntry, qualifierPath);
                     }
                 }
             }
@@ -275,11 +293,11 @@ const buildURIDocuments = async (requestSet, fullBuildIfTrue) =>
                 utils.logThis(`Warning: Non DigitalLink-compliant resolver data entry record rejected: ${urlToTest} - error is: ${structure.error}`);
             }
         }
-    //}
-    //catch (err)
-    //{
-    //    utils.logThis("buildURIDocuments error:", err)
-    //}
+    }
+    catch (err)
+    {
+        utils.logThis("buildURIDocuments error:", err)
+    }
 };
 
 
@@ -300,38 +318,39 @@ const buildGCPDocuments = async (gcpRedirectSet, fullBuildIfTrue) =>
         for (let gcpRedirectEntry of gcpRedirectSet)
         {
             processCounter++;
-            const gs1KeyCode = gcpRedirectEntry.gs1_key_code.trim();
-            const gs1GCPValue = gcpRedirectEntry.gs1_gcp_value.trim();
+            const identificationKeyType = gcpRedirectEntry.identification_key_type.trim();
+            const prefixValue = gcpRedirectEntry.prefix_value.trim();
             const redirectURL = gcpRedirectEntry.target_url.trim();
 
             if (processCounter % 1000 === 0)
             {
                 utils.logThis(`Processed count: ${processCounter} of ${gcpRedirectSet.length}`);
             }
-            let mongoEntry = await mongodb.findEntryInMongoDB(gs1KeyCode, gs1GCPValue, "gcp");
+
+            await mongodb.findEntryInMongoDB(identificationKeyType, prefixValue, "gcp");
 
             //The GCP document is far simpler than the URI document, with just an ID and URL.
             //So we will create the document here and insert/update it in the MongoDB database.
             const doc = {
-                "_id": "/" + gs1KeyCode + "/" + gs1GCPValue,
+                "_id": "/" + identificationKeyType + "/" + prefixValue,
                 resolve_url_format: redirectURL
             };
 
             if(fullBuildIfTrue)
             {
-                mongoEntry = await mongodb.updateDocumentInMongoDB(doc, "gcp");
+                await mongodb.updateDocumentInMongoDB(doc, "gcp");
             }
             else
             {
                 let updateOrDeleteFlag = gcpRedirectEntry['active'];
                 if (updateOrDeleteFlag)
                 {
-                    mongoEntry = await mongodb.updateDocumentInMongoDB(doc, "gcp");
+                    await mongodb.updateDocumentInMongoDB(doc, "gcp");
                 }
                 else
                 {
                     //Delete the GCP entry using its key:
-                    await mongodb.deleteDocumentInMongoDB( { "_id": "/" + gs1KeyCode + "/" + gs1GCPValue }, "gcp");
+                    await mongodb.deleteDocumentInMongoDB( { "_id": "/" + identificationKeyType + "/" + prefixValue }, "gcp");
                 }
             }
         }
@@ -348,34 +367,44 @@ const buildGCPDocuments = async (gcpRedirectSet, fullBuildIfTrue) =>
  * Performs a build based on all the changes that have happened since this server last registered with the database.
  * @returns {Promise<void>}
  * @param lastHeardDateTime
- * @param fullBuildFLag
+ * @param fullBuildFlag
  */
-const performSyncURIDocumentBuild = async (lastHeardDateTime, fullBuildFLag) =>
+const performSyncURIDocumentBuild = async (lastHeardDateTime, fullBuildFlag) =>
 {
-    utils.logThis("Perform an Update Build of the database reflecting latest changes");
-    let nextUriRequestId = 0;
-    let finishFlag = false;
-    while (!finishFlag)
+    utils.logThis(`Perform an ${fullBuildFlag ? 'Full' : 'Update'} Build of the database reflecting latest changes`);
+
+    if (fullBuildFlag)
+    {
+        await mongodb.createUnixTimeIndex();
+    }
+
+    let nextUriEntryId = 0;
+
+    //This code will now loop until no more URI entries are returned from the database
+    while (true)
     {
         try
         {
-            const requestSet = await sqldb.getURIRequests(lastHeardDateTime, nextUriRequestId, rowBatchSize);
-            if (requestSet.length === 0)
+            //get the first / next set of URI entries
+            const entrySet = await sqldb.getURIEntries(lastHeardDateTime, nextUriEntryId, rowBatchSize);
+            if (entrySet === null || entrySet.length === 0)
             {
-                finishFlag = true;
+                //No more entries so break out of the loop:
                 utils.logThis("Build Processing completed");
                 break;
             }
             else
             {
-                await buildURIDocuments(requestSet, fullBuildFLag);
-                nextUriRequestId = requestSet[requestSet.length - 1]['uri_request_id'] + 1;
+                //We have one or more URI entries to Build:
+                await buildURIDocuments(entrySet, fullBuildFlag);
+                nextUriEntryId = parseInt(entrySet[entrySet.length - 1]['uri_entry_id']) + 1;
             }
         }
         catch (err)
         {
+            //It's all gone terribly wrong! Better make a note of the error and exit the loop
             utils.logThis(`performSyncURIDocumentBuild error: ${err}`);
-            finishFlag = true;
+            break;
         }
     }
 };
@@ -383,31 +412,31 @@ const performSyncURIDocumentBuild = async (lastHeardDateTime, fullBuildFLag) =>
 
 /**
  * Performs a build based on entries for a specific GS1 Key Code and GS1 Key Value.
- * @param gs1KeyCode
- * @param gs1KeyValue
+ * @param identificationKeyType
+ * @param identificationKey
  * @returns {Promise<boolean>}
  */
-const performGS1KeyCodeAndValueURIDocumentBuild = async (gs1KeyCode, gs1KeyValue) =>
+const performIdKeyTypeAndValueURIDocumentBuild = async (identificationKeyType, identificationKey) =>
 {
-    utils.logThis(`Perform an Update Build of the database using GS1 Key Code: ${gs1KeyCode} and GS1 Key Value: ${gs1KeyValue}`);
+    utils.logThis(`Performing a URI Update Build of the database using GS1 Key Code: ${identificationKeyType} and GS1 Key Value: ${identificationKey}`);
     let success = true;
     try
     {
-        const requestSet = await sqldb.getURIRequestsForGS1KeyCodeAndValue(gs1KeyCode, gs1KeyValue);
-        if (requestSet.length === 0)
+        const entrySet = await sqldb.getURIEntriesUsingIdentificationKeyValue(identificationKeyType, identificationKey);
+        if (entrySet === null || entrySet.length === 0)
         {
-            utils.logThis(`No GS1 Key Code: ${gs1KeyCode} and GS1 Key Value: ${gs1KeyValue} exists in SQL DB!`);
+            utils.logThis(`No identificationKeyType: ${identificationKeyType} and identificationKey: ${identificationKey} exists in SQL DB!`);
             success = false;
         }
         else
         {
-            await buildURIDocuments(requestSet, true);
-            utils.logThis(`Build completed for GS1 Key Code: ${gs1KeyCode} and GS1 Key Value: ${gs1KeyValue}`);
+            await buildURIDocuments(entrySet, true);
+            utils.logThis(`Build completed for identificationKeyType: ${identificationKeyType} and identificationKey: ${identificationKey}`);
         }
     }
     catch (err)
     {
-        utils.logThis(`performGS1KeyCodeAndValueURIDocumentBuild error: ${err}`);
+        utils.logThis(`performIdKeyTypeAndValueURIDocumentBuild error: ${err}`);
         success = false;
     }
 
@@ -417,21 +446,21 @@ const performGS1KeyCodeAndValueURIDocumentBuild = async (gs1KeyCode, gs1KeyValue
 
 /**
  * createVariantRecord creates the variant record that will be inserted into the larger document
- * indexed on gs1KeyCode and gs1KeyValue.
- * Each document can have one or more variants, with each variant representing on date entry request row
+ * indexed on identificationKeyType and identificationKey.
+ * Each document can have one or more variants, with each variant representing on date entry entry row
  * and one or more matching responses rows from the SQL DB.
- * @param variantUri
- * @param requestEntry
+ * @param qualifierPath
+ * @param entryEntry
  * @param responses
  * @returns {{}}
  */
-const createVariantRecord = (variantUri, requestEntry, responses) =>
+const createVariantRecord = (qualifierPath, entryEntry, responses) =>
 {
     let record = {};
 
-    record[variantUri] = {};
-    record[variantUri].item_name = decodeTextFromSQLSafe(requestEntry.item_description);
-    record[variantUri].responses = {};
+    record[qualifierPath] = {};
+    record[qualifierPath].item_name = decodeTextFromSQLSafe(entryEntry.item_description);
+    record[qualifierPath].responses = {};
 
     for (let response of responses)
     {
@@ -446,69 +475,69 @@ const createVariantRecord = (variantUri, requestEntry, responses) =>
 
             let linkTypeForDB = getDigitalLinkVocabWord(response['linktype']);
 
-            if(record[variantUri].responses.linktype === undefined)
+            if(record[qualifierPath].responses.linktype === undefined)
             {
-                record[variantUri].responses.linktype = {};
+                record[qualifierPath].responses.linktype = {};
             }
 
-            if(record[variantUri].responses.linktype[linkTypeForDB] === undefined)
+            if(record[qualifierPath].responses.linktype[linkTypeForDB] === undefined)
             {
-                record[variantUri].responses.linktype[linkTypeForDB] = {};
+                record[qualifierPath].responses.linktype[linkTypeForDB] = {};
             }
 
-            if(record[variantUri].responses.linktype[linkTypeForDB]['lang'] === undefined)
+            if(record[qualifierPath].responses.linktype[linkTypeForDB]['lang'] === undefined)
             {
-                record[variantUri].responses.linktype[linkTypeForDB]['lang'] = {};
+                record[qualifierPath].responses.linktype[linkTypeForDB]['lang'] = {};
             }
 
-            if(record[variantUri].responses.linktype[linkTypeForDB]['lang'][response['iana_language']] === undefined)
+            if(record[qualifierPath].responses.linktype[linkTypeForDB]['lang'][response['iana_language']] === undefined)
             {
-                record[variantUri].responses.linktype[linkTypeForDB]['lang'][response['iana_language']] = {}
+                record[qualifierPath].responses.linktype[linkTypeForDB]['lang'][response['iana_language']] = {}
             }
 
-            if(record[variantUri].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'] === undefined)
+            if(record[qualifierPath].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'] === undefined)
             {
-                record[variantUri].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'] = {};
+                record[qualifierPath].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'] = {};
             }
 
-            if(record[variantUri].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'][response['context']] === undefined)
+            if(record[qualifierPath].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'][response['context']] === undefined)
             {
-                record[variantUri].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'][response['context']] = {};
+                record[qualifierPath].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'][response['context']] = {};
             }
 
-            if(record[variantUri].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'][response['context']]['mime_type'] === undefined)
+            if(record[qualifierPath].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'][response['context']]['mime_type'] === undefined)
             {
-                record[variantUri].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'][response['context']]['mime_type'] = {};
+                record[qualifierPath].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'][response['context']]['mime_type'] = {};
             }
 
-            record[variantUri].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'][response['context']]['mime_type'][response['mime_type']] = destination;
+            record[qualifierPath].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'][response['context']]['mime_type'][response['mime_type']] = destination;
 
             if (response['default_linktype'])
             {
-                record[variantUri].responses['default_linktype'] = linkTypeForDB;
+                record[qualifierPath].responses['default_linktype'] = linkTypeForDB;
             }
 
             if (response['default_iana_language'])
             {
-                record[variantUri].responses.linktype[linkTypeForDB]['default_lang'] = response['iana_language'];
+                record[qualifierPath].responses.linktype[linkTypeForDB]['default_lang'] = response['iana_language'];
             }
 
             if (response['default_context'])
             {
-                record[variantUri].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['default_context'] = response['context'];
+                record[qualifierPath].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['default_context'] = response['context'];
             }
 
             if (response['default_mime_type'])
             {
-                record[variantUri].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'][response['context']]['default_mime_type'] = response['mime_type'];
+                record[qualifierPath].responses.linktype[linkTypeForDB]['lang'][response['iana_language']]['context'][response['context']]['default_mime_type'] = response['mime_type'];
             }
         }
     }
 
-    if (record[variantUri].responses.linktype !== undefined)
+    if (record[qualifierPath].responses.linktype !== undefined)
     {
         //Now the document is built, enforce defaults
-        return enforceDefaults(record, variantUri);
+        return enforceDefaults(record, qualifierPath);
     }
     else
     {
@@ -522,19 +551,19 @@ const createVariantRecord = (variantUri, requestEntry, responses) =>
  * Iterates through the record looking for the absence of defaults an, if necessary, enforcing defaults
  * by taking the first entry found for each attribute
  * @param record
- * @param variantUri
+ * @param qualifierPath
  * @return array
  */
-const enforceDefaults = (record, variantUri) =>
+const enforceDefaults = (record, qualifierPath) =>
 {
-    if (record[variantUri].responses['default_linktype'] === undefined)
+    if (record[qualifierPath].responses['default_linktype'] === undefined)
     {
-        record[variantUri].responses['default_linktype'] = Object.keys(record[variantUri].responses['linktype'])[0];
+        record[qualifierPath].responses['default_linktype'] = Object.keys(record[qualifierPath].responses['linktype'])[0];
     }
 
-    for (let linkTypeName in record[variantUri].responses['linktype'])
+    for (let linkTypeName in record[qualifierPath].responses['linktype'])
     {
-        let linkType = record[variantUri].responses['linktype'][linkTypeName];
+        let linkType = record[qualifierPath].responses['linktype'][linkTypeName];
         if (!linkType.hasOwnProperty('default_lang'))
         {
             linkType['default_lang'] = Object.keys(linkType['lang'])[0];
@@ -567,21 +596,20 @@ const enforceDefaults = (record, variantUri) =>
  * Performs a build based on all the changes to GCP records that have happened since this server last registered with the database.
  * @returns {Promise<void>}
  * @param lastHeardDateTime
+ * @param fullBuildFlag
  */
 
 const performSyncGCPDocumentBuild = async (lastHeardDateTime, fullBuildFlag) =>
 {
-    utils.logThis("Perform an GCP Update Build of the database reflecting latest changes");
+    utils.logThis("Performing a GCP Update Build of the database reflecting latest changes");
     let nextGCPRedirectId = 0;
-    let finishFlag = false;
-    while (!finishFlag)
+    while (true)
     {
         try
         {
             const gcpSet = await sqldb.getGCPRedirects(lastHeardDateTime, nextGCPRedirectId, rowBatchSize);
-            if (gcpSet.length === 0)
+            if (gcpSet === null || gcpSet.length === 0)
             {
-                finishFlag = true;
                 utils.logThis("GCP Processing completed");
                 break;
             }
@@ -594,7 +622,7 @@ const performSyncGCPDocumentBuild = async (lastHeardDateTime, fullBuildFlag) =>
         catch (err)
         {
             utils.logThis(`performSyncGCPDocumentBuild error: ${err}`);
-            finishFlag = true;
+            break;
         }
     }
 };
@@ -602,7 +630,8 @@ const performSyncGCPDocumentBuild = async (lastHeardDateTime, fullBuildFlag) =>
 
 /**
  * getDigitalLinkVocabWord takes the linktype and creates a 'compressed' version (CURIE).
- * For example, 'https:/gs1.org/voc/hasRetailers' becomes 'gs1:hasRetailers'
+ * For example, 'https:/gs1.org/voc/hasRetailers' becomes 'gs1*hasRetailers', and
+ *              alternative format 'gs1:hasRetailers' becomes 'gs1*hasRetailers'
  * But, since colons are reserved in come computer languages making the database inaccessible.
  * Indeed, MongoDB and other Document DBs doesn't allow colons in names of name/value pairs.
  * So this function actually returns 'gs1*hasRetailers' which will be returned to a colon
@@ -613,19 +642,34 @@ const performSyncGCPDocumentBuild = async (lastHeardDateTime, fullBuildFlag) =>
  */
 const getDigitalLinkVocabWord = (linkTypeURL) =>
 {
-    const list = linkTypeURL.split('/');
-    if (linkTypeURL.includes('gs1'))
+    //Does the incoming linktype have a ":" but no "/" ?
+    if (linkTypeURL.includes(':') && !linkTypeURL.includes('/'))
     {
-        return 'gs1*' + list[list.length - 1];
+        //If so, convert the ":" to "*":
+        return linkTypeURL.replace(':', '*');
     }
-    else if (linkTypeURL.includes('schema'))
+    else if (linkTypeURL.includes('/'))
     {
-        return 'schema*' + list[list.length - 1];
+        const list = linkTypeURL.split('/');
+        if (linkTypeURL.includes('gs1'))
+        {
+            return 'gs1*' + list[list.length - 1];
+        }
+        else if (linkTypeURL.includes('schema'))
+        {
+            return 'schema*' + list[list.length - 1];
+        }
+        else
+        {
+            //Just return the original
+            return list[list.length - 1];
+        }
     }
     else
     {
-        //Just return the original
-        return list[list.length - 1];
+        //We haven't much choice just to return what we were given - add a warning to console.
+        utils.logThis(`getDigitalLinkVocabWord WARNING: unformatted CURIE linktype ${linkTypeURL} returned`);
+        return linkTypeURL;
     }
 };
 
@@ -651,22 +695,20 @@ const registerThisSyncServer = async () =>
     try
     {
         await mongodb.getResolverDatabaseIdFromMongoDB();
-        utils.logThis(`Registering as sync server name: ${global.syncHostName}`);
+        utils.logThis(`Registering as sync server name: ${global.syncId}`);
 
         //Register this server with the data-entry database
-        const result = await sqldb.registerSyncServer(global.syncHostName);
+        const result = await sqldb.registerSyncServer(global.syncId, process.env.HOSTNAME);
 
-        //Process metrics that have come back from a successful registration so that the calling function
-        //can find out what synchronisation work (if any) it needs to do.
-        lastHeardDateTime = result[0]["last_heard_datetime"];
-
-        if(lastHeardDateTime === null)
+        if (result === null)
         {
-            utils.logThis("This sync server has not been heard from before, so a full build of the MongoDB will now commence");
+            utils.logThis(`registerThisSyncServer warning: Could not get last heard datetime from SQL database!`);
         }
         else
         {
-            utils.logThis(`This sync server was last heard by the data-entry sqldb on ${lastHeardDateTime}`);
+            //Process metrics that have come back from a successful registration so that the calling function
+            //can find out what synchronisation work (if any) it needs to do.
+            lastHeardDateTime = result[0]["last_heard_datetime"];
         }
     }
     catch (error)
@@ -680,9 +722,8 @@ const registerThisSyncServer = async () =>
 
 /**
  * getDigitalLinkStructure calls into the GS1 DigitalInk Toolkit library and
- * returns the object structure (if any) or an error. This is an async (Promise)
- * function so as not to block calls during complex processing.
-
+ * returns the object structure (if any) or an error. The qualifiers are sorted
+ * into the correct order (if there are any).
  * @param uri
  * @returns {{result: string, error: string}}
  */
@@ -695,6 +736,39 @@ const getDigitalLinkStructure = (uri) =>
     {
         structuredObject = gs1dlt.analyseURI(uri, true).structuredOutput;
         structuredObject.result = "OK";
+
+        //If the are qualifiers to sort then we use the details in the Digital Link
+        //Toolkit's aiTable.
+        if (structuredObject.qualifiers && Array.isArray(structuredObject.qualifiers))
+        {
+            //Find the appropriate aiTable entry matching the identificationKeyType ('01' if GTIN)
+            const wantedAITableEntry = gs1dlt.aitable.find((aiTableEntry) => aiTableEntry.ai === Object.keys(structuredObject.identifiers[0])[0]);
+
+            //only a couple of aiTable entries have the qualifiers property. This array property contains
+            //a list of the qualifiers in the correct sort order (if it exists):
+            if (wantedAITableEntry.qualifiers)
+            {
+                //create a new array property 'sortedQualifiers'
+                structuredObject.sortedQualifiers = [];
+
+                //loop through the wantedAITableEntry.qualifiers:
+                for (let wantedQualifier of wantedAITableEntry.qualifiers)
+                {
+                    //for each wantedAITableEntry.qualifiers entry, find the same entry
+                    //in structuredObject.qualifiers and add it to the sortedQualifiers array.
+                    for (let qualifier of structuredObject.qualifiers)
+                    {
+                        if (Object.keys(qualifier)[0] === wantedQualifier)
+                        {
+                            structuredObject.sortedQualifiers.push(qualifier);
+                        }
+                    }
+
+                }
+            }
+        }
+
+        //We're done.
         return structuredObject;
     }
     catch (err)
@@ -720,7 +794,7 @@ const decodeTextFromSQLSafe = (textThatIsSQLSafe) =>
         let buff = new Buffer.from(textThatIsSQLSafe.substring(2), 'base64');
         result = buff.toString('utf8');
     }
-    if (result === null)
+    if (result == null)
     {
         result = '';
     }
@@ -728,4 +802,7 @@ const decodeTextFromSQLSafe = (textThatIsSQLSafe) =>
 };
 
 
-module.exports = {run, performGS1KeyCodeAndValueURIDocumentBuild};
+module.exports = {
+    run,
+    performIdKeyTypeAndValueURIDocumentBuild
+};

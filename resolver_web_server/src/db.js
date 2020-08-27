@@ -1,104 +1,112 @@
 const MongoClient = require('mongodb').MongoClient;
-const resolverutils = require("./resolver_utils");
-const fetch = require("node-fetch");
-const mongoConnection = process.env.MONGODBCONN;
-
-//This server can call across to the build sync server to ask it to see if there is an entry
-//for this request in the SQL database. However this can put the SQL service under strain so
-//if there is no 'BUILDSYNCSERVICE' environment variable in Dockerfile (or Compose / K8s deployment)
-// then this variable is set to 'N/A' which stops an attempt being made.
-const buildSyncServer = process.env.BUILDSYNCSERVICE || 'N/A'
+const mongoConnection = process.env.MONGODBCONN || process.env.DBCONN;
 
 
 /**
  * findDigitalLinkEntry runs the function findDigitalLinkEntryInDB to get the local entry for the URI document.
- * If one cannot be found, it runs function requestBuildSearchForGS1KeyCodeAndValue which asks the build server
- * to check with the central SQL database. If an entry is found there, Build will insert it into the local database
- * and return 'true' so that this function can 'ask' the local database again.
- * This request can be overridden by removing the environment variable BUILDSYNCSERVICE from Dockerfile / Compose / K8s Deployment
- * (see variable declaration for 'buildSyncServer' at the top of this file)
- * @param gs1KeyCode
- * @param gs1KeyValue
+ * @param identifierKeyType
+ * @param identifierKey
  * @returns {Promise<{}>}
  */
-const findDigitalLinkEntry = async (gs1KeyCode, gs1KeyValue) =>
+const findDigitalLinkEntry = async (identifierKeyType, identifierKey) =>
 {
-    let result = await findDigitalLinkEntryInDB(gs1KeyCode, gs1KeyValue);
-    if(!result && buildSyncServer !== 'N/A')
-    {
-        if(await requestBuildSearchForGS1KeyCodeAndValue(gs1KeyCode, gs1KeyValue))
-        {
-            result = await findDigitalLinkEntryInDB(gs1KeyCode, gs1KeyValue);
-        }
-    }
+    let result = await findDigitalLinkEntryInDB(identifierKeyType, identifierKey);
     return result;
 };
 
 /**
  * findDigitalLinkEntryInDB connects to the document database and looks for the document
- * for the values in gs1KeyCode and gs1KeyValue
- * @param gs1KeyCode
- * @param gs1KeyValue
+ * for the values in identifierKeyType and identifierKey
+ * @param identifierKeyType
+ * @param identifierKey
  * @returns {Promise<{}>}
  */
-const findDigitalLinkEntryInDB = async (gs1KeyCode, gs1KeyValue) =>
+const findDigitalLinkEntryInDB = async (identifierKeyType, identifierKey) =>
 {
     try
     {
         const mongoClient = new MongoClient(mongoConnection, {useNewUrlParser: true, useUnifiedTopology: true});
         let connClient = await mongoClient.connect();
         let collection = connClient.db("gs1resolver").collection("uri");
-        let finalResult = await collection.findOne({"_id": "/" + gs1KeyCode + "/" + gs1KeyValue});
+        let finalResult = await collection.findOne({"_id": "/" + identifierKeyType + "/" + identifierKey});
         await mongoClient.close();
         return finalResult;
     }
     catch (e)
     {
-        resolverutils.logThis(`findDigitalLinkEntryInDB error: ${e}`);
+        console.log(`findDigitalLinkEntryInDB error: ${e}`);
         return null;
     }
 };
 
 
 /**
- * Asks the build_sync_server to see if it can find this missing entry from SQL DB. This function doers this
- * by calling the 'buildkey' command on build_sync_server's web service.
- * URL call is: http://build_sync_server/buildkey/<gs1KeyCode></gs1KeyValue> and await a true or false success value
- *
- * @param gs1KeyCode
- * @param gs1KeyValue
- * @returns {Promise<boolean>}
+ * Counts the number of entries in Resolver's mongo database
+ * @param unixTime
+ * @returns {Promise<null|*>}
  */
-const requestBuildSearchForGS1KeyCodeAndValue = async (gs1KeyCode, gs1KeyValue) =>
+const countEntriesFromUnixTime = async (unixTime) =>
 {
-    let success = false;
-    if (buildSyncServer !== 'N/A')
+    try
     {
-        const buildSyncServerURL = `http://${buildSyncServer}/buildkey/${gs1KeyCode}/${gs1KeyValue}`;
-        resolverutils.logThis(buildSyncServerURL);
-        try
-        {
-            const response = await fetch(buildSyncServerURL);
-            const result = await response.json();
-            success = result['SUCCESS'] === "Y";
-        }
-        catch (error)
-        {
-            resolverutils.logThis(`requestBuildSearchForGS1KeyCodeAndValue error: ${error}`);
-        }
+        unixTime = parseInt(unixTime);
+        const mongoClient = new MongoClient(mongoConnection, {useNewUrlParser: true, useUnifiedTopology: true});
+        let connClient = await mongoClient.connect();
+        let collection = connClient.db("gs1resolver").collection("uri");
+        let finalResult = await collection.countDocuments({ unixtime: {$gte: unixTime} } );
+        await mongoClient.close();
+        return finalResult;
     }
-    return success;
+    catch (err)
+    {
+        console.log(`countEntriesFromUnixTime error: ${err}`);
+        return -1;
+    }
+};
+
+/**
+ * Returns a list of documents that are greater than or equal to the supplied unixTime value
+ * using a page number and size.
+ * @param unixTime
+ * @param pageNumber
+ * @param pageSize
+ * @returns {Promise<number|*>}
+ */
+const getPagedEntriesFromUnixTime = async (unixTime, pageNumber, pageSize) =>
+{
+    try
+    {
+        unixTime = parseInt(unixTime)
+        pageNumber = parseInt(pageNumber);
+        pageSize = parseInt(pageSize);
+
+        //Maximum page size is 1000
+        pageSize = pageSize > 1000 ? 1000 : pageSize;
+        const skips = pageSize * (pageNumber - 1)
+        const mongoClient = new MongoClient(mongoConnection, {useNewUrlParser: true, useUnifiedTopology: true});
+        let connClient = await mongoClient.connect();
+        let collection = connClient.db("gs1resolver").collection("uri");
+        let dataArray = await collection.find({ unixtime: {$gte: unixTime} } ).skip(skips).limit(pageSize).toArray();
+        await mongoClient.close();
+
+        return dataArray;
+    }
+    catch (err)
+    {
+        console.log(`getPagesEntriesFromUnixTime error: ${err}`);
+        return -1; //-1 denotes error
+    }
 };
 
 
 /**
- * findPrefixEntry looks for prefix versions of the gs1KeyValue. It is normally called should
+ * findPrefixEntry looks for prefix versions of the identifierKey. It is normally called should
  * no match be found by function findDigitalLinkEntryInDB().
- * @param gs1KeyCode
- * @param gs1KeyValue
+ * @param identifierKeyType
+ * @param identifierKey
  * @returns {Promise<{}>}
  */
-const findPrefixEntry = async (gs1KeyCode, gs1KeyValue) =>
+const findPrefixEntry = async (identifierKeyType, identifierKey) =>
 {
     let finalResult = null;
     try
@@ -108,11 +116,11 @@ const findPrefixEntry = async (gs1KeyCode, gs1KeyValue) =>
         let collection = connClient.db("gs1resolver").collection("gcp");
 
         //To find a match we must chop off more and more of a GS1 Key Value until we get a match
-        const gs1KeyValueOriginalLength = gs1KeyValue.length;
-        for (let gs1KeyValueLength = gs1KeyValueOriginalLength; gs1KeyValueLength > 3; gs1KeyValueLength--)
+        const identifierKeyOriginalLength = identifierKey.length;
+        for (let identifierKeyLength = identifierKeyOriginalLength; identifierKeyLength > 3; identifierKeyLength--)
         {
-            let partialGS1KeyValue = gs1KeyValue.substring(0, gs1KeyValueLength -1);
-            finalResult = await collection.findOne({"_id": "/" + gs1KeyCode + "/" + partialGS1KeyValue});
+            let partialGS1KeyValue = identifierKey.substring(0, identifierKeyLength -1);
+            finalResult = await collection.findOne({"_id": "/" + identifierKeyType + "/" + partialGS1KeyValue});
             if (finalResult !== null)
             {
                 break;  //we've found a result - stop the loop early!
@@ -123,7 +131,7 @@ const findPrefixEntry = async (gs1KeyCode, gs1KeyValue) =>
     }
     catch (e)
     {
-        resolverutils.logThis(`findPrefixEntry error: ${e}`);
+        console.log(`findPrefixEntry error: ${e}`);
         return null;
     }
 
@@ -132,6 +140,7 @@ const findPrefixEntry = async (gs1KeyCode, gs1KeyValue) =>
 
 module.exports = {
     findDigitalLinkEntry,
-    requestBuildSearchForGS1KeyCodeAndValue,
-    findPrefixEntry
+    findPrefixEntry,
+    countEntriesFromUnixTime,
+    getPagedEntriesFromUnixTime
 };
