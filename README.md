@@ -47,8 +47,8 @@ before they are published. This has resulted in a data structure change that inc
 named SQL tables into which data is uploaded. A validation procvess is then kicked off which, if successful
 for each entry, copies the data into the non _prevalid suffix SQL tables.
 
-To install this new update, dockeer-compose build and docker-compose run -d over the top of your existing
-installation, then run the SQL create script as documented in step 7. This will create a SQL database called "gs1-resolver-ce-v2-1-db" alongside
+To install this new update, use the 'docker-compose build' and 'docker-compose run -d' commands over the top of your existing
+installation, then run the SQL create script as documented in Fast Start step 7 below. This will create a SQL database called "gs1-resolver-ce-v2-1-db" alongside
 your existing SQL database "gs1-resolver-ce-v2-db" with the updated structure. The containers point to the new SQL database but the
 Mongo database is unchanged and will continue serving existing data. You will have an extra step of copying data
 between the databases but, apart from the _prevalid tables, you will find the structure familiar. Note that
@@ -56,10 +56,10 @@ a few column names have been changed to conform better to GS1 naming conventions
 data in the columns is unchanged in format.
 
 Note also that you only see one running instance of the resolver-web-server rather than five, unlike v2.0. The running of multiple
-servers has become unnecessary thanks to the latest Node V8 engine and a lot of code optimisation. Fast!
+servers has become unnecessary thanks to the latest Node v14 V8 engine and a lot of code optimisation. Fast!
 
 Finally, by popular request, docker-compose exposes the web service on port 80, no longer port 8080. It also exposes SQL Server and MongoDB on their default
-ports, so use your fasvourite SQL Server client and Mongo DB to connect to localhost with crednetials supplied in the SQL and Mongo Dockerfiles.
+ports, so use your favourite SQL Server client and Mongo DB to connect to localhost with credentials supplied in the SQL and Mongo Dockerfiles.
 
 
 ## Documentation
@@ -167,7 +167,7 @@ and what it means (read the final section of the PDF document for more details a
     Location: https://dalgiardino.com/risotto-rice-with-mushrooms/index.html.vi
 
 </pre> This demonstrates that Resolver has found an entry for GTIN 09506000134352 and is redirecting you to the web site shown in the 'Location' header. 
-You can also see this in action if you use the same web address ( in your web browser - you should end up at Dal Giardino web site, this particular page written in Vietnamese!
+You can also see this in action if you use the same web address (in your web browser - you should end up at Dal Giardino web site, this particular page written in Vietnamese!).
  The rest of the information above reveals all the alternative links available for this product depending on the context in which Resolver was called.
 
 In the folder "Example Files to Upload" you will also find an Excel spreadsheet with the same data - you can upload Excel data too! This particular spreadsheet
@@ -187,8 +187,10 @@ docker volume rm gs1resolvercommunityeditionv20_resolver-sql-server-dbbackup-vol
 
 If the above volume are the ony ones in your Docker Engine then it's quicker to type:<pre>docker volume ls </pre> to confirm, then to delete all the volumes type:<pre>docker volume prune </pre> 
 
-###Fast Start: Kubernetes (Beta)
+##Fast Start: Kubernetes (Beta)
+
 #####DISCLAIMER: These Kubernetes YAML scripts are currently under test and experimentation to get the best results. Be careful if you run these scripts on a cloud service as it could cause them to create costly resources. You need to be skilled and experienced with Kubernetes to continue!
+
 The service is now ready for use with Kubernetes clusters. The container images are now maintained on Docker Hub and
 the supplied YAML files in this repository will get you up and running quickly.
 
