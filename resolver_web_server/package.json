@@ -12,6 +12,6 @@
   "dependencies": {
     "http-status-codes": "^1.4.0",
     "mongodb": "^3.5.8",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.1"
   }
 }
