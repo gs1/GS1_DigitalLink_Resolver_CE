@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "http-status-codes": "^1.4.0",
-    "mongodb": "^3.5.8",
+    "mongodb": "^3.6.2",
     "node-fetch": "^2.6.0"
   }
 }
