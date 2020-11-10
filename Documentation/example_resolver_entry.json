@@ -1,0 +1,77 @@
+{
+  "_id": "/01/09506000134376",
+  "unixtime": 1604940000,
+  "/": {
+    "active": true,
+    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg",
+    "responses": [
+      {
+        "link": "https://dalgiardino.com/medicinal-compound/pil.html",
+        "title": "Product Information Page",
+        "linkType": "gs1:epil",
+        "ianaLanguage": "en",
+        "context": "xx",
+        "mimeType": "text/html",
+        "active": true,
+        "fwqs": true,
+        "defaultLinkType": false,
+        "defaultIanaLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true
+      },
+      {
+        "link": "https://dalgiardino.com/medicinal-compound/",
+        "title": "Product Information Page",
+        "linkType": "gs1:pip",
+        "ianaLanguage": "en",
+        "context": "xx",
+        "mimeType": "text/html",
+        "active": true,
+        "fwqs": true,
+        "defaultLinkType": true,
+        "defaultIanaLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true
+      },
+      {
+        "link": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+        "title": "Product Information Page",
+        "linkType": "gs1:pip",
+        "ianaLanguage": "ja",
+        "context": "xx",
+        "mimeType": "text/html",
+        "active": true,
+        "fwqs": true,
+        "defaultLinkType": false,
+        "defaultIanaLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true
+      }
+    ]
+  },
+  "/21/{serial}": {
+    "active": true,
+    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg with serial number",
+    "responses": [
+      {
+        "link": "https://dalgiardino.com/medicinal-compound/index.html?serialnumber=%7Bserial%7D",
+        "title": "Product Information Page",
+        "linkType": "gs1:pip",
+        "ianaLanguage": "en",
+        "context": "xx",
+        "mimeType": "text/html",
+        "active": true,
+        "fwqs": true,
+        "defaultLinkType": false,
+        "defaultIanaLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true
+      }
+    ],
+    "variables": [
+      {
+        "21": "{serial}"
+      }
+    ]
+  }
+}

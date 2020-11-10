@@ -58,7 +58,7 @@ def create_account():
         account_name = account_name.strip()
 
     if len(account_name) > 100:
-        account_name = input("Please keep the account name under 100 char: ")
+        account_name = input("Please keep the account under 100 char: ")
 
     issuer_gln = input("13-digit Issuer GLN: ")
     if issuer_gln == "":
@@ -107,7 +107,7 @@ def delete_account():
     account_id = int(account_num) - 1
     if account_id < 0:
         return
-    account = DotMap(accounts_list[account_id])
+    account = DotMap(accounts_list['data'][account_id])
     remove_account(account.accountName, account.issuerGLN, account.authenticationKey)
 
 
@@ -121,7 +121,7 @@ def list_accounts():
         longest_issuer_gln = 0
         longest_account_name = 0
         longest_auth_key = 0
-        for account in accounts_list:
+        for account in accounts_list['data']:
             for key, value in account.items():
                 if key == "issuerGLN" and len(value) > longest_issuer_gln:
                     longest_issuer_gln = len(value)
@@ -137,7 +137,7 @@ def list_accounts():
         print(("-" * (longest_issuer_gln + longest_account_name + longest_auth_key)))
 
         account_number = 1
-        for account in accounts_list:
+        for account in accounts_list['data']:
             account_line = "{:3.0f}".format(account_number) + " "
             for key, value in account.items():
                 if key == "issuerGLN":
@@ -151,7 +151,6 @@ def list_accounts():
     else:
         print('HTTP {0} received'.format(response.status_code))
         return None
-
 
 
 def display_main_menu():
@@ -171,7 +170,7 @@ def display_main_menu():
 
 def main():
     print()
-    print("GS1 Resolver Community Editioon - Accounts System:", domain)
+    print("GS1 Resolver Community Edition v2.2 - Accounts System:", domain)
     print("--------------------------------------------------" + ("-" * (len(domain))))
     while True:
         display_main_menu()

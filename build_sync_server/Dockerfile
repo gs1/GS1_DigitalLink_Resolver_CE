@@ -1,4 +1,4 @@
-FROM node:14.4-stretch
+FROM node:15.1.0-alpine3.12
 
 ENV TZ=Europe/London
 # These two environment variables ensure that the installation of the packages we need is all automatic and doesn't need
@@ -20,32 +20,26 @@ ENV SQLDBCONN_DB="gs1-resolver-ce-v2-1-db"
 # database better performing, but smaller numbers will cause the processing to take longer overall.
 ENV SQLDB_PROCESS_BATCH_SIZE=1000
 
-# This value sets how often the build event will be started (if idle)
-ENV BUILD_INTERVAL_SECONDS=60
-
-RUN apt-get update && apt-get -y install curl dos2unix  apt-transport-https ca-certificates cron && apt-get autoremove
-
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
-RUN curl https://packages.microsoft.com/config/debian/9/prod.list > /etc/apt/sources.list.d/mssql-release.list
-RUN apt-get update && apt-get -y install msodbcsql17 mssql-tools
-RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile
-RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
-RUN apt-get -y install unixodbc-dev
+# BUILD_INTERVAL_SECONDS sets how often the build event will be started (if idle). Additionally, if running several
+# Build containers in Docker or Kubernetes, BUILD_MAX_ENTROPY_SECONDS stores the maximum extra seconds
+# the Build should be delayed for at every build interval. At every interval, a random number between 0 and
+# this value is generated.  This 'entropy' enables workload to be shared more eevenly amongst Build containers
+# otherwise Build container 1 will always start its interval before Build container 2, 3, ... and n, and will
+# always detect DB changes first as the subsequent containers will be running behind.
+ENV BUILD_INTERVAL_SECONDS=10
+ENV BUILD_MAX_ENTROPY_SECONDS=10
 
 RUN mkdir /buildsync
-COPY package-lock.json /buildsync
-COPY package.json /buildsync
+COPY *.json /buildsync/
 WORKDIR /buildsync
-RUN npm install
+RUN npm install && npm audit fix
 
 COPY src /buildsync/src
-RUN find /buildsync/src/* -type f -print0 | xargs -0 dos2unix
 
 HEALTHCHECK CMD curl http://localhost/healthcheck || exit 1
 
 # Run Node (not NPM) to start the server.
 # If the usual practice of 'npm start' is used, any SIGTERM arriving to stop the
 # container in a controlled manner is instead absorbed by NPM and the container
-
 # keeps going until it is forced-stopped.
 ENTRYPOINT ["node","/buildsync/src/index.js"]

@@ -26,6 +26,13 @@ services:
     networks:
       - resolver-internal-network
 
+  digitallink-toolkit-service:
+    build: "./digitallink_toolkit_server"
+    container_name: digitallink-toolkit-server
+    restart: always
+    networks:
+      - resolver-internal-network
+
   build-sync-service:
     build: './build_sync_server'
     container_name: build-sync-server

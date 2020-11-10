@@ -48,7 +48,7 @@ spec:
       containers:
         - name: resolver-data-entry-server
 
-          image: nicklansley/gs1_digitallink_resolver_ce_resolver-data-entry-server:v2.1.0
+          image: nicklansley/gs1_digitallink_resolver_ce_resolver-data-entry-server:v2.2.0
           imagePullPolicy: IfNotPresent
 
           env:
@@ -79,35 +79,4 @@ spec:
             - containerPort: 80
               name: dataentryserver
 
-          resources:
-            # these limits are set to prevent the data entry server denying available CPU power to the other services;
-            # data entry is a lower priority service and can run slower if the cluster is under load
-            limits:
-              cpu: 200m
-            requests:
-              cpu: 100m
 
----
-apiVersion: autoscaling/v2beta2
-kind: HorizontalPodAutoscaler
-
-metadata:
-  name: resolver-data-entry-server-hpa
-  namespace: default
-
-spec:
-  minReplicas: 1
-  maxReplicas: 2
-
-  metrics:
-    - resource:
-        name: cpu
-        target:
-          averageUtilization: 50
-          type: Utilization
-      type: Resource
-
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: resolver-data-entry-server-deployment

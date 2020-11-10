@@ -13,3 +13,4 @@ resources:
   - k8s/resolver-data-entry-server.yaml
   - k8s/resolver-mongo-server.yaml
   - k8s/resolver-web-server.yaml
+  - k8s/digitallink-toolkit-server.yaml

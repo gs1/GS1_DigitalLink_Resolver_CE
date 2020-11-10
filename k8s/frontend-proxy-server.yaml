@@ -45,28 +45,7 @@ spec:
     spec:
       containers:
         - name: frontend-proxy-server
-          image: nicklansley/gs1_digitallink_resolver_ce_frontend-proxy-server:v2.1.0
+          image: nicklansley/gs1_digitallink_resolver_ce_frontend-proxy-server:v2.2.0
           ports:
             - containerPort: 80
               name: frontendproxy
-
----
-apiVersion: autoscaling/v2beta2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: frontend-proxy-server-hpa
-  namespace: default
-spec:
-  minReplicas: 2
-  maxReplicas: 10
-  metrics:
-    - resource:
-        name: cpu
-        target:
-          averageUtilization: 50
-          type: Utilization
-      type: Resource
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: frontend-proxy-server-service

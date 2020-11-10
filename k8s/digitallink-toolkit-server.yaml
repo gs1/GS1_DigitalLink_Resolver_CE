@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: digitallink-toolkit-service
+  labels:
+    app: resolver-digitallink-toolkit-server
+    tier: backend
+
+spec:
+  type: ClusterIP
+
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: digitallink
+
+  selector:
+    app: resolver-digitallink-toolkit-server
+    tier: backend
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: resolver-digitallink-toolkit-server-deployment
+  labels:
+    app: resolver-digitallink-toolkit-server
+    tier: backend
+
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: resolver-digitallink-toolkit-server
+      tier: backend
+
+  template:
+    metadata:
+      labels:
+        app: resolver-digitallink-toolkit-server
+        tier: backend
+    spec:
+
+      containers:
+        - name: resolver-digitallink-toolkit-server
+          image:  nicklansley/gs1_digitallink_resolver_k8s_digitallink-toolkit-service:v2.2.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 80
+              name: digitallink
+
+      imagePullSecrets:
+        - name: registry-lansleycom
+

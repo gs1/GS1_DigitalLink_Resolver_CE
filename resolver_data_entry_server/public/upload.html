@@ -6,7 +6,6 @@
 
     <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
 
-    <script src="javascripts/GS1DigitalLinkToolkit.js"></script>
     <script lang="javascript" src="javascripts/xlsx.full.min.js"></script>
     <script src="javascripts/upload.js"></script>
     <script>
@@ -39,7 +38,7 @@
         <tr>
             <td>If no column is assigned as LinkType, select a LinkType value to be used for all entries in this file:
             </td>
-            <td><select id="selectDefaultLinkType" onchange="setDefaultLinkTitle(this)"></select></td>
+            <td><select id="selectDefaultLinkType" onchange="setDefaultLinkType()"></select></td>
         </tr>
         <tr>
             <td>If no column is assigned as a Link Title describing the Target URL, enter a text value to be used for

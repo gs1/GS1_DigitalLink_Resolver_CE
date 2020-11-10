@@ -48,7 +48,7 @@ spec:
 
       containers:
         - name: resolver-web-server
-          image: nicklansley/gs1_digitallink_resolver_ce_resolver-web-server:v2.1.0
+          image: nicklansley/gs1_digitallink_resolver_ce_resolver-web-server:v2.2.0
           imagePullPolicy: IfNotPresent
 
           env:
@@ -62,28 +62,3 @@ spec:
           ports:
             - containerPort: 80
               name: idserver
-
----
-apiVersion: autoscaling/v2beta2
-kind: HorizontalPodAutoscaler
-
-metadata:
-  name: resolver-web-server-hpa
-  namespace: default
-
-spec:
-  minReplicas: 2
-  maxReplicas: 10
-
-  metrics:
-    - resource:
-        name: cpu
-        target:
-          averageUtilization: 50
-          type: Utilization
-      type: Resource
-
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: resolver-web-server-deployment

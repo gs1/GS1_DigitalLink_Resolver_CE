@@ -18,7 +18,7 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: resolver-document-pv-claim
+  name: resolver-sql-pv-claim-22
   labels:
     app: resolver-sql-server
     tier: sqldb
@@ -32,7 +32,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: resolver-mongo-server
+  name: resolver-sql-server
   labels:
     app: resolver-sql-server
     tier: sqldb
@@ -49,7 +49,7 @@ spec:
     spec:
       containers:
         - name: resolver-sql-server
-          image: nicklansley/gs1_digitallink_resolver_ce_resolver-sql-server:v2.1.0
+          image: nicklansley/gs1_digitallink_resolver_ce_resolver-sql-server:v2.2.0
           imagePullPolicy: IfNotPresent
           env:
             - name: SQLDBCONN_USER
@@ -96,13 +96,13 @@ spec:
       volumes:
         - name: resolver-sql-server-volume-db-data
           persistentVolumeClaim:
-            claimName: resolver-sql-pv-claim
+            claimName: resolver-sql-pv-claim-22
         - name: resolver-sql-server-volume-db-log
           persistentVolumeClaim:
-            claimName: resolver-sql-pv-claim
+            claimName: resolver-sql-pv-claim-22
         - name: resolver-sql-server-volume-db-secrets
           persistentVolumeClaim:
-            claimName: resolver-sql-pv-claim
+            claimName: resolver-sql-pv-claim-22
         - name: resolver-sql-server-dbbackup-volume
           persistentVolumeClaim:
-            claimName: resolver-sql-pv-claim
+            claimName: resolver-sql-pv-claim-22

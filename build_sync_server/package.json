@@ -1,15 +1,16 @@
 {
   "name": "build_sync_server",
-  "version": "1.0.0",
-  "description": "This server reviews changes made to dataentry database and applied the changes to the local MongoDB database",
+  "version": "2.2.0",
+  "description": "This server reviews changes made to data-entry database and applied the changes to the local MongoDB database",
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Nick Lansley",
+  "author": "Nick Lansley for GS1 AISBL",
   "license": "ISC",
   "dependencies": {
     "mongodb": "^3.5.8",
-    "mssql": "^6.2.0"
+    "mssql": "^6.2.0",
+    "node-fetch": "^2.6.1"
   }
 }

@@ -1,67 +1,46 @@
-const MongoClient = require('mongodb').MongoClient;
+const { MongoClient } = require('mongodb');
+
 const mongoConnection = process.env.MONGODBCONN || process.env.DBCONN;
 
-
 /**
- * findDigitalLinkEntry runs the function findDigitalLinkEntryInDB to get the local entry for the URI document.
- * @param identifierKeyType
- * @param identifierKey
- * @returns {Promise<{}>}
- */
-const findDigitalLinkEntry = async (identifierKeyType, identifierKey) =>
-{
-    let result = await findDigitalLinkEntryInDB(identifierKeyType, identifierKey);
-    return result;
-};
-
-/**
- * findDigitalLinkEntryInDB connects to the document database and looks for the document
+ * findDigitalLinkEntry connects to the document database and looks for the document
  * for the values in identifierKeyType and identifierKey
  * @param identifierKeyType
  * @param identifierKey
  * @returns {Promise<{}>}
  */
-const findDigitalLinkEntryInDB = async (identifierKeyType, identifierKey) =>
-{
-    try
-    {
-        const mongoClient = new MongoClient(mongoConnection, {useNewUrlParser: true, useUnifiedTopology: true});
-        let connClient = await mongoClient.connect();
-        let collection = connClient.db("gs1resolver").collection("uri");
-        let finalResult = await collection.findOne({"_id": "/" + identifierKeyType + "/" + identifierKey});
-        await mongoClient.close();
-        return finalResult;
-    }
-    catch (e)
-    {
-        console.log(`findDigitalLinkEntryInDB error: ${e}`);
-        return null;
-    }
+const findDigitalLinkEntry = async (identifierKeyType, identifierKey) => {
+  try {
+    const mongoClient = new MongoClient(mongoConnection, { useNewUrlParser: true, useUnifiedTopology: true });
+    const connClient = await mongoClient.connect();
+    const collection = connClient.db('gs1resolver').collection('uri');
+    const finalResult = await collection.findOne({ _id: `/${identifierKeyType}/${identifierKey}` });
+    await mongoClient.close();
+    return finalResult;
+  } catch (e) {
+    console.log(`findDigitalLinkEntry error: ${e}`);
+    return null;
+  }
 };
-
 
 /**
  * Counts the number of entries in Resolver's mongo database
  * @param unixTime
  * @returns {Promise<null|*>}
  */
-const countEntriesFromUnixTime = async (unixTime) =>
-{
-    try
-    {
-        unixTime = parseInt(unixTime);
-        const mongoClient = new MongoClient(mongoConnection, {useNewUrlParser: true, useUnifiedTopology: true});
-        let connClient = await mongoClient.connect();
-        let collection = connClient.db("gs1resolver").collection("uri");
-        let finalResult = await collection.countDocuments({ unixtime: {$gte: unixTime} } );
-        await mongoClient.close();
-        return finalResult;
-    }
-    catch (err)
-    {
-        console.log(`countEntriesFromUnixTime error: ${err}`);
-        return -1;
-    }
+const countEntriesFromUnixTime = async (unixTime) => {
+  try {
+    unixTime = parseInt(unixTime);
+    const mongoClient = new MongoClient(mongoConnection, { useNewUrlParser: true, useUnifiedTopology: true });
+    const connClient = await mongoClient.connect();
+    const collection = connClient.db('gs1resolver').collection('uri');
+    const finalResult = await collection.countDocuments({ unixtime: { $gte: unixTime } });
+    await mongoClient.close();
+    return finalResult;
+  } catch (err) {
+    console.log(`countEntriesFromUnixTime error: ${err}`);
+    return -1;
+  }
 };
 
 /**
@@ -72,32 +51,31 @@ const countEntriesFromUnixTime = async (unixTime) =>
  * @param pageSize
  * @returns {Promise<number|*>}
  */
-const getPagedEntriesFromUnixTime = async (unixTime, pageNumber, pageSize) =>
-{
-    try
-    {
-        unixTime = parseInt(unixTime)
-        pageNumber = parseInt(pageNumber);
-        pageSize = parseInt(pageSize);
+const getPagedEntriesFromUnixTime = async (unixTime, pageNumber, pageSize) => {
+  try {
+    unixTime = parseInt(unixTime);
+    pageNumber = parseInt(pageNumber);
+    pageSize = parseInt(pageSize);
 
-        //Maximum page size is 1000
-        pageSize = pageSize > 1000 ? 1000 : pageSize;
-        const skips = pageSize * (pageNumber - 1)
-        const mongoClient = new MongoClient(mongoConnection, {useNewUrlParser: true, useUnifiedTopology: true});
-        let connClient = await mongoClient.connect();
-        let collection = connClient.db("gs1resolver").collection("uri");
-        let dataArray = await collection.find({ unixtime: {$gte: unixTime} } ).skip(skips).limit(pageSize).toArray();
-        await mongoClient.close();
+    // Maximum page size is 1000
+    pageSize = pageSize > 1000 ? 1000 : pageSize;
+    const skips = pageSize * (pageNumber - 1);
+    const mongoClient = new MongoClient(mongoConnection, { useNewUrlParser: true, useUnifiedTopology: true });
+    const connClient = await mongoClient.connect();
+    const collection = connClient.db('gs1resolver').collection('uri');
+    const dataArray = await collection
+      .find({ unixtime: { $gte: unixTime } })
+      .skip(skips)
+      .limit(pageSize)
+      .toArray();
+    await mongoClient.close();
 
-        return dataArray;
-    }
-    catch (err)
-    {
-        console.log(`getPagesEntriesFromUnixTime error: ${err}`);
-        return -1; //-1 denotes error
-    }
+    return dataArray;
+  } catch (err) {
+    console.log(`getPagesEntriesFromUnixTime error: ${err}`);
+    return -1; // -1 denotes error
+  }
 };
-
 
 /**
  * findPrefixEntry looks for prefix versions of the identifierKey. It is normally called should
@@ -106,41 +84,33 @@ const getPagedEntriesFromUnixTime = async (unixTime, pageNumber, pageSize) =>
  * @param identifierKey
  * @returns {Promise<{}>}
  */
-const findPrefixEntry = async (identifierKeyType, identifierKey) =>
-{
-    let finalResult = null;
-    try
-    {
-        const mongoClient = new MongoClient(mongoConnection, {useNewUrlParser: true, useUnifiedTopology: true});
-        let connClient = await mongoClient.connect();
-        let collection = connClient.db("gs1resolver").collection("gcp");
+const findPrefixEntry = async (identifierKeyType, identifierKey) => {
+  let finalResult = null;
+  try {
+    const mongoClient = new MongoClient(mongoConnection, { useNewUrlParser: true, useUnifiedTopology: true });
+    const connClient = await mongoClient.connect();
+    const collection = connClient.db('gs1resolver').collection('gcp');
 
-        //To find a match we must chop off more and more of a GS1 Key Value until we get a match
-        const identifierKeyOriginalLength = identifierKey.length;
-        for (let identifierKeyLength = identifierKeyOriginalLength; identifierKeyLength > 3; identifierKeyLength--)
-        {
-            let partialGS1KeyValue = identifierKey.substring(0, identifierKeyLength -1);
-            finalResult = await collection.findOne({"_id": "/" + identifierKeyType + "/" + partialGS1KeyValue});
-            if (finalResult !== null)
-            {
-                break;  //we've found a result - stop the loop early!
-            }
-        }
-        await mongoClient.close();
-        return finalResult;
+    // To find a match we must chop off more and more of a GS1 Key Value until we get a match
+    const identifierKeyOriginalLength = identifierKey.length;
+    for (let identifierKeyLength = identifierKeyOriginalLength; identifierKeyLength > 3; identifierKeyLength--) {
+      const partialGS1KeyValue = identifierKey.substring(0, identifierKeyLength - 1);
+      finalResult = await collection.findOne({ _id: `/${identifierKeyType}/${partialGS1KeyValue}` });
+      if (finalResult !== null) {
+        break; // we've found a result - stop the loop early!
+      }
     }
-    catch (e)
-    {
-        console.log(`findPrefixEntry error: ${e}`);
-        return null;
-    }
-
+    await mongoClient.close();
+    return finalResult;
+  } catch (e) {
+    console.log(`findPrefixEntry error: ${e}`);
+    return null;
+  }
 };
 
-
 module.exports = {
-    findDigitalLinkEntry,
-    findPrefixEntry,
-    countEntriesFromUnixTime,
-    getPagedEntriesFromUnixTime
+  findDigitalLinkEntry,
+  findPrefixEntry,
+  countEntriesFromUnixTime,
+  getPagedEntriesFromUnixTime,
 };

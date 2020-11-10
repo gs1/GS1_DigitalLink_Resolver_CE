@@ -1,19 +1,19 @@
 ## Welcome to the GS1 Digital Link Resolver
-### Community Edition v2.1 
+### Community Edition v2.2 
 
 Welcome! The purpose of this repository is to provide you with the ability to build a complete resolver service that will enable you to enter information about GTINs and other GS1 keys
 and resolve (that is, redirect) web clients to their appropriate destinations.
 
-### Version 2.1 Features
-1. UI Upload page can Excel spreadsheets
-2. Code included a validateEntries() function which can be used optionally for you to add your own validation of uploaded entries before publishing.
-3. Comprehensive API with 'batch upload' facility for fast upload of large amounts of data.  
-4. Lots of optimizations, enhancements and security improvements.   
-5. Inclusion of Python Accounts Administration script program to help you set up accounts and get your Resolver on the air (Python v3.7+ and 'pip install dotmap' required).
+### Version 2.2 Features
+1. URI Template Variables - instead of using static values for qualifiers such as sewrial number, you can use a string value wrapped in curly braces like this: {myvar}. See the example in the CSV file resolverdata.csv in the 'Example Files To Upload'
+2. Simplified linktype=all JSON document
+3. New linktype=linkset JSON document 
+3. Massively reduced container image sizes. Using the latest version of Node and NPM with its updated packages, we can now run most of the service in the tiny Alpine Linux containers.
+4. Better access to SQL via pooling - this makes better use of cloud-based databases such as SQL Azure (as well as dedicated databases)  
+5. Lots of optimizations, enhancements and security improvements.   
+6. Optimised for working in Kubernetes clusters - tested on DigitalOcean and Microsoft Azure Kubernetes offerings.
 
-<b><i>UPDATE: Kubernetes compatible! Head to the bottom of this README.md file for more info</i></b> 
-
-This repository consists of six applications which work together to provide the resolving service:
+This repository consists of seven applications which work together to provide the resolving service:
 <table border="1">
 <tr><th>Folder Name</th><th>Project</th></tr>
 <tr><td>resolver_data_entry_server</td><td>The Data Entry service <b>dataentry-web-server</b> consisting of an API that provides controlled access to Create, Read, Update and Delete (CRUD) operations on resolver records, along with 
@@ -24,6 +24,7 @@ This project uses a SQL Server database to store information</td></tr>
 <tr><td>resolver_sql_server</td><td>The SQL database service <b>dataentry-sql-server</b> using SQL Server 2017 Express edition (free to use but with 10GB limit) to provide a stable data storage service for the resolver's data-entry needs.</td></tr>
 <tr><td>resolver_mongo_server</td><td>The <b>resolver-mongo-server</b> MongoDB database used by the resolver.</td></tr>
 <tr><td>frontend_proxy_server</td><td>The frontend web server routing traffic securely to the other containers. Using NGINX, this server's config can be adjusted to support load balancing and more,</td></tr>
+<tr><td>digitallink_toolkit_server</td><td>A library server available to all the other container applications that tests incoming data against the official reference implementation of the GS1 Digital Link standard</td></tr>
 </table>
 
 ### Important Notes for existing users of previous versions 1.0 and 1.1
@@ -61,6 +62,50 @@ servers has become unnecessary thanks to the latest Node v14 V8 engine and a lot
 Finally, by popular request, docker-compose exposes the web service on port 80, no longer port 8080. It also exposes SQL Server and MongoDB on their default
 ports, so use your favourite SQL Server client and Mongo DB to connect to localhost with credentials supplied in the SQL and Mongo Dockerfiles.
 
+### Important Notes for existing users of previous version 2.1
+In v2.2 the new JSON format for linktype=all has been highly simplified and is a breaking change if you have a client that
+expects the previous format. The unixtime batch format also uses the new format.
+
+We have upgraded the security of the service in many ways. An important new environment
+variable in the Dockerfile of resolver_data_entry_server is:
+<pre>ENV CSP_NONCE_SOURCE_URL="localhost"</pre>
+Wherever you run Resolver, you must change its domain name in this variable
+to match it's 'live' domain name, or else the Data Entry UI JavaScript will be blocked from executing.
+
+The SQL database is unchanged, but we've greatly simplified the data stored in MongoDB. This changed document format is smaller and simpler to both use and understand!
+So you need to force the Build application to rebuild the Mongo database or the new Resolver web server won't understand it. This is simple to do - using either the API or direct server access, empty the table
+[gs1-resolver-ce-v2-1-db].[dbo].[server_sync_register]
+
+For example, using the free SQL Server Management Studio, head into the database and use this command:
+<pre>truncate table [gs1-resolver-ce-v2-1-db].[dbo].[server_sync_register]</pre>   
+- OR -
+Using the API with your Admin auth key, use the endpoint to list the servers:
+<pre>curl --location --request GET 'https://resolver-domain-name/admin/heardbuildsyncservers'
+
+[
+  {
+    "resolverSyncServerId": "qlh00O7z3JGk",
+    "resolverSyncServerHostname": "build-sync-server-deployment-798854fb75-bvk4m",
+    "lastHeardDatetime": "2020-06-15T08:35:12.840Z"
+  }
+]
+
+</pre>
+...then delete each server using its resolverSyncServerId value:
+<pre>curl --location --request DELETE 'https://resolver-domain-name/admin/heardbuildsyncserver/qlh00O7z3JGk'</pre>
+- OR -
+If you are running Resolver in Docker on your local machine, then you can use the docker volume command to remove the volume that Mongo stores its data in.
+Make sure that the service is completely down using <pre>docker-compose down</pre> then use this command:
+<pre>docker volume ls</pre>
+..and look for a volume that should be called 'gs1_digitallink_resolver_ce_resolver-document-volume'. You can then delete it like this:
+<pre>docker volume rm gs1_digitallink_resolver_ce_resolver-document-volume</pre>
+Finally, build and restart the new service:
+<pre>
+docker-compose build
+docker-compose run -d
+</pre>
+Mongo will initialise a fresh new empty database which the Build application will detect and perform a full rebuild.
+
 
 ## Documentation
 Please refer to the document 'GS1 Resolver - Overview and Architecture.pdf' in the root of this 
@@ -92,6 +137,9 @@ The BUILD server looks look for changes in the SQL database and uses it to creat
 This 'de-coupled' processing means that the data is simple to understand for date entry purposes, but is repurposed into a more complex structure for highly
 performant resolving.
 MongoDB can perform high-speed lookups and is ideal for the high-performance reading of data.
+
+#### Data Entry API
+The Data Entry API is published here: https://documenter.getpostman.com/view/10078469/TVejgpjz
 
 #### Database servers
 This repository includes two extra containers for SQL Server and MongoDB. These are included to help you get up and running quickly to experiment and 
@@ -131,47 +179,43 @@ connection the build-from-scratch will take 10-15 minutes.
 1. You are nearly ready to start the application. Before you do, make sure you have no SQL Server service, MongoDB service or port 80 web server running on your computer
 as they will clash with Docker as it tries to start the service up. Once completed, type this to start everything up:<pre>docker-compose up -d</pre>(the -d means 'disconnect' - docker-compose will start up everything then hand control back to you). 
 
-1. Now wait 10 seconds while the system settles down (the SQL Server service takes a few seconds to initialise when 'new') then copy and paste this command, which will run a program inside the SQL Server 
-container, creating the database and some example data.<pre>
-docker exec -it  resolver-sql-server  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P its@SECR3T! -i  /gs1resolver_sql_scripts/sqldb_create_script.sql </pre>
-
+1. Now wait 10 seconds while the system settles down (the SQL Server service takes a few seconds to initialise when 'new') then copy and paste 
+this command which will cause you to enter the container and access its terminal prompt:<pre>docker exec -it  resolver-sql-server bash</pre>
+Now run this command which will create the database and some example data:<pre>/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P its@SECR3T! -i  /gs1resolver_sql_scripts/sqldb_create_script.sql </pre>
+You will see a messages such as '(1 rows affected)' and a sentences that starts 'The module 'END_OF_DAY' depends on the missing object...'. These are all fine - the latter messages are shown because some
+stored procedures are created by the SQL script before others - and some stored procedures depend on others not created yet. As long as the final line says 'Database Create Script Completed' all is well!
+Exit the container with the command:<pre>exit</pre> 
 1. Head to http://localhost/ui and select the Download page.
 1. In the authorization key box, type: "5555555555555" and click the Download button. Save the file to your local computer.
 1. Click the link to go back to the home page, then choose the Upload page.
 1. Type in your authorization key (5555555555555), then choose the file you just downloaded. The Upload page detects 'Download' -format file and will set all the columns correctly for you. Have  look at the example data in each column
 and what it means (read the final section of the PDF document for more details about these columns).
 1. Click 'Check file' followed by 'Upload file'.
-1. By now the local Mongo database should be built (a build event occurs every one minute) so try out this request in a terminal window: <pre> curl -I http://localhost/gtin/05000204795370 </pre> which should result in this appearing in your terminal window:<pre>HTTP/1.1 307 Temporary Redirect
-    Server: nginx/1.19.0
-    Date: Thu, 27 Aug 2020 15:24:48 GMT
-    Connection: keep-alive
-    Vary: Accept-Encoding
-    Access-Control-Allow-Origin: *
-    Access-Control-Allow-Methods: HEAD, GET, OPTIONS
-    Access-Control-Expose-Headers: Link, Content-Length
-    Cache-Control: max-age=0, no-cache, no-store, must-revalidate
-    X-Resolver-ProcessTimeMS: 8
-    Link: <https://dalgiardino.com/where-to-buy/>; rel="gs1:hasRetailers"; type="text/html"; hreflang="en"; title="Product Information Page", <https://dalgiardino.com/where-to-buy/index.html.
-    es>; rel="gs1:hasRetailers"; type="text/html"; hreflang="es"; title="Donde comprar Dal Giardino", <https://dalgiardino.com/where-to-buy/index.html.vi>; rel="gs1:hasRetailers"; type="text/
-    html"; hreflang="vi"; title="data:text/plain;charset=utf-16;base64,TgChAWkAIABiAOEAbgA=", <https://dalgiardino.com/risotto-rice-with-mushrooms/>; rel="gs1:pip"; type="text/html"; hreflang
-    ="en"; title="Product Information Page", <https://dalgiardino.com/risotto-rice-with-mushrooms/index.html.es>; rel="gs1:pip"; type="text/html"; hreflang="es"; title="Informaci¾n del Produc
-    to", <https://dalgiardino.com/risotto-rice-with-mushrooms/index.html.ja>; rel="gs1:pip"; type="text/html"; hreflang="ja"; title="Product Information Page", <https://dalgiardino.com/risott
-    o-rice-with-mushrooms/index.html.vi>; rel="gs1:pip"; type="text/html"; hreflang="vi"; title="data:text/plain;charset=utf-16;base64,VAByAGEAbgBnACAAdABoAPQAbgBnACAAdABpAG4AIABzAKMebgAgAHAA
-    aACpHm0A", <https://dalgiardino.com/about/>; rel="gs1:productSustainabilityInfo"; type="text/html"; hreflang="en"; title="Product Information Page", <https://dalgiardino.com/about/index.h
-    tml.es>; rel="gs1:productSustainabilityInfo"; type="text/html"; hreflang="es"; title="Sobre Dal Giardino", <https://dalgiardino.com/about/index.html.vi>; rel="gs1:productSustainabilityInf
-    o"; type="text/html"; hreflang="vi"; title="data:text/plain;charset=utf-16;base64,UABoAOEAdAAgAHQAcgBpAMMebgAgAGIAwR5uACAAdgDvHm4AZwAgAHYA4AAgAHQA", <https://dalgiardino.com/mushroom-squa
-    sh-risotto/>; rel="gs1:recipeInfo"; type="text/html"; hreflang="en"; title="Wild Mushroom And Butternut Squa", <https://dalgiardino.com/mushroom-squash-risotto/index.html.es>; rel="gs1:re
-    cipeInfo"; type="text/html"; hreflang="es"; title="Recetas", <https://dalgiardino.com/mushroom-squash-risotto/index.html.ja>; rel="gs1:recipeInfo"; type="text/html"; hreflang="ja"; title=
-    "data:text/plain;charset=utf-16;base64,rTDOMLMwaDAVeEQwXzDQML8w/DD9/w==", <https://dalgiardino.com/risotto-rice-with-mushrooms/lot/ABC/ser/123>; rel="gs1:traceability"; type="text/html";
-    hreflang="en"; title="Traceability (item level)", <https://id.gs1.org/01/09506000134352>; rel="owl:sameAs"
-    Location: https://dalgiardino.com/risotto-rice-with-mushrooms/index.html.vi
+1. By now the local Mongo database should be built (a build event occurs every one minute) so try out this request in a terminal window: <pre> curl -I http://localhost/gtin/09506000134376?serialnumber=12345 </pre> which should result in this appearing in your terminal window:<pre>HTTP/1.1 307 Temporary Redirect
+HTTP/1.1 307 Temporary Redirect
+Server: nginx/1.19.0
+Date: Mon, 09 Nov 2020 16:42:51 GMT
+Connection: keep-alive
+Vary: Accept-Encoding
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: HEAD, GET, OPTIONS
+Access-Control-Expose-Headers: Link, Content-Length
+Cache-Control: max-age=0, no-cache, no-store, must-revalidate
+X-Resolver-ProcessTimeMS: 9
+Link: <https://dalgiardino.com/medicinal-compound/pil.html>; rel="gs1:epil"; type="text/html"; hreflang="en"; title="Product Information Page", <https://dalgiardino.com/medicinal-co
+mpound/>; rel="gs1:pip"; type="text/html"; hreflang="en"; title="Product Information Page", <https://dalgiardino.com/medicinal-compound/index.html.ja>; rel="gs1:pip"; type="text/htm
+l"; hreflang="ja"; title="Product Information Page", <https://id.gs1.org/01/09506000134376>; rel="owl:sameAs"
+Location: https://dalgiardino.com/medicinal-compound/?serialnumber=12345
 
-</pre> This demonstrates that Resolver has found an entry for GTIN 09506000134352 and is redirecting you to the web site shown in the 'Location' header. 
+</pre> This demonstrates that Resolver has found an entry for GTIN 09506000134376 and is redirecting you to the web site shown in the 'Location' header. 
 You can also see this in action if you use the same web address (in your web browser - you should end up at Dal Giardino web site, this particular page written in Vietnamese!).
  The rest of the information above reveals all the alternative links available for this product depending on the context in which Resolver was called.
 
-In the folder "Example Files to Upload" you will also find an Excel spreadsheet with the same data - you can upload Excel data too! This particular spreadsheet
-is the 'official GS1 Resolver upload spreadsheet' which is recognised by the Upload page which sets all the upload columns for you. However any unencrypted
+In this example, try changing the serial number - you will see it change in the resulting 'Location:' header, too! This is an example of using 'URI template variables'
+to forward incm,ing requests into outgoing responses. This is new to Resolver CE v2.2!
+
+In the folder "Example Files to Upload" you will also find an Excel spreadsheet and CSV file with the same data - you can upload Excel data too! This particular spreadsheet
+is the 'official GS1 Resolver upload spreadsheet' which is recognised by the Upload page which sets all the upload columns for you. However, any unencrypted
 Excel spreadsheet saved by Excel with extension .xlsx can be read by the upload page.
 
 ####Shutting down the service  
@@ -195,6 +239,8 @@ The service is now ready for use with Kubernetes clusters. The container images 
 the supplied YAML files in this repository will get you up and running quickly.
 
 1. Make sure you are pointing at the correct K8s cluster context:<pre>docker context ls</pre> 
-1. Run this command to get your cluster to install the images and build the complete K8s application:<pre>kubectl apply -k ./
+1. Run this command to get your cluster to install the images and build the complete K8s application:<pre>kubectl apply -k ./</pre>
+Note: It can take several minutes for the SQL Server pod to be set running. Until then expect 'ContainerCreating' status when you list the running pods.
+Use the command 'kubectl get pods' regularly until the SQL Server pod has status 'Running'. You are always recommended to use SQL Server in a separate cloud resource such as SQL Azure and not in a pod! 
 1. Once your cluster is up and running, you will need to run the SQL script to create the database with some example data. To do this, you need to find the SQL Server pod:<pre>kubectl get pods</pre>...and locate a pod with 'sql-server' in its name, then use that name in this command:<pre>kubectl exec -it  POD_name_containing_sql-server /bin/bash</pre>
 ...then once you have a command prompt inside the pod:<pre>/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P its@SECR3T! -i  /gs1resolver_sql_scripts/sqldb_create_script.sql</pre>... and once that script has completed, exit the pod with:<pre>exit</pre>

@@ -5,48 +5,37 @@ const router = express.Router();
 /**
  * Returns the list of linktypes allowed by this service
  */
-router.get('/linktypes', async function (req, res, next)
-{
-        res.send(global['linkTypesArray']);
+router.get('/linktypes', async (req, res, next) => {
+  res.send(global.linkTypesArray);
 });
-
-
 
 /**
  * Returns the list of IANA languages allowed by this service
  */
-router.get('/languages', async function (req, res, next)
-{
-    res.send(global['iana_language_array']);
+router.get('/languages', async (req, res, next) => {
+  res.send(global.iana_language_array);
 });
 
 /**
  * (Alias) Returns the list of IANA languages allowed by this service
  */
-router.get('/iana_languages', async function (req, res, next)
-{
-    res.send(global['iana_language_array']);
+router.get('/iana_languages', async (req, res, next) => {
+  res.send(global.iana_language_array);
 });
-
-
 
 /**
  * Returns the list of Media (MIME) types allowed by this service
  */
 
-router.get('/mediatypes', async function (req, res, next)
-{
-    res.send(global['media_types_array']);
+router.get('/mediatypes', async (req, res, next) => {
+  res.send(global.media_types_array);
 });
 
 /**
  * (Alias) Returns the list of Media (MIME) types allowed by this service
  */
-router.get('/mime_types', async function (req, res, next)
-{
-    res.send(global['media_types_array']);
+router.get('/mime_types', async (req, res, next) => {
+  res.send(global.media_types_array);
 });
-
-
 
 module.exports = router;
