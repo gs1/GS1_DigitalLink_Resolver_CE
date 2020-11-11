@@ -5,12 +5,12 @@ Welcome! The purpose of this repository is to provide you with the ability to bu
 and resolve (that is, redirect) web clients to their appropriate destinations.
 
 ### Version 2.2 Features
-1. URI Template Variables - instead of using static values for qualifiers such as sewrial number, you can use a string value wrapped in curly braces like this: {myvar}. See the example in the CSV file resolverdata.csv in the 'Example Files To Upload'
+1. URI Template Variables - instead of using static values for qualifiers such as serial number, you can use a string value wrapped in curly braces like this: {myvar}. See the example in the CSV file resolverdata.csv in the 'Example Files To Upload'
 2. Simplified linktype=all JSON document
 3. New linktype=linkset JSON document 
 3. Massively reduced container image sizes. Using the latest version of Node and NPM with its updated packages, we can now run most of the service in the tiny Alpine Linux containers.
 4. Better access to SQL via pooling - this makes better use of cloud-based databases such as SQL Azure (as well as dedicated databases)  
-5. Lots of optimizations, enhancements and security improvements.   
+5. Lots of optimisations, enhancements and security improvements.   
 6. Optimised for working in Kubernetes clusters - tested on DigitalOcean and Microsoft Azure Kubernetes offerings.
 
 This repository consists of seven applications which work together to provide the resolving service:
@@ -212,7 +212,7 @@ You can also see this in action if you use the same web address (in your web bro
  The rest of the information above reveals all the alternative links available for this product depending on the context in which Resolver was called.
 
 In this example, try changing the serial number - you will see it change in the resulting 'Location:' header, too! This is an example of using 'URI template variables'
-to forward incm,ing requests into outgoing responses. This is new to Resolver CE v2.2!
+to forward incoming requests into outgoing responses. This is new to Resolver CE v2.2!
 
 In the folder "Example Files to Upload" you will also find an Excel spreadsheet and CSV file with the same data - you can upload Excel data too! This particular spreadsheet
 is the 'official GS1 Resolver upload spreadsheet' which is recognised by the Upload page which sets all the upload columns for you. However, any unencrypted
@@ -229,7 +229,7 @@ docker volume rm gs1resolvercommunityeditionv20_resolver-sql-server-volume-db-se
 docker volume rm gs1resolvercommunityeditionv20_resolver-sql-server-dbbackup-volume
 </pre>
 
-If the above volume are the ony ones in your Docker Engine then it's quicker to type:<pre>docker volume ls </pre> to confirm, then to delete all the volumes type:<pre>docker volume prune </pre> 
+If the above volumes are the only ones in your Docker Engine then it's quicker to type:<pre>docker volume ls </pre> to confirm, then to delete all the volumes type:<pre>docker volume prune </pre> 
 
 ##Fast Start: Kubernetes (Beta)
 
