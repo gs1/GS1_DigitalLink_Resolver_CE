@@ -364,7 +364,6 @@ const cleanAndParseDataEntryResponse = async (responsesEntries) => {
   return respArr;
 };
 
-
 module.exports = {
   processBatchValidationResp,
   convertResponseStatusCodeFromDBValue,
