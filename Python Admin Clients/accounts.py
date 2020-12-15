@@ -1,109 +1,137 @@
+##########################################################
+# Python Accounts Administration Application
+# v1.1 by Nick Lansley for Python v3.6 and later
+##########################################################
+# Before first use, use 'pip' to install these libraries:
+# > pip install requests
+# > pip install dotmap
+#
+# Usage: CHange to same directory as script, then:
+# > python accounts.py
+#
+# > pip install --upgrade certifi
+
+##########################################################
+
 import json
 import requests
 from dotmap import DotMap
+import urllib3
+urllib3.disable_warnings()
 
-# By default this script is looking in the local Docker Desktop
-# Using 'http' URL prefix. If you are hosting somewhere else then
-# change the domain, port and whether you are using http or https:
-# Example: domain = "http://localhost:8080"
-domain = "http://localhost"
-
-# this key can be changed in resolver_data_entry_server/Dockerfile
-api_token = 'MySecretAuthKey'
+domain = 'resolver-dv1.gs1.org'
+api_token = 'i1bb39a96-10c5-4639-b1ca-9ee7643fe0ae'
 accounts_list = []
-api_url = domain + '/admin/accounts'
+api_url = 'https://' + domain + '/admin/accounts'
 headers = {'Content-Type': 'application/json',
            'Authorization': 'Bearer {0}'.format(api_token)}
+
+
+def show_ssl_error_message():
+    print("Your local SSL certificate store is not up to date and cannot decrypt incoming Resolver API responses.")
+    print("To fix, exit this program and run this command:")
+    print("pip install --upgrade certifi")
 
 
 def save_account(account_name, issuer_gln, authentication_key):
     global api_url
     body = [{
-        "issuerGLN": issuer_gln,
-        "accountName": account_name,
-        "authenticationKey": authentication_key
+        'issuerGLN': issuer_gln,
+        'accountName': account_name,
+        'authenticationKey': authentication_key
     }]
-
-    response = requests.post(api_url, data=json.dumps(body), headers=headers)
+    try:
+        response = requests.post(api_url, data=json.dumps(body), headers=headers, verify=False)
+        return True
+    except requests.exceptions.SSLError:
+        show_ssl_error_message()
+        return False
 
 
 def remove_account(account_name, issuer_gln, authentication_key):
     global api_url
     body = [{
-        "issuerGLN": issuer_gln,
-        "accountName": account_name,
-        "authenticationKey": authentication_key
+        'issuerGLN': issuer_gln,
+        'accountName': account_name,
+        'authenticationKey': authentication_key
     }]
 
-    print("-------------------------------------")
-    print("Account Name:", account_name)
-    print("Issuer GLN:  ", issuer_gln)
-    print("Auth Key:    ", authentication_key)
-    print("-------------------------------------")
+    print('-------------------------------------')
+    print('Account Name:', account_name)
+    print('Issuer GLN:  ', issuer_gln)
+    print('Auth Key:    ', authentication_key)
+    print('-------------------------------------')
 
-    yn = input("Delete this account - are you sure (Y/N)?: ").upper()
-    if yn == "Y":
-        response = requests.delete(api_url, data=json.dumps(body), headers=headers)
-        print("Account deleted")
+    yn = input('Delete this account - are you sure (Y/N)?: ').upper()
+    if yn == 'Y':
+        try:
+            response = requests.delete(api_url, data=json.dumps(body), headers=headers, verify=False)
+            print('Account deleted')
+        except requests.exceptions.SSLError:
+            show_ssl_error_message()
+            print("Account NOT deleted")
+
     else:
-        print("Account deletion abandoned")
+        print('Account deletion abandoned')
 
 
 def create_account():
-    account_name = input("Please enter a name for this account: ")
-    if account_name == "":
-        print("(Abandoned)")
+    account_name = input('Please enter a name for this account: ')
+    if account_name == '':
+        print('(Abandoned)')
         return
     else:
         account_name = account_name.strip()
 
     if len(account_name) > 100:
-        account_name = input("Please keep the account under 100 char: ")
+        account_name = input('Please keep the account under 100 char: ')
 
-    issuer_gln = input("13-digit Issuer GLN: ")
-    if issuer_gln == "":
-        print("(Abandoned)")
+    issuer_gln = input('13-digit Issuer GLN: ')
+    if issuer_gln == '':
+        print('(Abandoned)')
         return
     else:
         issuer_gln = issuer_gln.strip()
 
     while len(str(issuer_gln)) != 13 or not issuer_gln.isnumeric():
-        issuer_gln = input("Issuer GLN needs to be a 13 digit number: ")
+        issuer_gln = input('Issuer GLN needs to be a 13 digit number: ')
 
-    authentication_key = input("Authentication key (up to 64 chars): ")
-    if authentication_key == "":
-        print("(Abandoned)")
+    authentication_key = input('Authentication key (up to 64 chars): ')
+    if authentication_key == '':
+        print('(Abandoned)')
         return
     while len(authentication_key) > 64:
-        authentication_key = input("Keep Authentication key under 64 chars: ")
+        authentication_key = input('Keep Authentication key under 64 chars: ')
 
-    print("-------------------------------------")
-    print("Account Name:", "[" + account_name + "]")
-    print("Issuer GLN:  ", "[" + issuer_gln + "]")
-    print("Auth Key:    ", "[" + authentication_key + "]")
-    print("-------------------------------------")
-    yn = input("Details OK (Y/N)?: ").upper()
-    if yn == "Y":
-        save_account(account_name, issuer_gln, authentication_key)
-        print("Account created")
+    print('-------------------------------------')
+    print('Account Name:', '[' + account_name + ']')
+    print('Issuer GLN:  ', '[' + issuer_gln + ']')
+    print('Auth Key:    ', '[' + authentication_key + ']')
+    print('-------------------------------------')
+    yn = input('Details OK (Y/N)?: ').upper()
+    if yn == 'Y':
+        if save_account(account_name, issuer_gln, authentication_key):
+            print('Account created')
+        else:
+            print("Account NOT created due to error")
     else:
-        print("Account creation cancelled")
+        print('Account creation cancelled')
 
 
 def update_account():
-    print("------------------------------------------------------------------------------")
-    print("To update an account, first delete it then recreate it.")
-    print("Deleting an account does not affect any Resolver data uploaded by that account")
-    print("and you can reconnect an account to its entries by using the same Issuer GLN.")
-    print("The same Issuer GLN value can be shared by more than one account.")
-    print("------------------------------------------------------------------------------")
+    print('------------------------------------------------------------------------------')
+    print('To update an account, first delete it then recreate it.')
+    print('Deleting an account does not affect any Resolver data uploaded by that account')
+    print('and you can reconnect an account to its entries by using the same Issuer GLN.')
+    print('The same Issuer GLN value can be shared by more than one account.')
+    print('------------------------------------------------------------------------------')
 
 
 def delete_account():
     list_accounts()
     account_num = 'x'
     while not account_num.isnumeric():
-        account_num = input("Which account number would you wish to delete (0 to cancel)? ")
+        account_num = input('Which account number would you wish to delete (0 to cancel)? ')
     account_id = int(account_num) - 1
     if account_id < 0:
         return
@@ -114,67 +142,110 @@ def delete_account():
 def list_accounts():
     global api_url
     global accounts_list
-    response = requests.get(api_url, headers=headers)
+    try:
+        response = requests.get(api_url, headers=headers, verify=False)
 
-    if response.status_code == 200:
-        accounts_list = json.loads(response.content.decode('utf-8'))
-        longest_issuer_gln = 0
-        longest_account_name = 0
-        longest_auth_key = 0
-        for account in accounts_list['data']:
-            for key, value in account.items():
-                if key == "issuerGLN" and len(value) > longest_issuer_gln:
-                    longest_issuer_gln = len(value)
-                elif key == "accountName" and len(value) > longest_account_name:
-                    longest_account_name = len(value)
-                elif key == "authenticationKey" and len(value) > longest_auth_key:
-                    longest_auth_key = len(value)
-        print()
-        print("Accounts on Resolver", domain)
-        print("  # | IssuerGLN" + (" " * (longest_issuer_gln - 9)) +
-              " | Account Name" + (" " * (longest_account_name - 12)) +
-              " | Auth Key" + (" " * (longest_auth_key - 8)))
-        print(("-" * (longest_issuer_gln + longest_account_name + longest_auth_key)))
+        if response.status_code == 200:
+            accounts_list = json.loads(response.content.decode('utf-8'))
+            longest_issuer_gln = 0
+            longest_account_name = 0
+            longest_auth_key = 0
+            for account in accounts_list['data']:
+                for key, value in account.items():
+                    if key == 'issuerGLN' and len(value) > longest_issuer_gln:
+                        longest_issuer_gln = len(value)
+                    elif key == 'accountName' and len(value) > longest_account_name:
+                        longest_account_name = len(value)
+                    elif key == 'authenticationKey' and len(value) > longest_auth_key:
+                        longest_auth_key = len(value)
+            print()
+            print('Accounts on Resolver', domain)
+            print('  # | IssuerGLN' + (' ' * (longest_issuer_gln - 9)) +
+                  ' | Account Name' + (' ' * (longest_account_name - 12)) +
+                  ' | Auth Key' + (' ' * (longest_auth_key - 8)))
+            print(('-' * (longest_issuer_gln + longest_account_name + longest_auth_key)))
+        else:
+            print('HTTP {0} received'.format(response.status_code))
+            return None
 
         account_number = 1
         for account in accounts_list['data']:
-            account_line = "{:3.0f}".format(account_number) + " "
+            account_line = '{:3.0f}'.format(account_number) + ' '
             for key, value in account.items():
-                if key == "issuerGLN":
-                    account_line += "| " + value + (" " * (longest_issuer_gln - len(value) + 1))
-                if key == "accountName":
-                    account_line += "| " + value + (" " * (longest_account_name - len(value) + 1))
-                if key == "authenticationKey":
-                    account_line += "| " + value + (" " * (longest_auth_key - len(value) + 1))
+                if key == 'issuerGLN':
+                    account_line += '| ' + value + (' ' * (longest_issuer_gln - len(value) + 1))
+                if key == 'accountName':
+                    account_line += '| ' + value + (' ' * (longest_account_name - len(value) + 1))
+                if key == 'authenticationKey':
+                    account_line += '| ' + value + (' ' * (longest_auth_key - len(value) + 1))
             print(account_line)
             account_number += 1
-    else:
-        print('HTTP {0} received'.format(response.status_code))
-        return None
+
+    except requests.exceptions.SSLError:
+        show_ssl_error_message()
+
+
+
+
+def change_resolver():
+    global api_url
+    global domain
+    finish_flag = False
+    while not finish_flag:
+        print('The current Resolver is:', domain)
+        print('--------------------------------------')
+        print('Choose Resolver:')
+        print('1 - localhost port 80 (dev)')
+        print('2 - localhost port 8080 (dev)')
+        print('3 - resolver-dv.gs1.org (dev / daily build)')
+        print('4 - resolver-dv1.gs1.org (triallist / playground)')
+        print('5 - resolver-st.gs1.org (stage)')
+        print('6 - resolver.gs1.org (production)')
+
+        choice = input('Please choose a Resolver (1 to 4): ')
+        if choice == '1':
+            domain = 'http://localhost'
+        elif choice == '2':
+            domain = 'http://localhost:8080'
+        elif choice == '3':
+            domain = 'https://resolver-dv.gs1.org'
+        elif choice == '4':
+            domain = 'https://resolver-dv1.gs1.org'
+        elif choice == '5':
+            domain = 'https://resolver-st.gs1.org'
+        elif choice == '6':
+            domain = 'https://resolver.gs1.org'
+        else:
+            print('Unknown menu option ' + choice)
+
+        if choice in['1', '2', '3', '4', '5', '6']:
+            finish_flag = True
+            api_url = domain + '/admin/accounts'
 
 
 def display_main_menu():
     global domain
-    print("")
+    print('')
     print('The current Resolver is:', domain)
-    print("-------------------------------------")
-    print("Main Menu")
-    print("")
-    print("1 - List Accounts on this Resolver")
-    print("2 - Add a new Account")
-    print("3 - Edit an existing Account")
-    print("4 - Delete an Account")
-    print("5 - Exit")
-    print("-------------------------------------")
+    print('-------------------------' + ('-' * (len(domain))))
+
+    print('Main Menu')
+    print('')
+    print('1 - List Accounts on this Resolver')
+    print('2 - Add a new Account')
+    print('3 - Edit an existing Account')
+    print('4 - Delete an Account')
+    print('5 - Change Resolver ')
+    print('6 - Exit')
+    print('-------------------------------------')
 
 
 def main():
     print()
-    print("GS1 Resolver Community Edition v2.2 - Accounts System:", domain)
-    print("--------------------------------------------------" + ("-" * (len(domain))))
+    print('GS1 Resolver Accounts Administration')
     while True:
         display_main_menu()
-        choice = input('Please choose a menu option (1 to 5): ')
+        choice = input('Please choose a menu option (1 to 6): ')
         if choice == '1':
             list_accounts()
         elif choice == '2':
@@ -184,11 +255,13 @@ def main():
         elif choice == '4':
             delete_account()
         elif choice == '5':
+            change_resolver()
+        elif choice == '6':
             print('Exiting program')
             exit()
         else:
             print('Unknown menu option ' + choice)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
