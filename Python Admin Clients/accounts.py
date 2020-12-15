@@ -5,19 +5,22 @@
 # Before first use, use 'pip' to install these libraries:
 # > pip install requests
 # > pip install dotmap
-#
-# Usage: CHange to same directory as script, then:
-# > python accounts.py
-#
+# Then, update your certificates library:
 # > pip install --upgrade certifi
-
+#
+# Usage: Change to same directory as script, then:
+# > python accounts.py
 ##########################################################
 
 import json
 import requests
 from dotmap import DotMap
 import urllib3
-urllib3.disable_warnings()
+
+check_ssl_certs_flag = False
+
+if not check_ssl_certs_flag:
+    urllib3.disable_warnings()
 
 domain = 'resolver-dv1.gs1.org'
 api_token = 'i1bb39a96-10c5-4639-b1ca-9ee7643fe0ae'
@@ -34,14 +37,14 @@ def show_ssl_error_message():
 
 
 def save_account(account_name, issuer_gln, authentication_key):
-    global api_url
+    global api_url, check_ssl_certs_flag
     body = [{
         'issuerGLN': issuer_gln,
         'accountName': account_name,
         'authenticationKey': authentication_key
     }]
     try:
-        response = requests.post(api_url, data=json.dumps(body), headers=headers, verify=False)
+        response = requests.post(api_url, data=json.dumps(body), headers=headers, verify=check_ssl_certs_flag)
         return True
     except requests.exceptions.SSLError:
         show_ssl_error_message()
@@ -49,7 +52,7 @@ def save_account(account_name, issuer_gln, authentication_key):
 
 
 def remove_account(account_name, issuer_gln, authentication_key):
-    global api_url
+    global api_url, check_ssl_certs_flag
     body = [{
         'issuerGLN': issuer_gln,
         'accountName': account_name,
@@ -65,7 +68,7 @@ def remove_account(account_name, issuer_gln, authentication_key):
     yn = input('Delete this account - are you sure (Y/N)?: ').upper()
     if yn == 'Y':
         try:
-            response = requests.delete(api_url, data=json.dumps(body), headers=headers, verify=False)
+            response = requests.delete(api_url, data=json.dumps(body), headers=headers, verify=check_ssl_certs_flag)
             print('Account deleted')
         except requests.exceptions.SSLError:
             show_ssl_error_message()
@@ -140,10 +143,9 @@ def delete_account():
 
 
 def list_accounts():
-    global api_url
-    global accounts_list
+    global api_url, check_ssl_certs_flag, accounts_list
     try:
-        response = requests.get(api_url, headers=headers, verify=False)
+        response = requests.get(api_url, headers=headers, verify=check_ssl_certs_flag)
 
         if response.status_code == 200:
             accounts_list = json.loads(response.content.decode('utf-8'))
@@ -188,8 +190,7 @@ def list_accounts():
 
 
 def change_resolver():
-    global api_url
-    global domain
+    global api_url, domain, check_ssl_certs_flag
     finish_flag = False
     while not finish_flag:
         print('The current Resolver is:', domain)
@@ -224,10 +225,15 @@ def change_resolver():
 
 
 def display_main_menu():
-    global domain
+    global domain, check_ssl_certs_flag
     print('')
     print('The current Resolver is:', domain)
     print('-------------------------' + ('-' * (len(domain))))
+
+    if not check_ssl_certs_flag:
+        print("-----------------------------------------------------------------")
+        print("Warning, SSL certificates will not be checked when accessing data")
+        print("-----------------------------------------------------------------")
 
     print('Main Menu')
     print('')
@@ -236,16 +242,21 @@ def display_main_menu():
     print('3 - Edit an existing Account')
     print('4 - Delete an Account')
     print('5 - Change Resolver ')
-    print('6 - Exit')
+    if check_ssl_certs_flag:
+        print("6 - Disable SSL certificates check")
+    else:
+        print("6 - Enable SSL certificates check")
+    print('7 - Exit')
     print('-------------------------------------')
 
 
 def main():
+    global check_ssl_certs_flag
     print()
     print('GS1 Resolver Accounts Administration')
     while True:
         display_main_menu()
-        choice = input('Please choose a menu option (1 to 6): ')
+        choice = input('Please choose a menu option (1 to 7): ')
         if choice == '1':
             list_accounts()
         elif choice == '2':
@@ -257,6 +268,8 @@ def main():
         elif choice == '5':
             change_resolver()
         elif choice == '6':
+            check_ssl_certs_flag = not check_ssl_certs_flag
+        elif choice == '7':
             print('Exiting program')
             exit()
         else:
