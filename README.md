@@ -7,10 +7,10 @@ and resolve (that is, redirect) web clients to their appropriate destinations.
 ### Version 2.3 Features
 1. New JSON output format conforming to the IETF Linkset standard.
 2. New extended format for Mongo documents that reduces the processing
-   overhead of the resolving web server, thus improving performanced.
+   overhead of the resolving web server, thus improving performance.
 3. New HTTP 303 'See Other' return code enabling clients to get more general info
    about an entry, if the specific lot or serial number is not present (part of the 'walking up the tree' functionality).
-4. New HTTP 410 'Gone Away' return code if entry is present in the datbase but its 'active'
+4. New HTTP 410 'Gone Away' return code if entry is present in the database but its 'active'
    flag is set to false (as compared to HTTP 404 'Not Found') when no entry exists at all.
 5. Improvements to GS1 Digital Link Toolkit library.
 6. Various bug fixes and improvements to the applications thanks to developer and triallists feedback.
