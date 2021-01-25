@@ -1,3 +1,5 @@
+# GS1 Digital Link Toolkit Service provides HTTP server API access to its functionality
+# so that it is not duplicated across many of the other containers.
 apiVersion: v1
 kind: Service
 
@@ -47,7 +49,7 @@ spec:
 
       containers:
         - name: resolver-digitallink-toolkit-server
-          image:  nicklansley/gs1_digitallink_resolver_k8s_digitallink-toolkit-service:v2.2.0
+          image:  nicklansley/gs1_digitallink_resolver_k8s_digitallink-toolkit-service:v2.3.0
           imagePullPolicy: IfNotPresent
 
           ports:

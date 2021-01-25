@@ -1,4 +1,7 @@
-# Mongo database application
+# SQL database application
+# WARNING: You are strongly advised to use a separate SQL server service provided by cloud service providers
+#          such as Microsoft Azure. Running SQL server inside a Kubernetes cluster is likely to be low in
+#          performance and may even fail to start.
 apiVersion: v1
 kind: Service
 metadata:
@@ -49,7 +52,7 @@ spec:
     spec:
       containers:
         - name: resolver-sql-server
-          image: nicklansley/gs1_digitallink_resolver_ce_resolver-sql-server:v2.2.0
+          image: nicklansley/gs1_digitallink_resolver_ce_resolver-sql-server:v2.3.0
           imagePullPolicy: IfNotPresent
           env:
             - name: SQLDBCONN_USER
