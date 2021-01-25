@@ -15,20 +15,6 @@ spec:
     app: resolver-mongo-server
     tier: mongodb
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: resolver-document-pv-claim-22
-  labels:
-    app: resolver-mongo-server
-    tier: mongodb
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 20Gi
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -64,6 +50,6 @@ spec:
       volumes:
         - name: resolver-document-volume
           persistentVolumeClaim:
-            claimName: resolver-document-pv-claim-22
+            claimName: resolver-mongo-pv-claim
       imagePullSecrets:
         - name: acr-secret

@@ -1,7 +1,8 @@
 # SQL database application
 # WARNING: You are strongly advised to use a separate SQL server service provided by cloud service providers
 #          such as Microsoft Azure. Running SQL server inside a Kubernetes cluster is likely to be low in
-#          performance and may even fail to start.
+#          performance and may even fail to start due to lack of memory.
+#          However, running the service on your local computer in Docker Desktop Kubernetes should work OK.
 apiVersion: v1
 kind: Service
 metadata:
@@ -17,20 +18,6 @@ spec:
   selector:
     app: resolver-sql-server
     tier: sqldb
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: resolver-sql-pv-claim-22
-  labels:
-    app: resolver-sql-server
-    tier: sqldb
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 20Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -52,7 +39,7 @@ spec:
     spec:
       containers:
         - name: resolver-sql-server
-          image: nicklansley/gs1_digitallink_resolver_ce_resolver-sql-server:v2.3.0
+          image: nicklansley/gs1_digitallink_resolver_ce_sql-server:v2.3.0
           imagePullPolicy: IfNotPresent
           env:
             - name: SQLDBCONN_USER
@@ -99,13 +86,13 @@ spec:
       volumes:
         - name: resolver-sql-server-volume-db-data
           persistentVolumeClaim:
-            claimName: resolver-sql-pv-claim-22
+            claimName: resolver-sql-pv-claim-data
         - name: resolver-sql-server-volume-db-log
           persistentVolumeClaim:
-            claimName: resolver-sql-pv-claim-22
+            claimName: resolver-sql-pv-claim-log
         - name: resolver-sql-server-volume-db-secrets
           persistentVolumeClaim:
-            claimName: resolver-sql-pv-claim-22
+            claimName: resolver-sql-pv-claim-secrets
         - name: resolver-sql-server-dbbackup-volume
           persistentVolumeClaim:
-            claimName: resolver-sql-pv-claim-22
+            claimName: resolver-sql-pv-claim-backup

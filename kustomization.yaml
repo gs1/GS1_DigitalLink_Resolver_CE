@@ -7,6 +7,7 @@ secretGenerator:
       - database=gs1-resolver-ce-v2-1-db
 
 resources:
+  - k8s/resolver-pvc-drives.yaml
   - k8s/resolver-sql-server.yaml
   - k8s/build-sync-server.yaml
   - k8s/frontend-proxy-server.yaml
