@@ -30,6 +30,7 @@ global.serverRunningSince = new Date();
 const requestHandler = async (request, response) => {
   if (request.url.toLowerCase() === '/build') {
     utils.logThis('Build process requested');
+    // eslint-disable-next-line no-lone-blocks
     {
       if (!global.buildRunningFlag) {
         utils.logThis('Web request: Starting Build process');
@@ -85,12 +86,16 @@ const requestHandler = async (request, response) => {
  * @type {Server}
  */
 const server = http.createServer(requestHandler);
+// eslint-disable-next-line consistent-return
 server.listen(port, async (err) => {
   await mongodb.getResolverDatabaseIdFromMongoDB();
 
   if (err) {
-    return utils.logThis(`GS1 DigitalLink Build Sync Server SYNC ID [${global.syncId}] 
-    HOSTNAME [${process.env.HOSTNAME}] listen error:`, err);
+    return utils.logThis(
+      `GS1 DigitalLink Build Sync Server SYNC ID [${global.syncId}] 
+    HOSTNAME [${process.env.HOSTNAME}] listen error:`,
+      err,
+    );
   }
   utils.logThis(
     `GS1 DigitalLink Build Sync Server
@@ -101,7 +106,6 @@ server.listen(port, async (err) => {
   );
 });
 
-
 /**
   The purpose of entropyWait() is to provide an additional period of delay time before the
  * build activates. This effect allows multiple instances ('replicas') of the Build container to balance the load
@@ -110,7 +114,7 @@ server.listen(port, async (err) => {
  * @returns {Promise<void>}
  */
 const entropyWait = async () => {
-  const entropyMilliSecs = crypto.randomInt(1, parseInt(buildMaxEntropySecs) * 1000);
+  const entropyMilliSecs = crypto.randomInt(1, parseInt(buildMaxEntropySecs, 10) * 1000);
   await new Promise((resolve) => setTimeout(resolve, entropyMilliSecs));
 };
 
@@ -136,5 +140,4 @@ const serverShutDown = async () => {
   process.exit(0);
 };
 
-process.on('SIGTERM', async () => await serverShutDown());
-
+process.on('SIGTERM', async () => serverShutDown());

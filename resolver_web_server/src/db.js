@@ -30,7 +30,7 @@ const findDigitalLinkEntry = async (identifierKeyType, identifierKey) => {
  */
 const countEntriesFromUnixTime = async (unixTime) => {
   try {
-    unixTime = parseInt(unixTime);
+    unixTime = parseInt(unixTime, 10);
     const mongoClient = new MongoClient(mongoConnection, { useNewUrlParser: true, useUnifiedTopology: true });
     const connClient = await mongoClient.connect();
     const collection = connClient.db('gs1resolver').collection('uri');
@@ -53,13 +53,13 @@ const countEntriesFromUnixTime = async (unixTime) => {
  */
 const getPagedEntriesFromUnixTime = async (unixTime, pageNumber, pageSize) => {
   try {
-    unixTime = parseInt(unixTime);
-    pageNumber = parseInt(pageNumber);
-    pageSize = parseInt(pageSize);
+    unixTime = parseInt(unixTime, 10);
+    pageNumber = parseInt(pageNumber, 10);
+    pageSize = parseInt(pageSize, 10);
 
     // Maximum page size is 1000
     pageSize = pageSize > 1000 ? 1000 : pageSize;
-    const skips = pageSize * (pageNumber - 1);
+    const skips = pageNumber > 0 ? (pageNumber - 1) * pageSize : 0;
     const mongoClient = new MongoClient(mongoConnection, { useNewUrlParser: true, useUnifiedTopology: true });
     const connClient = await mongoClient.connect();
     const collection = connClient.db('gs1resolver').collection('uri');
@@ -93,7 +93,7 @@ const findPrefixEntry = async (identifierKeyType, identifierKey) => {
 
     // To find a match we must chop off more and more of a GS1 Key Value until we get a match
     const identifierKeyOriginalLength = identifierKey.length;
-    for (let identifierKeyLength = identifierKeyOriginalLength; identifierKeyLength > 3; identifierKeyLength--) {
+    for (let identifierKeyLength = identifierKeyOriginalLength; identifierKeyLength > 3; identifierKeyLength -= 1) {
       const partialGS1KeyValue = identifierKey.substring(0, identifierKeyLength - 1);
       finalResult = await collection.findOne({ _id: `/${identifierKeyType}/${partialGS1KeyValue}` });
       if (finalResult !== null) {

@@ -12,7 +12,7 @@ const checkAPIAuth = async (authKey) => {
     return queryResponse.recordset;
   } catch (e) {
     utils.logThis('Error to connect DB (SQL Procedure Exception) authkey: ', authKey);
-    utils.logThis(message);
+    utils.logThis(e);
   }
 };
 

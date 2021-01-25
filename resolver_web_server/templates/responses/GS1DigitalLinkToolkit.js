@@ -5823,13 +5823,12 @@ class GS1DigitalLinkToolkit {
   // tests the syntax of a value against the regular expression (expected format)
   // throws an error when invalid syntax is detected
   // e.g. verifySyntax('01','01234567890128');
-  // UPDATE by Nick Lansley - if value starts with { and ends with } then it is
-  // a 'template variable' and the syntax does not need to be checked (as it will fail!))
   verifySyntax(ai, value) {
-    if (!ai) return;
-    if (!this.regexAllNum.test(ai)) return;
-    if (value && value.startsWith('{') && value.endsWith('}')) return;
-    if (!this.aiRegex[ai].test(value)) throw 'SYNTAX ERROR: invalid syntax for value of (' + ai + ')' + value;
+    if (ai !== null && this.regexAllNum.test(ai)) {
+      if (!this.aiRegex[ai].test(value)) {
+        throw 'SYNTAX ERROR: invalid syntax for value of (' + ai + ')' + value;
+      }
+    }
   }
 
   // method to percent-encode all reserved characters mentioned in the GS1 Digital Link standard

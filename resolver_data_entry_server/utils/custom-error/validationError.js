@@ -1,3 +1,5 @@
+/* eslint-disable no-useless-constructor */
+// eslint-disable-next-line max-classes-per-file
 const CustomErrorBaseClass = require('./customErrorBaseClass');
 
 class ValidationError extends CustomErrorBaseClass {

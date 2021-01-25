@@ -4,6 +4,8 @@ const fs = require('fs');
 
 const db = require('./db');
 const resolver = require('./resolver');
+const responseFuncs = require('./responses');
+const utills = require('./helper/utills');
 
 const port = process.env.PORT || 8080;
 let requestCounter = 0;
@@ -12,6 +14,7 @@ const processDigitalLink = async (request, response, processStartTime) => {
   // Decode the digital link structure from the incoming request
   const structure = await resolver.getDigitalLinkStructure(request.url);
   if (structure.result === 'ERROR') {
+    utills.logThis(`processDigitalLink >> URL: ${request.url} -- ${structure.error}`);
     response.writeHead(400, { 'Content-Type': 'application/json' });
     response.end(`{ "error": "${structure.error}" }`);
   } else if (structure) {
@@ -20,6 +23,7 @@ const processDigitalLink = async (request, response, processStartTime) => {
     const dbDocument = await db.findDigitalLinkEntry(gs1KeyCode, gs1KeyValue);
     if (dbDocument !== null) {
       // We have found a document for this gs1KeyCode and gs1KeyValue
+      utills.logThis(`Found the dbDocument for requested URL ${request.url}`);
       resolver.processRequest(request, structure, dbDocument, response, processStartTime);
     } else {
       // we didn't find a document, so we need to check if we have a 'general'
@@ -28,7 +32,7 @@ const processDigitalLink = async (request, response, processStartTime) => {
       if (gcpDoc) {
         resolver.processGCPRedirect(request, gcpDoc, response, processStartTime);
       } else {
-        await resolver.response_NotFoundPage(gs1KeyCode, gs1KeyValue, response, processStartTime);
+        await responseFuncs.response_404_Not_Found_HTML_Page(gs1KeyCode, gs1KeyValue, response, processStartTime);
       }
     }
   } else {
@@ -61,39 +65,39 @@ const sayHello = async (httpResponse, processStartTime) => {
   // The file /resolver/src/builddatetime.txt is created during the image build for this container, in Dockerfile.
   hello.buildDateTime = await readFileAsync('./src/builddatetime.txt', { encoding: 'utf8' });
 
-  resolver.resolverHTTPResponse(httpResponse, { 'X-STATS': JSON.stringify(hello) }, html, 200, processStartTime);
+  responseFuncs.resolverHTTPResponse(httpResponse, { 'X-STATS': JSON.stringify(hello) }, html, 200, processStartTime);
 };
 
 /**
- * Sends the favIcon.ico file stored in the container path ./templates/interstitial/favicon.ico
+ * Sends the binary (and text) files stored in the container path ./templates/responses/
+ * @param filename
  * @param response
  * @returns {Promise<void>}
  */
-const sendFavIcon = async (response) => {
-  response.writeHead(200, { 'Content-Type': 'image/x-icon' });
-  const iconBinaryStream = fs.createReadStream('./templates/interstitial/favicon.ico');
+const sendBinaryFile = async (filename, response) => {
+  if (filename.endsWith('.ico')) {
+    response.writeHead(200, { 'Content-Type': 'image/x-icon' });
+  } else if (filename.endsWith('.png')) {
+    response.writeHead(200, { 'Content-Type': 'image/png' });
+  } else if (filename.endsWith('.jpg') || filename.endsWith('.jpeg')) {
+    response.writeHead(200, { 'Content-Type': 'image/jpeg' });
+  } else if (filename.endsWith('.css')) {
+    response.writeHead(200, { 'Content-Type': 'text/css' });
+  } else if (filename.endsWith('.js')) {
+    response.writeHead(200, { 'Content-Type': 'text/javascript' });
+  } else if (filename.endsWith('.htm') || filename.endsWith('.html')) {
+    response.writeHead(200, { 'Content-Type': 'text/html' });
+  }
+  const iconBinaryStream = fs.createReadStream(`./templates/responses/${filename}`);
   iconBinaryStream.on('open', () => {
     iconBinaryStream.pipe(response);
   });
-  console.log('favicon requested');
-};
-
-/**
- * Sends the GS1 logo as a binary file  stored in the container path ./templates/interstitial/gs1logo.png
- * @param response
- * @returns {Promise<void>}
- */
-const sendGS1LogoPNG = async (response) => {
-  response.writeHead(200, { 'Content-Type': 'image/x-icon' });
-  const iconBinaryStream = fs.createReadStream('./templates/interstitial/gs1logo.png');
-  iconBinaryStream.on('open', () => {
-    iconBinaryStream.pipe(response);
-  });
-  console.log('GS1 Logo PNG image requested');
+  console.log(`Binary file ${filename}' requested`);
 };
 
 /**
  * The primary (only!) request handler for incoming digital link resolving requests.
+ * NOTE: The fake path names for nearly all entries.
  * @param request
  * @param response
  * @returns {Promise<void>}
@@ -108,17 +112,24 @@ const requestHandler = async (request, response) => {
   console.log(`======= New Incoming Request #${requestCounter}:`, request.url);
 
   // This is an 'are you there?!' test
-  if (request.url.toLowerCase() === '/hello') {
+
+  const lcRequest = request.url;
+
+  if (lcRequest === '/hello') {
     await sayHello(response, processStartTime);
-  } else if (request.url.toLowerCase() === '/favicon.ico') {
-    await sendFavIcon(response);
-  } else if (request.url.toLowerCase() === '/gs1logo.png') {
-    await sendGS1LogoPNG(response);
-  } else if (request.url.toLowerCase().includes('/.well-known/gs1resolver')) {
+  } else if (lcRequest === '/favicon.ico') {
+    await sendBinaryFile('favicon.ico', response);
+  } else if (lcRequest.startsWith('/css/')) {
+    await sendBinaryFile(lcRequest.replace('/css/', ''), response);
+  } else if (lcRequest.startsWith('/images/')) {
+    await sendBinaryFile(lcRequest.replace('/images/', ''), response);
+  } else if (lcRequest.startsWith('/scripts/')) {
+    await sendBinaryFile(lcRequest.replace('/scripts/', ''), response);
+  } else if (lcRequest.includes('/.well-known/gs1resolver')) {
     await resolver.processWellKnownRequest(response, processStartTime);
-  } else if (request.url.toLowerCase().includes('/resolverdescriptionfile.schema.json')) {
+  } else if (lcRequest.includes('/resolverdescriptionfile.schema.json')) {
     await resolver.processResolverDescriptionFile(response, processStartTime);
-  } else if (request.url.toLowerCase().startsWith('/unixtime')) {
+  } else if (lcRequest.startsWith('/unixtime')) {
     await resolver.processUnixTime(request.url, response, processStartTime);
   } else {
     await processDigitalLink(request, response, processStartTime);

@@ -47,7 +47,7 @@ const searchURIEntriesByIdentificationKeyAndGLN = async ({ issuerGLN, identifica
     utils.logThis('Successfull get URI Data Entries');
     return queryResponse.recordset;
   } catch (error) {
-    utils.logThis(e.message);
+    utils.logThis(error.message);
   }
 };
 
@@ -162,6 +162,7 @@ const upsertURIResponse = async (resolverResponse) => {
     ps.input('defaultMimeType', sql.TYPES.Bit());
 
     await ps.prepare(
+      // eslint-disable-next-line operator-linebreak
       'EXEC [UPSERT_URI_Response_Prevalid] @uriEntryId, @linkType, @ianaLanguage, @context, @mimeType, @linkTitle, ' +
         '@targetUrl, @fwqs, @active, @defaultLinkType, @defaultIanaLanguage, @defaultContext, @defaultMimeType',
     );

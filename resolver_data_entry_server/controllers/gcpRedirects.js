@@ -4,7 +4,7 @@ const { checkAPIAuth, searchGCPRedirectsByGLN, upsertGCPRedirect, removeGCPRedir
 const { ErrorResponse, BadRequestParameter, UnAuthRouteAccess } = require('../utils/custom-error');
 
 // For get GCP Date
-exports.getGCPDate = asynchHandler(async (req, res, next) => {
+exports.getGCPDate = asynchHandler(async (req, res) => {
   const dateObj = new Date();
   res.send({
     staus: true,
@@ -106,7 +106,7 @@ exports.addNewGCPRedirect = asynchHandler(async (req, res, next) => {
   }
 
   res.status(200).json({
-    success: success,
+    success,
     data: req.body,
   });
 });

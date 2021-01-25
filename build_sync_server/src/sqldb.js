@@ -1,8 +1,9 @@
+/* eslint-disable new-cap */
 /**
  * sqldb.js provides the complete interface to Resolver's SQL Server database. All SQL entries are requested via this file.
  * As a result, any desired database brand change from Microsoft SQL Server requires alterations only to this file.
  */
-
+// eslint-disable-next-line import/no-unresolved
 const sql = require('mssql');
 const utils = require('./resolverUtils');
 
@@ -189,7 +190,7 @@ const registerSyncServer = async (syncId, hostName) => {
  */
 const decodeSQLSafeResolverArray = (rrArray) => {
   if (Array.isArray(rrArray)) {
-    for (let i = 0; i < rrArray.length; i++) {
+    for (let i = 0; i < rrArray.length; i += 1) {
       rrArray[i] = decodeSQLSafeResolverObject(rrArray[i]);
     }
   }

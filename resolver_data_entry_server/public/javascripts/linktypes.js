@@ -7,9 +7,8 @@ const getLinkTypes = async () => {
     const fetchResponse = await fetch('/reference/linktypes');
     if (fetchResponse.status === 200) {
       return await fetchResponse.json();
-    } else {
-      return [];
     }
+    return [];
   } catch {
     return [];
   }
@@ -20,12 +19,12 @@ const getLinkTypes = async () => {
  * @param linkTypesArray
  */
 const displayLinkTypesList = (linkTypesArray) => {
-  let linkTypesTable = document.createElement('table');
-  let thead = document.createElement('thead');
+  const linkTypesTable = document.createElement('table');
+  const thead = document.createElement('thead');
 
-  let th1 = document.createElement('th');
-  let th2 = document.createElement('th');
-  let th3 = document.createElement('th');
+  const th1 = document.createElement('th');
+  const th2 = document.createElement('th');
+  const th3 = document.createElement('th');
 
   th1.scope = 'col';
   th2.scope = 'col';
@@ -41,11 +40,11 @@ const displayLinkTypesList = (linkTypesArray) => {
 
   linkTypesTable.appendChild(thead);
 
-  for (let linkType of linkTypesArray) {
-    let row = document.createElement('tr');
-    let td1 = document.createElement('td');
-    let td2 = document.createElement('td');
-    let td3 = document.createElement('td');
+  for (const linkType of linkTypesArray) {
+    const row = document.createElement('tr');
+    const td1 = document.createElement('td');
+    const td2 = document.createElement('td');
+    const td3 = document.createElement('td');
     td1.innerHTML = `<b>${linkType.title}</b>`;
     td2.innerText = linkType.curie;
     td3.innerText = linkType.url;
@@ -54,8 +53,8 @@ const displayLinkTypesList = (linkTypesArray) => {
     row.appendChild(td3);
     linkTypesTable.appendChild(row);
 
-    let descRow = document.createElement('tr');
-    let descTd = document.createElement('td');
+    const descRow = document.createElement('tr');
+    const descTd = document.createElement('td');
     descTd.colSpan = 3;
     descTd.innerHTML = `<i>${linkType.description}</i><hr />`;
     descRow.appendChild(descTd);

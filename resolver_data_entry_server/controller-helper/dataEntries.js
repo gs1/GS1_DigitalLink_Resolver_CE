@@ -1,8 +1,9 @@
+/* eslint-disable no-undef */
 const format = require('biguint-format');
 const crypto = require('crypto');
 const utils = require('../bin/resolver_utils');
-const validate = require('../bin/validate');
-const db = require("../db/query-controller/data-entries");
+// const validate = require('../bin/validate');
+// const db = require('../db/query-controller/data-entries');
 
 const processBatchValidationResp = (batchRespFromDB) => {
   const resultSet = { validations: [] };
@@ -18,6 +19,7 @@ const processBatchValidationResp = (batchRespFromDB) => {
   }
   // Convert the response status from DB value to API equivalant value
   if (resultSet.STATUS === 1) {
+    // eslint-disable-next-line guard-for-in
     for (const resultIndex in resultSet.validations) {
       resultSet.validations[resultIndex].validation_code = convertResponseStatusCodeFromDBValue(resultSet.validations[resultIndex].validation_code);
     }
@@ -98,7 +100,7 @@ const validateResolverEntry_QuickCheck = async (resolverEntry) => {
   // loop through the responses looking for anything missing for the response.
   // NB I'm using a conventional for loop rather than for..of as I am making a change to resolverResponse.linkType
   //  which needs to be reflected in the resolverEntry object.
-  for (let i = 0; i < resolverEntry.responses.length; i++) {
+  for (let i = 0; i < resolverEntry.responses.length; i += 1) {
     // If the title of the linktype was uploaded, change it to the CURIE version in this function call:
     // console.log('BEFORE', resolverEntry.responses[i]);
     setLinkType(resolverEntry.responses[i]);
@@ -141,18 +143,18 @@ const checkResolverEntryPropertiesArePresent = (resolverEntry) => {
   try {
     // Check for the presence of all correct properties
     return (
-        resolverEntry.identificationKeyType !== undefined &&
-        resolverEntry.identificationKey !== undefined &&
-        resolverEntry.itemDescription !== undefined &&
-        resolverEntry.qualifierPath !== undefined &&
-        resolverEntry.active !== undefined &&
-        resolverEntry.responses !== undefined &&
-        Array.isArray(resolverEntry.responses) &&
-        resolverEntry.identificationKeyType !== '' &&
-        resolverEntry.identificationKey !== '' &&
-        resolverEntry.itemDescription !== '' &&
-        resolverEntry.qualifierPath !== '' &&
-        resolverEntry.responses !== ''
+      resolverEntry.identificationKeyType !== undefined &&
+      resolverEntry.identificationKey !== undefined &&
+      resolverEntry.itemDescription !== undefined &&
+      resolverEntry.qualifierPath !== undefined &&
+      resolverEntry.active !== undefined &&
+      resolverEntry.responses !== undefined &&
+      Array.isArray(resolverEntry.responses) &&
+      resolverEntry.identificationKeyType !== '' &&
+      resolverEntry.identificationKey !== '' &&
+      resolverEntry.itemDescription !== '' &&
+      resolverEntry.qualifierPath !== '' &&
+      resolverEntry.responses !== ''
     );
   } catch (e) {
     utils.logThis(`checkResolverEntryPropertiesArePresent: entry ${JSON.stringify(resolverEntry)} has error: ${e}`);
@@ -171,12 +173,11 @@ const generateBatchId_v2 = () => {
   // These functions are sourced from:
   // https://stackoverflow.com/questions/33609404/node-js-how-to-generate-random-numbers-in-specific-range-using-crypto-randomby
   const randomC = (qty) => format(crypto.randomBytes(qty), 'dec');
-  const random = (low, high) => (randomC(4) / Math.pow(2, 4 * 8 - 1)) * (high - low) + low;
+  const random = (low, high) => (randomC(4) / 2 ** (4 * 8 - 1)) * (high - low) + low;
 
   // I use the above two functions to generate the desired always-9-digit number:
-  return parseInt(random(100000000, 999999999));
+  return parseInt(random(100000000, 999999999), 10);
 };
-
 
 /**
  * Not all properties need to be present on the inbound request, so defaults are set here if they are missing.
@@ -203,6 +204,7 @@ const cleanResolverEntry = (resolverEntry) => {
   const cleanedResolverEntry = {};
   for (const [key, value] of Object.entries(resolverEntry)) {
     if (typeof value === 'string') {
+      // eslint-disable-next-line newline-per-chained-call
       cleanedResolverEntry[key] = value.replace('\n', '').replace('\r', '').replace("'", '').replace(';', '').trim();
     } else {
       cleanedResolverEntry[key] = value;
@@ -239,24 +241,24 @@ const checkResolverResponsePropertiesArePresent = (resolverResponse) => {
   // Check for the presence of mandatory data.
   try {
     return (
-        resolverResponse.linkType !== undefined &&
-        resolverResponse.ianaLanguage !== undefined &&
-        resolverResponse.context !== undefined &&
-        resolverResponse.mimeType !== undefined &&
-        resolverResponse.linkTitle !== undefined &&
-        resolverResponse.targetUrl !== undefined &&
-        resolverResponse.defaultLinkType !== undefined &&
-        resolverResponse.defaultIanaLanguage !== undefined &&
-        resolverResponse.defaultContext !== undefined &&
-        resolverResponse.defaultMimeType !== undefined &&
-        resolverResponse.fwqs !== undefined &&
-        resolverResponse.active !== undefined &&
-        resolverResponse.linkType.length > 6 &&
-        resolverResponse.linkTitle !== '' &&
-        utils.isValidIANALanguage(resolverResponse.ianaLanguage) &&
-        utils.isValidMediaType(resolverResponse.mimeType) &&
-        setLinkType(resolverResponse) &&
-        lineIncludesInternetURIScheme(resolverResponse.targetUrl)
+      resolverResponse.linkType !== undefined &&
+      resolverResponse.ianaLanguage !== undefined &&
+      resolverResponse.context !== undefined &&
+      resolverResponse.mimeType !== undefined &&
+      resolverResponse.linkTitle !== undefined &&
+      resolverResponse.targetUrl !== undefined &&
+      resolverResponse.defaultLinkType !== undefined &&
+      resolverResponse.defaultIanaLanguage !== undefined &&
+      resolverResponse.defaultContext !== undefined &&
+      resolverResponse.defaultMimeType !== undefined &&
+      resolverResponse.fwqs !== undefined &&
+      resolverResponse.active !== undefined &&
+      resolverResponse.linkType.length > 6 &&
+      resolverResponse.linkTitle !== '' &&
+      utils.isValidIANALanguage(resolverResponse.ianaLanguage) &&
+      utils.isValidMediaType(resolverResponse.mimeType) &&
+      setLinkType(resolverResponse) &&
+      lineIncludesInternetURIScheme(resolverResponse.targetUrl)
     );
   } catch (e) {
     utils.logThis(`checkResolverResponsePropertiesArePresent: for response ${JSON.stringify(resolverResponse)} error ${e}`);
@@ -344,14 +346,14 @@ const setLinkType = (resolverResponse) => {
  * @returns {boolean}
  */
 const lineIncludesInternetURIScheme = (dataLine) =>
-    dataLine.includes('http://') || // unencrypted web address
-    dataLine.includes('https://') || // encrypted web address
-    dataLine.includes('ftp://') || // file transfer protocol (file download)
-    dataLine.includes('sftp://') || // secure file transfer protocol (file download)
-    dataLine.includes('rtsp://') || // media streaming protocol
-    dataLine.includes('sip:') || // internet telephone number
-    dataLine.includes('tel:') || // standard telephone number
-    dataLine.includes('mailto:'); // create an email to send
+  dataLine.includes('http://') || // unencrypted web address
+  dataLine.includes('https://') || // encrypted web address
+  dataLine.includes('ftp://') || // file transfer protocol (file download)
+  dataLine.includes('sftp://') || // secure file transfer protocol (file download)
+  dataLine.includes('rtsp://') || // media streaming protocol
+  dataLine.includes('sip:') || // internet telephone number
+  dataLine.includes('tel:') || // standard telephone number
+  dataLine.includes('mailto:'); // create an email to send
 // To set the response parameters of data entry request, which will prepare for add data in DB with valid entries
 const cleanAndParseDataEntryResponse = async (responsesEntries) => {
   const respArr = [];
@@ -376,5 +378,5 @@ module.exports = {
   setMissingDefaultsForAbsentResolverResponseProperties,
   checkResolverResponsePropertiesArePresent,
   structureResolverRespProps,
-  cleanAndParseDataEntryResponse
+  cleanAndParseDataEntryResponse,
 };

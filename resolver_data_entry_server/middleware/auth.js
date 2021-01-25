@@ -1,3 +1,4 @@
+/* eslint-disable consistent-return */
 const { UnAuthRouteAccess, ErrorResponse, BadRequestParameter } = require('../utils/custom-error');
 
 /**
@@ -9,7 +10,7 @@ exports.adminAuthOK = async (req, res, next) => {
   let token = null;
   const { authorization } = req.headers;
   if (authorization && authorization.startsWith('Bearer')) {
-    token = authorization.split(' ')[1];
+    [, token] = authorization.split(' ');
   }
   if (!(token === process.env.ADMIN_AUTH_KEY)) {
     return next(new UnAuthRouteAccess('Not Authorized (Forbidden Access)', 401));
@@ -30,7 +31,7 @@ exports.checkAuthHeaderInclude = async (req, res, next) => {
   let token = null;
   const { authorization } = req.headers;
   if (authorization && authorization.startsWith('Bearer')) {
-    token = authorization.split(' ')[1];
+    [, token] = authorization.split(' ');
   }
 
   if (!token) {

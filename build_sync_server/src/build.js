@@ -1,12 +1,14 @@
+/* eslint-disable guard-for-in */
 /**
  * build.js holds all the functionality required to run the BUILD application.
  * BUILD is controlled through the globally exposed .run() function below.
  */
-
+// eslint-disable-next-line import/no-unresolved
 const fetch = require('node-fetch');
 const sqldb = require('./sqldb');
 const mongodb = require('./mongodb');
 const utils = require('./resolverUtils');
+const linksetBuilder = require('./buildlinkset');
 
 const rowBatchSize = process.env.SQLDB_PROCESS_BATCH_SIZE || 1000;
 
@@ -151,7 +153,7 @@ const buildQualifierPathEntry = (qualifierPath, sqlDBEntry, responses) => {
 
     // Create the list of responses
     const _responseObj = {
-      link: encodeURI(_link),
+      link: _link,
       title: _title,
       linkType: _linkType,
       ianaLanguage: _ianaLanguage,
@@ -171,6 +173,20 @@ const buildQualifierPathEntry = (qualifierPath, sqlDBEntry, responses) => {
 };
 
 /**
+ * Some mere humans have their responses set such that for the same linktype, some entries have default_linktype
+ * set to true and some set to false. This function fixes that by finding linktypes with default_linktype set True
+ * and changes all entries with that linktype's default_linktype to true even if it was false before.
+ * @param responses
+ */
+const fixDefaultLinkTypeFlags = (responses) => {
+  // create a new array of responses where default_linktype is true.
+  const defaultResponseList = responses.filter((response) => response.default_linktype);
+  for (const index in responses) {
+    responses[index].default_linktype = defaultResponseList.some((dr) => dr.linktype === responses[index].linktype);
+  }
+};
+
+/**
  * Updates the resolver URI document with the included qualifier path entry, inserting it if
  * does not exist already.
  * @param sqlDBEntryRow
@@ -181,12 +197,15 @@ const buildQualifierPathEntry = (qualifierPath, sqlDBEntry, responses) => {
  * @param sortedQualifiers
  * @returns {Promise<*>}
  */
-const updateUriDocument = async (sqlDBEntryRow, qualifierPath, mongoEntry, identKeyType, identKey, sortedQualifiers) => {
+const updateUriDocument = async (sqlDBEntryRow, qualifierPath, mongoEntry, identKeyType, identKey, sortedQualifiers, structure) => {
   try {
     // First get the responses for this uri_entry_id
     const responseSet = await sqldb.getURIResponses(sqlDBEntryRow.uri_entry_id);
 
     if (responseSet !== null) {
+      // Fix any 'default' flag issues (see comments at function):
+      fixDefaultLinkTypeFlags(responseSet);
+
       // This is an update so we will go ahead and build the record.
       // Build a qualifier path entry record for this entry and its responses.
       const qualifierPathEntry = buildQualifierPathEntry(qualifierPath, sqlDBEntryRow, responseSet);
@@ -216,6 +235,10 @@ const updateUriDocument = async (sqlDBEntryRow, qualifierPath, mongoEntry, ident
 
         // format the document for best efficient parsing by the resolving application:
         mongoEntry = formatUriDocument(mongoEntry);
+
+        // Add the linkset info:
+        mongoEntry[qualifierPath].linkset = linksetBuilder.getLinkSetJson(mongoEntry[qualifierPath], identKeyType, identKey, qualifierPath, mongoEntry.unixtime);
+        mongoEntry[qualifierPath].linkHeaderText = linksetBuilder.getLinkHeaderText(mongoEntry[qualifierPath], structure);
 
         // update in document in the Mongo database
         const success = await mongodb.updateDocumentInMongoDB(mongoEntry, 'uri');
@@ -292,7 +315,11 @@ const buildURIDocuments = async (sqlDBEntrySet, fullBuildIfTrue) => {
     for (const sqlDBEntryRow of sqlDBEntrySet) {
       processCounter += 1;
       if (processCounter % 100 === 0) {
-        utils.logThis(`Processed count: ${processCounter} of ${sqlDBEntrySet.length}`);
+        utils.logThis(`Processed count: ${processCounter} of ${sqlDBEntrySet.length} entries`);
+      }
+
+      if (processCounter === sqlDBEntrySet.length) {
+        utils.logThis(`Processing completed: ${processCounter} of ${sqlDBEntrySet.length} entries`);
       }
 
       // Get the qualifier_path
@@ -333,11 +360,11 @@ const buildURIDocuments = async (sqlDBEntrySet, fullBuildIfTrue) => {
         const mongoEntry = await mongodb.findEntryInMongoDB(identificationKeyType, identificationKey, 'uri');
 
         if (fullBuildIfTrue) {
-          await updateUriDocument(sqlDBEntryRow, qualifierPath, mongoEntry, identificationKeyType, identificationKey, sortedQualifiers);
+          await updateUriDocument(sqlDBEntryRow, qualifierPath, mongoEntry, identificationKeyType, identificationKey, sortedQualifiers, structure);
         } else {
           const updateOrDeleteFlag = sqlDBEntryRow.active;
           if (updateOrDeleteFlag) {
-            await updateUriDocument(sqlDBEntryRow, qualifierPath, mongoEntry, identificationKeyType, identificationKey, sortedQualifiers);
+            await updateUriDocument(sqlDBEntryRow, qualifierPath, mongoEntry, identificationKeyType, identificationKey, sortedQualifiers, structure);
           } else {
             await deleteUriDocument(mongoEntry, qualifierPath);
           }

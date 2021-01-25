@@ -651,13 +651,8 @@ const buildResolverEntry = (dataColumns, resolverEntry, resolverResponse) => {
           break;
 
         case 'qualifierPath':
-          // This logic copes with some variants being blank, as end users may not 'get' that
-          // they should be supplying the root variant if no other variant is needed.
-          if (dataColumnValue !== '') {
-            resolverEntry.qualifierPath = dataColumnValue;
-          } else {
-            resolverEntry.qualifierPath = '/';
-          }
+          // Add a preceding '/' if dataColumnValue does not already start with '/'
+          resolverEntry.qualifierPath = `${dataColumnValue.startsWith('/') ? '' : '/'}${dataColumnValue}`;
           break;
 
         // It is important that cpv, batch_lot and serial are in this order for GTIN, and that
@@ -794,7 +789,7 @@ const performResolverEntryCheck = async (resolverEntry, divCheckResults, counter
   // call into Digital Link toolkit
   const gs1CheckResult = await runDigitalLinkCheck(resolverEntry.identificationKeyType, resolverEntry.identificationKey, resolverEntry.qualifierPath);
   if (gs1CheckResult.result === 'ERROR') {
-    divCheckResults.innerHTML += `<div style="color: red;">Line ${counter}: Error: ${resolverEntry.identificationKeyType}, ${resolverEntry.identificationKey}: ${gs1CheckResult.error}</div><p>${dataLine}</p><hr />`;
+    divCheckResults.innerHTML += `<div style="color: red;">Line ${counter}: Error: ${resolverEntry.identificationKeyType}, ${resolverEntry.identificationKey}: ${gs1CheckResult.data}</div><p>${dataLine}</p><hr />`;
     dataOKFlag = false;
   }
 
@@ -1020,10 +1015,7 @@ const runDigitalLinkCheck = async (identificationKeyType, identificationKey, qua
 
   try {
     const response = await fetch(uriToTest);
-    const result = await response.json();
-    const structuredObject = result.data;
-    structuredObject.result = 'OK';
-    return structuredObject;
+    return await response.json();
   } catch (err) {
     const errorObject = {};
     errorObject.result = 'ERROR';
@@ -1049,29 +1041,39 @@ const groupResolverEntries = async () => {
 
     // Is the resolverEntry already in groupedResolverEntriesArray?
     // Find out using its unique combination of ID Key Type, ID key and qualifier path.
-    // Note: If uploading many thousands of entries, this .find() will get slower and
-    //      slower as the array grows in size:
-    const storedResolverEntry = groupedResolverEntriesArray.find(
-      (element) =>
-        element.identificationKeyType === resolverEntry.identificationKeyType &&
-        element.identificationKey === resolverEntry.identificationKey &&
-        element.qualifierPath === resolverEntry.qualifierPath,
-    );
-
-    if (storedResolverEntry === undefined) {
-      // The resolver entry is not in the groupedResolverEntriesArray so push it all straight in:
+    // Note: If uploading many thousands of entries, this .some() search will get slower and
+    //       slower as the array grows in size:
+    if (
+      !groupedResolverEntriesArray.some(
+        (element) =>
+          element.identificationKeyType === resolverEntry.identificationKeyType &&
+          element.identificationKey === resolverEntry.identificationKey &&
+          element.qualifierPath === resolverEntry.qualifierPath,
+      )
+    ) {
+      // The resolver entry is NOT in the groupedResolverEntriesArray so push it all straight in:
       groupedResolverEntriesArray.push(resolverEntry);
     } else {
       // search for the entry in groupedResolverEntriesArray and update it.
-      for (let i = 0; i < groupedResolverEntriesArray.length; i++) {
+      for (const i in groupedResolverEntriesArray) {
         if (
           groupedResolverEntriesArray[i].identificationKeyType === resolverEntry.identificationKeyType &&
           groupedResolverEntriesArray[i].identificationKey === resolverEntry.identificationKey &&
           groupedResolverEntriesArray[i].qualifierPath === resolverEntry.qualifierPath
         ) {
-          // Only push the response section into the reslverEntry.response array:
-          groupedResolverEntriesArray[i].responses.push(resolverEntry.responses[0]);
-          break;
+          // Only push the response section into the resolverEntry.response array:
+          if (
+            !groupedResolverEntriesArray[i].responses.some(
+              (element) =>
+                element.linkType === resolverEntry.responses[0].linkType &&
+                element.ianaLanguage === resolverEntry.responses[0].ianaLanguage &&
+                element.context === resolverEntry.responses[0].context &&
+                element.mimeType === resolverEntry.responses[0].mimeType,
+            )
+          ) {
+            groupedResolverEntriesArray[i].responses.push(resolverEntry.responses[0]);
+            break;
+          }
         }
       }
     }
@@ -1243,11 +1245,11 @@ const pollForPendingResults = async (authKey) => {
  */
 const displayValidationErrors = () => {
   /*
-        batchId: results.responseArray['batchId'],
-        batchStatusPending: true,
-        badEntries: results.responseArray['badEntries'],
-        validationResults: []
-     */
+          batchId: results.responseArray['batchId'],
+          batchStatusPending: true,
+          badEntries: results.responseArray['badEntries'],
+          validationResults: []
+       */
   const divUploadResults = document.getElementById('divUploadResults');
   divUploadResults.innerText = '';
 
@@ -1258,7 +1260,7 @@ const displayValidationErrors = () => {
       validationErrorArray = [];
     }
     if (batchEntry.badEntries.length + validationErrorArray.length === 0) {
-      divUploadResults.innerHTML += `BatchId: ${batchEntry.batchId} passed all validations<br />`;
+      divUploadResults.innerHTML += `BatchId: ${batchEntry.batchId} published successfully<br />`;
     } else {
       divUploadResults.innerHTML += `BatchId: ${batchEntry.batchId} had ${batchEntry.badEntries.length + validationErrorArray.length} failed validations <br />`;
     }

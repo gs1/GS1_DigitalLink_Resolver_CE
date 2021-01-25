@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 const global_dataColumns = [
   'identificationKeyType',
   'identificationKey',
@@ -42,6 +43,7 @@ const downloadData = async () => {
   const entriesArray = [];
   const authKey = document.getElementById('authKey').value;
   if (authKey === '') {
+    // eslint-disable-next-line no-alert
     window.alert('Please paste in your authentication key to continue!');
     return;
   }
@@ -92,7 +94,7 @@ const downloadData = async () => {
             }
 
             countSoFar += entries.length;
-            currentPageNumber++;
+            currentPageNumber += 1;
 
             // Some stats to display to our end user
             percentProgress = Math.round((countSoFar * 100) / countResult.count);
@@ -154,7 +156,7 @@ const convertResolverJSONToCSV = async (dataArray) => {
       fullCSVLine += `"${response.defaultMimeType ? 'Y' : 'N'}","${response.fwqs ? 'Y' : 'N'}","${response.active ? 'Y' : 'N'}",`;
       fullCSVLine += `"${entry.dateInserted}","${entry.dateLastUpdated}"\n`;
       csvFile += fullCSVLine;
-      global_linesDownloadedCount++;
+      global_linesDownloadedCount += 1;
     }
   }
 

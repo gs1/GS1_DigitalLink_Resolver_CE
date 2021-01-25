@@ -2,7 +2,7 @@ const utils = require('../bin/resolver_utils');
 
 const { AuthenticationError, ValidationError, ServerResponseError } = require('../utils/custom-error');
 
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res) => {
   utils.logThis(`${err.cause || err.message} -- ${err.name}`);
   const _err = {
     statusCode: 500,

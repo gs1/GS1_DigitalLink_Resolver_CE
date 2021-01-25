@@ -36,10 +36,7 @@ app.use(helmet(), customContentSecurityPolicy());
 // Handling XSS attacks middleware
 app.use(xssPrevent());
 
-// Handle Express APIs rate limit middleware
-// app.use(globalRateLimiter());
-
-// Prevant http params pollution middleware
+// Prevent http params pollution middleware
 app.use(hpp());
 
 // Set the maximum size limit to 10 MB
@@ -64,12 +61,12 @@ app.use('/admin', resolverAdminAPI);
 app.use(errorHandler);
 
 // catch 404 and forward to error handler
-app.use((req, res, next) => {
+app.use((req, res) => {
   res.sendStatus(404);
 });
 
 // error handler
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   res.sendStatus(err.status || 500);
 });
 

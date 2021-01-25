@@ -22,7 +22,6 @@ const calculateProcessingTime = (processStartTime) => {
  */
 const requestHandler = async (request, response) => {
   const processStartTime = new Date().getTime();
-  console.time('PROCESSTIME');
 
   const httpHeaders = {
     Vary: 'Accept-Encoding',
@@ -41,13 +40,22 @@ const requestHandler = async (request, response) => {
 
   if (dlFunction === 'analyseuri') {
     try {
-      const structuredObject = {
-        data: gs1dlt.analyseURI(request.url.replace(`/${dlFunction}`, ''), true).structuredOutput,
+      const uriStem = request.url.replace(`/${dlFunction}`, '');
+      const result = {
+        data: gs1dlt.analyseURI(uriStem, true).structuredOutput,
         result: 'OK',
       };
+
+      // If the uriStem is compressed, calling analyseUri will return an empty string but not
+      // thrown an exception. So if we reach here with an empty string in result.data then
+      // let's have another go by calling the decompression function:
+      if (result.data === '') {
+        result.data = gs1dlt.decompressGS1DigitalLinkToStructuredArray(uriStem, '');
+      }
+
       httpHeaders['X-Resolver-ProcessTimeMS'] = calculateProcessingTime(processStartTime);
       response.writeHead(200, httpHeaders);
-      response.end(JSON.stringify(structuredObject));
+      response.end(JSON.stringify(result));
       console.log(request.url, ' ===> analyseuri OK');
     } catch (err) {
       const errorResponse = {
@@ -58,10 +66,49 @@ const requestHandler = async (request, response) => {
       response.end(JSON.stringify(errorResponse));
       console.log(request.url, ' ===> analyseuri ERROR ===>', errorResponse.data);
     }
+  } else if (dlFunction === 'compress') {
+    try {
+      const result = {
+        data: gs1dlt.compressGS1DigitalLink(request.url.replace(`/${dlFunction}`, ''), false, 'https://id.gs1.org', false, true, false),
+        result: true,
+      };
+      httpHeaders['X-Resolver-ProcessTimeMS'] = calculateProcessingTime(processStartTime);
+      response.writeHead(200, httpHeaders);
+      response.end(JSON.stringify(result));
+      console.log(request.url, ' ===> compress OK');
+    } catch (err) {
+      const errorResponse = {
+        result: 'ERROR',
+        data: err.toString(),
+      };
+      response.writeHead(400, httpHeaders);
+      response.end(JSON.stringify(errorResponse));
+      console.log(request.url, ' ===> compress ERROR ===>', errorResponse.data);
+    }
+  } else if (dlFunction === 'decompress' || dlFunction === 'uncompress') {
+    try {
+      const result = {
+        data: gs1dlt.decompressGS1DigitalLinkToStructuredArray(request.url.replace(`/${dlFunction}`, '')),
+        result: true,
+      };
+      httpHeaders['X-Resolver-ProcessTimeMS'] = calculateProcessingTime(processStartTime);
+      response.writeHead(200, httpHeaders);
+      response.end(JSON.stringify(result));
+      console.log(request.url, ' ===> decompress/uncompress OK');
+    } catch (err) {
+      const errorResponse = {
+        result: 'ERROR',
+        data: err.toString(),
+      };
+      response.writeHead(400, httpHeaders);
+      response.end(JSON.stringify(errorResponse));
+      console.log(request.url, ' ===> decompress/uncompress ERROR ===>', errorResponse.data);
+    }
   } else if (dlFunction === 'ailookup') {
     let wantedValue;
     try {
       const aiValue = urlParameterArray[2].toLowerCase();
+      // eslint-disable-next-line no-restricted-globals
       if (isNaN(aiValue)) {
         const aiEntry = gs1dlt.aitable.find((entry) => entry.shortcode === aiValue);
         wantedValue = aiEntry.ai;
@@ -100,8 +147,11 @@ const requestHandler = async (request, response) => {
  */
 const server = http.createServer(requestHandler);
 server.listen(port, async (err) => {
-  if (err) console.log('Error:', err);
-  else console.log(`GS1 DigitalLink Toolkit Server listening on port ${port}`);
+  if (err) {
+    console.log('Error:', err);
+  } else {
+    console.log(`GS1 DigitalLink Toolkit Server listening on port ${port}`);
+  }
 });
 
 /**
@@ -112,4 +162,4 @@ const serverShutDown = async () => {
   process.exit(0);
 };
 
-process.on('SIGTERM', async () => await serverShutDown());
+process.on('SIGTERM', async () => serverShutDown());

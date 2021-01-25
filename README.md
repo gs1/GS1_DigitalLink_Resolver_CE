@@ -1,8 +1,19 @@
 ## Welcome to the GS1 Digital Link Resolver
-### Community Edition v2.2 
+### Community Edition v2.3 
 
 Welcome! The purpose of this repository is to provide you with the ability to build a complete resolver service that will enable you to enter information about GTINs and other GS1 keys
 and resolve (that is, redirect) web clients to their appropriate destinations.
+
+### Version 2.3 Features
+1. New JSON output format conforming to the IETF Linkset standard.
+2. New extended format for Mongo documents that reduces the processing
+   overhead of the resolving web server, thus improving performanced.
+3. New HTTP 303 'See Other' return code enabling clients to get more general info
+   about an entry, if the specific lot or serial number is not present (part of the 'walking up the tree' functionality).
+4. New HTTP 410 'Gone Away' return code if entry is present in the datbase but its 'active'
+   flag is set to false (as compared to HTTP 404 'Not Found') when no entry exists at all.
+5. Improvements to GS1 Digital Link Toolkit library.
+6. Various bug fixes and improvements to the applications thanks to developer and triallists feedback.
 
 ### Version 2.2 Features
 1. URI Template Variables - instead of using static values for qualifiers such as serial number, you can use a string value wrapped in curly braces like this: {myvar}. See the example in the CSV file resolverdata.csv in the 'Example Files To Upload'
@@ -26,6 +37,7 @@ This project uses a SQL Server database to store information</td></tr>
 <tr><td>frontend_proxy_server</td><td>The frontend web server routing traffic securely to the other containers. Using NGINX, this server's config can be adjusted to support load balancing and more,</td></tr>
 <tr><td>digitallink_toolkit_server</td><td>A library server available to all the other container applications that tests incoming data against the official reference implementation of the GS1 Digital Link standard</td></tr>
 </table>
+<hr />
 
 ### Important Notes for existing users of previous versions 1.0 and 1.1
 This is a brand new resolving architecture, not backwards compatible with version 1.0 or 1.1
@@ -40,6 +52,7 @@ These changes were to provide:
 If you are using earlier versions of Resolver, contact Nick Lansley (nick@lansley.com) for advice
 on copying the data from the old SQL format to the new much simpler SQL format. You should stop
 using the older v1.x service and transition to this version as soon as possible.
+<hr />
 
 ### Important Notes for existing users of previous version 2.0
 The main upgrade of the service is to resolver_data_entry_server which has been upgraded to support batch
@@ -61,6 +74,7 @@ servers has become unnecessary thanks to the latest Node v14 V8 engine and a lot
 
 Finally, by popular request, docker-compose exposes the web service on port 80, no longer port 8080. It also exposes SQL Server and MongoDB on their default
 ports, so use your favourite SQL Server client and Mongo DB to connect to localhost with credentials supplied in the SQL and Mongo Dockerfiles.
+<hr />
 
 ### Important Notes for existing users of previous version 2.1
 In v2.2 the new JSON format for linktype=all has been highly simplified and is a breaking change if you have a client that
@@ -72,6 +86,7 @@ variable in the Dockerfile of resolver_data_entry_server is:
 Wherever you run Resolver, you must change its domain name in this variable
 to match it's 'live' domain name, or else the Data Entry UI JavaScript will be blocked from executing.
 
+#### Emptying SQL table [server_sync_register] to initiate MongoDB rebuild:
 The SQL database is unchanged, but we've greatly simplified the data stored in MongoDB. This changed document format is smaller and simpler to both use and understand!
 So you need to force the Build application to rebuild the Mongo database or the new Resolver web server won't understand it. This is simple to do - using either the API or direct server access, empty the table
 [gs1-resolver-ce-v2-1-db].[dbo].[server_sync_register]
@@ -105,7 +120,15 @@ docker-compose build
 docker-compose run -d
 </pre>
 Mongo will initialise a fresh new empty database which the Build application will detect and perform a full rebuild.
+<hr />
 
+### Important Notes for existing users of previous version 2.2
+Just as for users upgrading to version 2.2, you will need to empty the table:
+<pre>[gs1-resolver-ce-v2-1-db].[dbo].[server_sync_register]</pre>
+Please follow the instructions for doing this in 'Important Notes for existing users of previous version 2.1' 
+section 'Emptying SQL table [server_sync_register]' to initiate MongoDB rebuild of its data. 
+
+<hr />
 
 ## Documentation
 Please refer to the document 'GS1 Resolver - Overview and Architecture.pdf' in the root of this 
@@ -191,7 +214,9 @@ Exit the container with the command:<pre>exit</pre>
 1. Type in your authorization key (5555555555555), then choose the file you just downloaded. The Upload page detects 'Download' -format file and will set all the columns correctly for you. Have  look at the example data in each column
 and what it means (read the final section of the PDF document for more details about these columns).
 1. Click 'Check file' followed by 'Upload file'.
-1. By now the local Mongo database should be built (a build event occurs every one minute) so try out this request in a terminal window: <pre> curl -I http://localhost/gtin/09506000134376?serialnumber=12345 </pre> which should result in this appearing in your terminal window:<pre>HTTP/1.1 307 Temporary Redirect
+1. By now the local Mongo database should be built (a build event occurs every one minute) so try out this request in a terminal window: <pre> curl -I http://localhost/gtin/09506000134376?serialnumber=12345 </pre> which should result in this appearing in your terminal window:
+
+<pre>
 HTTP/1.1 307 Temporary Redirect
 Server: nginx/1.19.0
 Date: Mon, 09 Nov 2020 16:42:51 GMT
@@ -202,12 +227,13 @@ Access-Control-Allow-Methods: HEAD, GET, OPTIONS
 Access-Control-Expose-Headers: Link, Content-Length
 Cache-Control: max-age=0, no-cache, no-store, must-revalidate
 X-Resolver-ProcessTimeMS: 9
-Link: <https://dalgiardino.com/medicinal-compound/pil.html>; rel="gs1:epil"; type="text/html"; hreflang="en"; title="Product Information Page", <https://dalgiardino.com/medicinal-co
-mpound/>; rel="gs1:pip"; type="text/html"; hreflang="en"; title="Product Information Page", <https://dalgiardino.com/medicinal-compound/index.html.ja>; rel="gs1:pip"; type="text/htm
-l"; hreflang="ja"; title="Product Information Page", <https://id.gs1.org/01/09506000134376>; rel="owl:sameAs"
+Link: &#60;https://dalgiardino.com/medicinal-compound/pil.html>; rel="gs1:epil"; type="text/html"; hreflang="en"; title="Product Information Page", &#60;https://dalgiardino.com/medicinal-co
+mpound/>; rel="gs1:pip"; type="text/html"; hreflang="en"; title="Product Information Page", &#60;https://dalgiardino.com/medicinal-compound/index.html.ja>; rel="gs1:pip"; type="text/htm
+l"; hreflang="ja"; title="Product Information Page", &#60;https://id.gs1.org/01/09506000134376>; rel="owl:sameAs"
 Location: https://dalgiardino.com/medicinal-compound/?serialnumber=12345
+</pre> 
 
-</pre> This demonstrates that Resolver has found an entry for GTIN 09506000134376 and is redirecting you to the web site shown in the 'Location' header. 
+This demonstrates that Resolver has found an entry for GTIN 09506000134376 and is redirecting you to the web site shown in the 'Location' header. 
 You can also see this in action if you use the same web address (in your web browser - you should end up at Dal Giardino web site, this particular page written in Vietnamese!).
  The rest of the information above reveals all the alternative links available for this product depending on the context in which Resolver was called.
 

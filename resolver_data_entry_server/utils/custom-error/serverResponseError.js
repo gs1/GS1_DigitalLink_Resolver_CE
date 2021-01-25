@@ -1,6 +1,8 @@
+// eslint-disable-next-line max-classes-per-file
 const CustomErrorBaseClass = require('./customErrorBaseClass');
 
 class ServerResponseError extends CustomErrorBaseClass {
+  // eslint-disable-next-line no-useless-constructor
   constructor(message) {
     super(message);
   }

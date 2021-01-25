@@ -1,3 +1,5 @@
+/* eslint-disable no-bitwise */
+/* eslint-disable no-useless-escape */
 /* \
 |*|
 |*|  Base64 / binary data / UTF-8 strings utilities (#1)
@@ -20,11 +22,11 @@ function base64DecToArr(sBase64, nBlockSize) {
   const nOutLen = nBlockSize ? Math.ceil(((nInLen * 3 + 1) >>> 2) / nBlockSize) * nBlockSize : (nInLen * 3 + 1) >>> 2;
   const aBytes = new Uint8Array(nOutLen);
 
-  for (let nMod3, nMod4, nUint24 = 0, nOutIdx = 0, nInIdx = 0; nInIdx < nInLen; nInIdx++) {
+  for (let nMod3, nMod4, nUint24 = 0, nOutIdx = 0, nInIdx = 0; nInIdx < nInLen; nInIdx += 1) {
     nMod4 = nInIdx & 3;
     nUint24 |= b64ToUint6(sB64Enc.charCodeAt(nInIdx)) << (18 - 6 * nMod4);
     if (nMod4 === 3 || nInLen - nInIdx === 1) {
-      for (nMod3 = 0; nMod3 < 3 && nOutIdx < nOutLen; nMod3++, nOutIdx++) {
+      for (nMod3 = 0; nMod3 < 3 && nOutIdx < nOutLen; nMod3 += 1, nOutIdx += 1) {
         aBytes[nOutIdx] = (nUint24 >>> ((16 >>> nMod3) & 24)) & 255;
       }
       nUint24 = 0;
@@ -44,7 +46,7 @@ function base64EncArr(aBytes) {
   const eqLen = (3 - (aBytes.length % 3)) % 3;
   let sB64Enc = '';
 
-  for (let nMod3, nLen = aBytes.length, nUint24 = 0, nIdx = 0; nIdx < nLen; nIdx++) {
+  for (let nMod3, nLen = aBytes.length, nUint24 = 0, nIdx = 0; nIdx < nLen; nIdx += 1) {
     nMod3 = nIdx % 3;
     /* Uncomment the following line in order to split the output in lines 76-character long: */
     /*

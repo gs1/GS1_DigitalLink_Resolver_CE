@@ -1,3 +1,6 @@
+/* eslint-disable implicit-arrow-linebreak */
+/* eslint-disable no-unused-vars */
+/* eslint-disable import/no-unresolved */
 const rateLimit = require('express-rate-limit');
 
 module.exports = (req, res, next) =>

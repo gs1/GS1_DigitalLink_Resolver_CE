@@ -15,7 +15,7 @@ const {
   fetchDataEntriesByPage,
   upsertURIEntry,
   upsertURIResponse,
-  saveDataEntriesURIValidationResultToDB,
+  // saveDataEntriesURIValidationResultToDB,
   publishValidatedEntries,
 } = require('../db/query-controller/data-entries');
 
@@ -26,11 +26,11 @@ const {
   cleanAndParseDataEntryResponse,
   setMissingDefaultsForAbsentResolverResponseProperties,
   cleanResolverEntry,
-  checkResolverResponsePropertiesArePresent
+  checkResolverResponsePropertiesArePresent,
 } = require('../controller-helper/dataEntries');
 
 // get URI Date
-exports.getDataEntryDate = asynchHandler(async (req, res, next) => {
+exports.getDataEntryDate = asynchHandler(async (req, res) => {
   const dateObj = new Date();
   res.send({
     staus: true,
@@ -302,7 +302,7 @@ const processBatchToSaveDataEntries = asynchHandler(async ({ issuerGLN, requestB
         resolverEntry.itemDescription = utils.convertTextToSQLSafe_v2(resolverEntry.itemDescription);
         // Add the batchId property ready for entry into the database
         resolverEntry.batchId = batchId;
-        //Value 255 is 'pending validation check'
+        // Value 255 is 'pending validation check'
         resolverEntry.validationCode = 255;
         const entryUpsertResultResp = await upsertURIEntry(resolverEntry);
         // check if the upsert URI Entry data response success if yes than make a call to uriResponse to DB
@@ -326,9 +326,9 @@ const processBatchToSaveDataEntries = asynchHandler(async ({ issuerGLN, requestB
   }
 
   utils.logThis(`Save of batchId ${batchId} completed`);
-  //Validate the entries
+  // Validate the entries
   await validate.validateBatchOfEntries(savedUpsertArray);
-  //Publish any entries validated as OK
+  // Publish any entries validated as OK
   const publishCount = await publishValidatedEntries(batchId);
   utils.logThis(`${publishCount[0].entriesPublishedCount} entries were published`);
 });
@@ -342,4 +342,3 @@ const makeDBReqForDataURIResponses = async (incomingResolverResponse) => {
   }
   return false;
 };
-

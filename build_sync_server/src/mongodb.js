@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-unresolved
 const { MongoClient } = require('mongodb');
 const crypto = require('crypto');
 const utils = require('./resolverUtils');

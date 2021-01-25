@@ -12,20 +12,6 @@ services:
     networks:
       - resolver-internal-network
 
-  resolver-sql-server:
-    build: './resolver_sql_server'
-    container_name: resolver-sql-server
-    ports:
-      - "1433:1433"
-    volumes:
-      - resolver-sql-server-volume-db-data:/var/opt/mssql/data
-      - resolver-sql-server-volume-db-log:/var/opt/mssql/log
-      - resolver-sql-server-volume-db-secrets:/var/opt/mssql/secrets
-      - resolver-sql-server-dbbackup-volume:/dbbackup
-    restart: always
-    networks:
-      - resolver-internal-network
-
   digitallink-toolkit-service:
     build: "./digitallink_toolkit_server"
     container_name: digitallink-toolkit-server
@@ -36,6 +22,11 @@ services:
   build-sync-service:
     build: './build_sync_server'
     container_name: build-sync-server
+    environment:
+      - SQLDBCONN_USER=sa
+      - SQLDBCONN_PASSWORD=its@SECR3T!
+      - SQLDBCONN_SERVER=sql-server
+      - SQLDBCONN_DB=gs1-resolver-ce-v2-1-db
     depends_on:
       - resolver-mongo-service
     restart: always
@@ -44,7 +35,12 @@ services:
 
   data-entry-service:
     build: './resolver_data_entry_server'
-    container_name: resolver-data-entry-server
+    container_name: data-entry-server
+    environment:
+      - SQLDBCONN_USER=sa
+      - SQLDBCONN_PASSWORD=its@SECR3T!
+      - SQLDBCONN_SERVER=sql-server
+      - SQLDBCONN_DB=gs1-resolver-ce-v2-1-db
     depends_on:
       - resolver-mongo-service
     restart: always
@@ -71,13 +67,37 @@ services:
     networks:
       - resolver-internal-network
 
+  sql-server:
+    build: './resolver_sql_server'
+    container_name: resolver-sql-server
+    volumes:
+      - sql-server-volume-db-data:/var/opt/mssql/data
+      - sql-server-volume-db-log:/var/opt/mssql/log
+      - sql-server-volume-db-secrets:/var/opt/mssql/secrets
+      - sql-server-dbbackup-volume:/dbbackup
+    environment:
+      DEBIAN_FRONTEND: noninteractive
+      ACCEPT_EULA: Y
+      TZ: Europe/London
+      MSSQL_SA_PASSWORD: its@SECR3T!
+      MSSQL_PID: Developer
+      MSSQL_LCID: 1033
+      MSSQL_MEMORY_LIMIT_MB: 1024
+      MSSQL_AGENT_ENABLED: "true"
+    restart: always
+    ports:
+      - 1433:1433
+    networks:
+      - resolver-internal-network
+
+volumes:
+  sql-server-volume-db-data: {}
+  sql-server-volume-db-log: {}
+  sql-server-volume-db-secrets: {}
+  sql-server-dbbackup-volume: {}
+  resolver-document-volume: {}
+
 networks:
   resolver-internal-network:
     name: resolver-internal-network
 
-volumes:
-  resolver-document-volume: {}
-  resolver-sql-server-volume-db-data: {}
-  resolver-sql-server-volume-db-log: {}
-  resolver-sql-server-volume-db-secrets: {}
-  resolver-sql-server-dbbackup-volume: {}

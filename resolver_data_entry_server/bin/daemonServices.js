@@ -23,6 +23,7 @@ const endOfDay_d = () => {
 const updateLinktypes_d = () => {
   const interval = process.env.LINKTYPES_REFRESH_INTERVAL_MINS || 1440;
   //  const sourceUrl = process.env.LINKTYPES_SOURCE_URL;
+
   global.setImmediate(utils.getLinkTypesFromGS1, interval * 60000);
   utils.logThis(
     `Pull LinkTypes from LinkTypes URL source every ${interval} minutes at ${new Date()

@@ -1,3 +1,6 @@
+/* eslint-disable new-cap */
+/* eslint-disable no-restricted-globals */
+/* eslint-disable no-undef */
 // This script file is to hold any common utility functions used across two or more of the other scripts
 const { response } = require('express');
 const fetch = require('node-fetch');
@@ -64,6 +67,7 @@ const getLinkTypesFromGS1ORG = async (sourceUrl) => {
 const getLinkTypesFromElsewhere = async (sourceUrl) => {
   logThis(`Updating Linktypes from GS1 Experimental at ${sourceUrl}`);
   try {
+    // eslint-disable-next-line no-shadow
     const response = await fetch(sourceUrl, { headers: { Accept: 'application/ld+json' } });
     if (response.status === 200) {
       const data = await response.json();
@@ -112,7 +116,7 @@ const getLinkTypesFromGS1 = async () => {
  */
 const convertAILabelToNumeric = async (aiLabel) => {
   const aiNumeric = aiLabel;
-  const aiLabelLowerCase = aiLabel.toLowerCase();
+  // const aiLabelLowerCase = aiLabel.toLowerCase();
   if (isNaN(aiNumeric)) {
     // const aiEntry = dlToolkit.aitable.find((entry) => entry.shortcode === aiLabelLowerCase);
     // aiNumeric = aiEntry.ai;
@@ -183,7 +187,7 @@ const getDigitalLinkStructure = async (uri) => {
     const result = await fetchResponse.json();
     if (fetchResponse.status === 200) {
       const structuredObject = result.data;
-      officialDefinition.identificationKeyType = Object.keys(structuredObject.identifiers[0])[0];
+      [officialDefinition.identificationKeyType] = Object.keys(structuredObject.identifiers[0]);
       officialDefinition.identificationKey = structuredObject.identifiers[0][officialDefinition.identificationKeyType];
     } else {
       logThis(`getDigitalLinkStructure error: ${result}`);
@@ -219,7 +223,7 @@ const convertPropsToAPIFormat = async (dbObject) => {
 
   const convertedObj = [];
   if (Array.isArray(dbObject)) {
-    dbObject.forEach((item, i) => {
+    dbObject.forEach((item) => {
       const _renameProps = {};
       Object.keys(item).forEach(async (prop) => {
         const _propValue = await retrievePropValueFromAILabel(prop, item[prop]);
