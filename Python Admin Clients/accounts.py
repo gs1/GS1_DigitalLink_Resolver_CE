@@ -22,8 +22,8 @@ check_ssl_certs_flag = False
 if not check_ssl_certs_flag:
     urllib3.disable_warnings()
 
-domain = 'resolver-dv1.gs1.org'
-api_token = 'i1bb39a96-10c5-4639-b1ca-9ee7643fe0ae'
+domain = ''
+api_token = ''
 accounts_list = []
 api_url = 'https://' + domain + '/admin/accounts'
 headers = {'Content-Type': 'application/json',
