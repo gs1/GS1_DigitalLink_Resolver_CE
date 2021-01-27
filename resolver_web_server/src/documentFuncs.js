@@ -252,13 +252,13 @@ const findSuitableResponse = (qualifierPathDoc, requestedAttributes) => {
         const { linkType: reqLinkType } = requestedAttributes;
         const { ianaLanguage: langIanaLanguage, context: langContext } = languageContext;
         return (
-          // eslint-disable-next-line operator-linebreak
-          resLinkType.toLowerCase() === reqLinkType.toLowerCase() &&
-          // eslint-disable-next-line operator-linebreak
-          resIanaLanguage.toLowerCase() === langIanaLanguage.toLowerCase() &&
-          // eslint-disable-next-line operator-linebreak
-          resContext.toLowerCase() === langContext.toLowerCase() &&
-          resMimetype.toLowerCase() === mimeType.toLowerCase()
+            // eslint-disable-next-line operator-linebreak
+            resLinkType.toLowerCase() === reqLinkType.toLowerCase() &&
+            // eslint-disable-next-line operator-linebreak
+            resIanaLanguage.toLowerCase() === langIanaLanguage.toLowerCase() &&
+            // eslint-disable-next-line operator-linebreak
+            resContext.toLowerCase() === langContext.toLowerCase() &&
+            resMimetype.toLowerCase() === mimeType.toLowerCase()
         );
       });
 
@@ -276,13 +276,13 @@ const findSuitableResponse = (qualifierPathDoc, requestedAttributes) => {
       const { linkType: reqLinkType } = requestedAttributes;
       const { ianaLanguage: langIanaLanguage, context: langContext } = languageContext;
       return (
-        // eslint-disable-next-line operator-linebreak
-        resLinkType.toLowerCase() === reqLinkType.toLowerCase() &&
-        // eslint-disable-next-line operator-linebreak
-        resIanaLanguage.toLowerCase() === langIanaLanguage.toLowerCase() &&
-        // eslint-disable-next-line operator-linebreak
-        resContext.toLowerCase() === langContext.toLowerCase() &&
-        resDefaultMimeType
+          // eslint-disable-next-line operator-linebreak
+          resLinkType.toLowerCase() === reqLinkType.toLowerCase() &&
+          // eslint-disable-next-line operator-linebreak
+          resIanaLanguage.toLowerCase() === langIanaLanguage.toLowerCase() &&
+          // eslint-disable-next-line operator-linebreak
+          resContext.toLowerCase() === langContext.toLowerCase() &&
+          resDefaultMimeType
       );
     });
 
@@ -306,7 +306,7 @@ const findSuitableResponse = (qualifierPathDoc, requestedAttributes) => {
   // Still no match was found, and that was with trying to match with all the supplied language/contexts.
   // Let's see if we can find a match with just linkType and default ianaLanguage:
   suitableResponse = qualifierPathDoc.responses.find(
-    (response) => response.linkType.toLowerCase() === requestedAttributes.linkType.toLowerCase() && response.defaultIanaLanguage,
+      (response) => response.linkType.toLowerCase() === requestedAttributes.linkType.toLowerCase() && response.defaultIanaLanguage,
   );
 
   if (suitableResponse) {
@@ -325,6 +325,11 @@ const findSuitableResponse = (qualifierPathDoc, requestedAttributes) => {
 
   if (suitableResponse) {
     return suitableResponse;
+  }
+
+  // We're out of options - let's just return the first entry
+  if (qualifierPathDoc.responses.length > 0) {
+    return qualifierPathDoc.responses[0];
   }
 
   // We shouldn't ever be here but this can happen with data issues, so we'll just stop here
