@@ -257,9 +257,11 @@ docker volume rm gs1resolvercommunityeditionv20_resolver-sql-server-dbbackup-vol
 
 If the above volumes are the only ones in your Docker Engine then it's quicker to type:<pre>docker volume ls </pre> to confirm, then to delete all the volumes type:<pre>docker volume prune </pre> 
 
-##Fast Start: Kubernetes (Beta)
+<hr />
 
-#####DISCLAIMER: These Kubernetes YAML scripts are currently under test and experimentation to get the best results. Be careful if you run these scripts on a cloud service as it could cause them to create costly resources. You need to be skilled and experienced with Kubernetes to continue!
+## Fast Start: Kubernetes (Beta)
+
+##### DISCLAIMER: These Kubernetes YAML scripts are currently under test and experimentation to get the best results. Be careful if you run these scripts on a cloud service as it could cause them to create costly resources. You need to be skilled and experienced with Kubernetes to continue! You can also run Kubernetes on your own computer - these scripts have been tested with Docker Desktop for Windows 10 running in 'Kubernetes' mode.
 
 The service is now ready for use with Kubernetes clusters. The container images are now maintained on Docker Hub and
 the supplied YAML files in this repository will get you up and running quickly.
