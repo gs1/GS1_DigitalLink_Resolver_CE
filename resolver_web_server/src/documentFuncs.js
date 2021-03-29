@@ -223,7 +223,7 @@ const findSuitableResponse = (qualifierPathDoc, requestedAttributes) => {
   }
 
   // Do we have a linktype (other than the 'no-linktype' = 'xx' value?) If not let's get the default linktype:
-  if (requestedAttributes.linkType === 'xx') {
+  if (requestedAttributes.linkType === 'gs1:xx') {
     const defaultLinkTypeResponse = qualifierPathDoc.responses.find((response) => response.defaultLinkType);
     if (defaultLinkTypeResponse) {
       requestedAttributes.linkType = defaultLinkTypeResponse.linkType;
@@ -232,7 +232,7 @@ const findSuitableResponse = (qualifierPathDoc, requestedAttributes) => {
       // but the data for this group of responses has no default flag set!
       // In this case we will take the linktype in the first response entry and issue a warning message to stdout.
       requestedAttributes.linkType = qualifierPathDoc.responses[0].linkType;
-      console.log('WARNING No default linktype assigned for qualifier path', qualifierPathDoc, 'so first linktype chosen');
+      console.log('WARNING No default linktype assigned for qualifier path so first linktype chosen:', requestedAttributes.linkType);
     }
   }
 
@@ -251,14 +251,15 @@ const findSuitableResponse = (qualifierPathDoc, requestedAttributes) => {
         // eslint-disable-next-line object-curly-newline
         const { linkType: reqLinkType } = requestedAttributes;
         const { ianaLanguage: langIanaLanguage, context: langContext } = languageContext;
+        // console.log(`DEBUG 1 ==> findSuitableResponse looking for  linktype=${reqLinkType}, lang=${langIanaLanguage}, context=${langContext}, mimeType=${mimeType}`);
         return (
-            // eslint-disable-next-line operator-linebreak
-            resLinkType.toLowerCase() === reqLinkType.toLowerCase() &&
-            // eslint-disable-next-line operator-linebreak
-            resIanaLanguage.toLowerCase() === langIanaLanguage.toLowerCase() &&
-            // eslint-disable-next-line operator-linebreak
-            resContext.toLowerCase() === langContext.toLowerCase() &&
-            resMimetype.toLowerCase() === mimeType.toLowerCase()
+          // eslint-disable-next-line operator-linebreak
+          resLinkType.toLowerCase() === reqLinkType.toLowerCase() &&
+          // eslint-disable-next-line operator-linebreak
+          resIanaLanguage.toLowerCase() === langIanaLanguage.toLowerCase() &&
+          // eslint-disable-next-line operator-linebreak
+          resContext.toLowerCase() === langContext.toLowerCase() &&
+          resMimetype.toLowerCase() === mimeType.toLowerCase()
         );
       });
 
@@ -267,7 +268,7 @@ const findSuitableResponse = (qualifierPathDoc, requestedAttributes) => {
       }
     }
 
-    // OK so no Full match was found, and we tried all the different requested mimeTypes.
+    // OK so NO Full match was found, and we tried all the different requested mimeTypes.
     // Let's see if we can find a match with linkType, ianaLanguage and context with a defaultMimeType flag set:
     suitableResponse = qualifierPathDoc.responses.find((response) => {
       // eslint-disable-next-line object-curly-newline
@@ -275,14 +276,15 @@ const findSuitableResponse = (qualifierPathDoc, requestedAttributes) => {
       // eslint-disable-next-line object-curly-newline
       const { linkType: reqLinkType } = requestedAttributes;
       const { ianaLanguage: langIanaLanguage, context: langContext } = languageContext;
+      // console.log(`DEBUG 2 ==> findSuitableResponse looking for  linktype=${reqLinkType}, lang=${langIanaLanguage}, context=${langContext}`);
       return (
-          // eslint-disable-next-line operator-linebreak
-          resLinkType.toLowerCase() === reqLinkType.toLowerCase() &&
-          // eslint-disable-next-line operator-linebreak
-          resIanaLanguage.toLowerCase() === langIanaLanguage.toLowerCase() &&
-          // eslint-disable-next-line operator-linebreak
-          resContext.toLowerCase() === langContext.toLowerCase() &&
-          resDefaultMimeType
+        // eslint-disable-next-line operator-linebreak
+        resLinkType.toLowerCase() === reqLinkType.toLowerCase() &&
+        // eslint-disable-next-line operator-linebreak
+        resIanaLanguage.toLowerCase() === langIanaLanguage.toLowerCase() &&
+        // eslint-disable-next-line operator-linebreak
+        resContext.toLowerCase() === langContext.toLowerCase() &&
+        resDefaultMimeType
       );
     });
 
@@ -295,7 +297,21 @@ const findSuitableResponse = (qualifierPathDoc, requestedAttributes) => {
       const { linkType: resLinkType, ianaLanguage: resIanaLanguage, defaultContext: resDefaultContext } = response;
       const { linkType: reqLinkType } = requestedAttributes;
       const { ianaLanguage: langIanaLanguage } = languageContext;
+      // console.log(`DEBUG 3 ==> findSuitableResponse looking for  linktype=${reqLinkType}, lang=${langIanaLanguage} and default context`);
       return resLinkType.toLowerCase() === reqLinkType.toLowerCase() && resIanaLanguage.toLowerCase() === langIanaLanguage.toLowerCase() && resDefaultContext;
+    });
+
+    if (suitableResponse) {
+      return suitableResponse;
+    }
+
+    // Still no match was found. Let's see if we can find a match with just linkType and ianaLanguage:
+    suitableResponse = qualifierPathDoc.responses.find((response) => {
+      const { linkType: resLinkType, ianaLanguage: resIanaLanguage } = response;
+      const { linkType: reqLinkType } = requestedAttributes;
+      const { ianaLanguage: langIanaLanguage } = languageContext;
+      // console.log(`DEBUG 4 ==> findSuitableResponse looking for 4linktype=${reqLinkType}, lang=${langIanaLanguage}`);
+      return resLinkType.toLowerCase() === reqLinkType.toLowerCase() && resIanaLanguage.toLowerCase() === langIanaLanguage.toLowerCase();
     });
 
     if (suitableResponse) {
@@ -306,7 +322,7 @@ const findSuitableResponse = (qualifierPathDoc, requestedAttributes) => {
   // Still no match was found, and that was with trying to match with all the supplied language/contexts.
   // Let's see if we can find a match with just linkType and default ianaLanguage:
   suitableResponse = qualifierPathDoc.responses.find(
-      (response) => response.linkType.toLowerCase() === requestedAttributes.linkType.toLowerCase() && response.defaultIanaLanguage,
+    (response) => response.linkType.toLowerCase() === requestedAttributes.linkType.toLowerCase() && response.defaultIanaLanguage,
   );
 
   if (suitableResponse) {
@@ -334,7 +350,7 @@ const findSuitableResponse = (qualifierPathDoc, requestedAttributes) => {
 
   // We shouldn't ever be here but this can happen with data issues, so we'll just stop here
   // and 'undefined' will be returned to the calling function, which will return a 404 NOT FOUND
-  console.log('NO MATCH');
+  // console.log(`DEBUG 8 ==> findSuitableResponse NO MATCH!`);
   return false;
 };
 

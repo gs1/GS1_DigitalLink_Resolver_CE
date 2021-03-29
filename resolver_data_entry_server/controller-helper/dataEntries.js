@@ -59,7 +59,7 @@ const validateResolverEntriesArray_QuickCheck = async (resolverEntriesArray) => 
         // Bad entry found! We'll be sending it back as one of an array of bad entries
         // back to the end user. First, we'll change the numeric identificationKeyType back to its label
         // (e.g. '01' becomes 'gtin').
-        resolverEntry.identificationKeyType = await utils.convertAINumericToLabel(resolverEntry.identificationKeyType);
+        resolverEntry.identificationKeyType = utils.convertAINumericToShortCode(resolverEntry.identificationKeyType);
         // Now we push (add) this bad entry to the bottom of the array.
         // validationResultsArray.push(validateResolverEntry_QuickCheck(resolverEntry));
         validationResultsArray.push(result);
@@ -116,8 +116,12 @@ const validateResolverEntry_QuickCheck = async (resolverEntry) => {
 
     // Validate URI Template variables
     const element = resolverEntry.responses[i];
-    let qualifierPathURIVariables = decodeURI(resolverEntry.qualifierPath) ?? '';
-    let targetURLURIVariables = decodeURI(element.targetUrl) ?? '';
+    // let qualifierPathURIVariables = decodeURI(resolverEntry.qualifierPath) ?? ''; // ES2020 Nullish Coalescing Operator ??
+    const _qualifierPath = decodeURI(resolverEntry.qualifierPath);
+    let qualifierPathURIVariables = _qualifierPath !== null && _qualifierPath !== 0 ? _qualifierPath : '';
+    // let targetURLURIVariables = decodeURI(element.targetUrl) ?? '';
+    const _targetUrl = decodeURI(element.targetUrl);
+    let targetURLURIVariables = _targetUrl !== null && _targetUrl !== 0 ? _targetUrl : '';
     qualifierPathURIVariables = qualifierPathURIVariables.match(/\{.+?\}/g) || [];
     targetURLURIVariables = targetURLURIVariables.match(/\{.+?\}/g) || [];
 

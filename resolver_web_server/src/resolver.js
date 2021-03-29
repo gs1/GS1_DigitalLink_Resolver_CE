@@ -76,18 +76,20 @@ const processSpecificLinkType = (httpRequest, incomingRequestDigitalLinkStructur
     // check status for lincence fee paid or not by seeing active property false or true
     // if active is false means lincence fee not paid by the client so, we need send the 410 http status code with error message "entry gone away"
     if (!qualifierPathDoc.active) {
-      responseFuncs.response_410_Gone_Away_JSON(httpResponse, httpRequest.url, responseDoc.doc, processStartTime).then();
+      responseFuncs.response_410_Gone_Away(httpResponse, identifierKeyType, identifierKey, processStartTime).then();
+      return;
     }
     if (!responseDoc.exact) {
       responseFuncs.response_303_See_Other(httpResponse, httpRequest.url, responseDoc.doc, processStartTime).then();
       return;
     }
 
-    // STEP 2: Find the desired for contexts: linkType, language, context and MimeType
+    // STEP 2: Find the desired response for the four contexts: linkType, language, context/territory and MimeType
     //        linkType, then language (lang), then context, then finally mime_type (document type, eg 'text/html').
     //        This will result in an object with four values - link, fwqs, linktype_uri and title.
 
-    // Get an object with this format: // : {linkType: "", {languageContexts: [{ianaLanguage: "", context: ""], mimeTypes: [""]}}
+    // USe getAttributeFromHTTPHeaders(httpRequest) to get a returned object with this format:
+    // {linkType: "", {languageContexts: [{ianaLanguage: "", context: ""], mimeTypes: [""]}}
     // Real world example where a web browser is sending a request to into resolver:
     // {
     // "linkType":"",
@@ -105,7 +107,6 @@ const processSpecificLinkType = (httpRequest, incomingRequestDigitalLinkStructur
     // }
 
     const requestedAttributes = getAttributeFromHTTPHeaders(httpRequest);
-
     // Now get the linkType from the digital link structure
     // and populate the existing but empty-string property requestedAttributes.linkType
     requestedAttributes.linkType = getRequestLinkType(incomingRequestDigitalLinkStructure);
@@ -380,9 +381,10 @@ const processRequest = (httpRequest, incomingRequestDigitalLinkStructure, resolv
  * @param gcpDoc
  * @param httpResponse
  * @param processStartTime
+ * @param identifierKeyType
  */
-const processGCPRedirect = (httpRequest, gcpDoc, httpResponse, processStartTime) => {
-  const additionalHttpHeaders = { Location: gcpDoc.resolve_url_format + httpRequest.url };
+const processGCPRedirect = (httpRequest, gcpDoc, httpResponse, processStartTime, identifierKeyType) => {
+  const additionalHttpHeaders = { Location: `${gcpDoc.resolve_url_format}/${identifierKeyType}${httpRequest.url}` };
   // Add 'gs1:handledBy' to GCP Redirects as link header
   additionalHttpHeaders.Link = '<linkType>; rel="gs1:handledBy"';
   responseFuncs.resolverHTTPResponse(httpResponse, additionalHttpHeaders, null, 307, processStartTime);

@@ -9,7 +9,7 @@ const getLinkTypes = async () => {
       return await fetchResponse.json();
     }
     return [];
-  } catch {
+  } catch (e) {
     return [];
   }
 };

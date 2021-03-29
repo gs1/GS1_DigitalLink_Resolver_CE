@@ -569,8 +569,9 @@ const run = async () => {
   const fullBuildFlag = String(lastHeardDateTime).includes('2020-01-01');
   if (fullBuildFlag) {
     utils.logThis(`This build sync server '${global.syncId}' has not been heard from before, so a full build of the MongoDB will now commence`);
-    await mongodb.dropCollection('gcp');
-    await mongodb.dropCollection('uri');
+    // DEPRECATED dropCollection() as it can take an existing service off the air needlessly
+    // await mongodb.dropCollection('gcp');
+    // await mongodb.dropCollection('uri');
   } else {
     utils.logThis(`Build: '${global.syncId}' last heard ${lastHeardDateTime} - running 'update' build`);
   }

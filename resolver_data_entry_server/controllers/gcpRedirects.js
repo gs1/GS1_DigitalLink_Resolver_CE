@@ -58,7 +58,7 @@ exports.getSingleGCPRedirect = asynchHandler(async (req, res, next) => {
     return next(new UnAuthRouteAccess('You are not authorize to access this endpoint'));
   }
   const memberGLN = isValidUser[0].member_primary_gln;
-  const idKeyTypeAI = await utils.convertAILabelToNumeric(identificationKeyType);
+  const idKeyTypeAI = utils.convertShortCodeToAINumeric(identificationKeyType);
 
   const gcpSearchResult = await searchGCPRedirectsByGLN(memberGLN, idKeyTypeAI, gcp);
   if (!gcpSearchResult) {
@@ -92,7 +92,7 @@ exports.addNewGCPRedirect = asynchHandler(async (req, res, next) => {
     return next(new UnAuthRouteAccess('You are not authorize to access this endpoint'));
   }
   const issuerGLN = isValidUser[0].member_primary_gln;
-  const idKeyType = await utils.convertAILabelToNumeric(identificationKeyType);
+  const idKeyType = utils.convertShortCodeToAINumeric(identificationKeyType);
   const success = await upsertGCPRedirect({
     issuerGLN,
     identificationKeyType: idKeyType,
@@ -130,7 +130,7 @@ exports.deleteGCPRedirect = asynchHandler(async (req, res, next) => {
     return next(new UnAuthRouteAccess('You are not authorize to access this endpoint'));
   }
   const issuerGLN = isValidUser[0].member_primary_gln;
-  const idKeyType = await utils.convertAILabelToNumeric(identificationKeyType);
+  const idKeyType = utils.convertShortCodeToAINumeric(identificationKeyType);
   const deleteGCPResponse = await removeGCPRedirect({
     issuerGLN,
     identificationKeyType: idKeyType,

@@ -1,0 +1,159 @@
+{
+  "$schema": "http://id.gs1.org/resolverDescriptionFileSchema.json",
+  "description": "The JSON schema for a conformant GS1 resolver description file to be placed at /.well-known/gs1Resolver",
+  "type": "object",
+  "properties": {
+    "name": {
+      "description": "The name of the resolver",
+      "type": "string"
+    },
+    "resolverRoot": {
+      "description": "The root URL of the resolver",
+      "type": "string",
+      "format": "uri"
+    },
+    "supportedLinkType": {
+      "type": "array",
+      "items": {
+        "properties": {
+          "namespace": {
+            "description": "A namespace URI recognised by the resolver",
+            "type": "string",
+            "format": "uri"
+          },
+          "prefix": {
+            "description": "The prefix assigned to this URI for use in CURIEs, including the colon",
+            "type": "string",
+            "pattern": "^[a-zA-Z_][A-Za-z0-9_-]*?:$"
+          }
+        }
+      }
+    },
+    "linkTypeDefaultCanBeAll": {
+      "description": "Boolean flag stating whether the resolver supports the option to make 'all' the default linkType.",
+      "type": "boolean",
+      "default": false
+    },
+    "supportsSemanticInterpretation": {
+      "description": "Boolean flag stating whether the resolver provides a semantic interpretation of request URIs",
+      "type": "boolean",
+      "default": false
+    },
+    "validatesAIcombinations": {
+      "description": "Boolean flag stating whether the resolver validates the combination of AIs according to the GS1 General Specifications",
+      "type": "boolean",
+      "default": false
+    },
+    "supportedContextValuesEnumerated": {
+      "description": "Enumeated list of values for context supported by this resolver",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "supportedContextValuesExternal": {
+      "description": "External lists of supported values for context recognised by this resolver",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nameOfList": {
+            "description": "The name of the list of values",
+            "type": "string"
+          },
+          "url": {
+            "description": "The URL of the external list",
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "supportsLanguageVariants": {
+      "description": "A Boolean value to declare that the resolver may offer different redirections *or content) based on the user language",
+      "type": "boolean",
+      "default": true
+    },
+    "contact": {
+      "description": "Contact details for the resolver operator, uses VCard",
+      "type": "object",
+      "properties": {
+        "fn": {
+          "description": "Full name",
+          "type": "string"
+        },
+        "hasAddress": {
+          "description": "Address info for the resolver operator",
+          "type": "object",
+          "properties": {
+            "streetAddress": {
+              "description": "Street address of hte operator",
+              "type": "string"
+            },
+            "locality": {
+              "description": "locality of the operator",
+              "type": "string"
+            },
+            "region": {
+              "description": "region of the operator",
+              "type": "string"
+            },
+            "postal-code": {
+              "description": "post code of the operator",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "hasTelephone": {
+        "description": "A contact telephone number",
+        "type": "string",
+        "format": "uri"
+      }
+    },
+    "extensionProfile": {
+      "description": "A link to a document that describes any extended key=value pairs supported by the resolver and/or an additional supported compression/decompression capability",
+      "type": "string",
+      "format": "uri"
+    },
+    "dataDump": {
+      "description": "The URL of a complete set of GS1 Digital Link URIs and their associated links available from this resolver",
+      "type": "string",
+      "format": "url"
+    },
+    "supportedPrimaryKeys": {
+      "description": "An array of primary keys supported by the resolver, provided as their numeric AI. The value 'all' indicates that all GS1 primary identification keys are supported",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "all",
+          "01",
+          "8006",
+          "8013",
+          "8010",
+          "410",
+          "411",
+          "412",
+          "413",
+          "414",
+          "415",
+          "416",
+          "8017",
+          "8018",
+          "255",
+          "00",
+          "253",
+          "401",
+          "402",
+          "8003",
+          "8004"
+        ]
+      }
+    }
+  },
+  "required": [
+    "resolverRoot",
+    "supportedPrimaryKeys"
+  ]
+}

@@ -146,7 +146,7 @@ server.listen(port, (err) => {
     console.log('Server listen error:', err);
     return;
   }
-  console.log(`GS1 DigitalLink ID Server is listening on port ${port} in this container`);
+  console.log(`Resolver Web Server is listening on port ${port} in this container`);
 });
 
 /**

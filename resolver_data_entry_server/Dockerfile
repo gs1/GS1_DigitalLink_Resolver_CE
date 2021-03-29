@@ -1,4 +1,4 @@
-FROM node:15.1.0-alpine3.12
+FROM node:15.11.0-alpine3.13
 ENV TZ=Europe/London
 
 # App Insights env config variable (if you wish to use Microsoft Azure App Insights)
@@ -8,9 +8,9 @@ ENV INSTRUMENTATION_KEY=""
 ENV PORT=80
 
 # This API call is where Resolver will request the latest linktypes once every 24 hours
-# For production and stage Resolvers
+# to retrive the official supported linktypes from the GS1 Web Vocabulary
 ENV LINKTYPES_SOURCE_URL="https://www.gs1.org/voc/?show=linktypes"
-ENV LINKTYPES_REFRESH_INTERVAL_MINS=60
+ENV LINKTYPES_REFRESH_INTERVAL_MINS=1440
 
 # This is the Admin auth key for admin API functions (can be any string value)
 ENV ADMIN_AUTH_KEY="MyAdminAuthKey"

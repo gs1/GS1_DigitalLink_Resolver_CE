@@ -1,13 +1,12 @@
-FROM node:15.1.0-alpine3.12
+FROM node:15.11.0-alpine3.13
 
 ENV TZ=Europe/London
-# These two environment variables ensure that the installation of the packages we need is all automatic and doesn't need
-# any interaction from us:
-ENV DEBIAN_FRONTEND=noninteractive
-ENV ACCEPT_EULA=Y
 
 # This MongoDb connection is to the local Mongo database within the cluster
 ENV MONGODBCONN="mongodb://gs1resolver:gs1resolver@resolver-mongo-service"
+
+# Change this fully qualified domain name to match the web domain where you will be hosting the application
+ENV RESOLVER_FQDN="http://localhost"
 
 # SQL Azure database connection variables - DEV only for use on local Docker
 ENV SQLDBCONN_USER="sa"

@@ -50,7 +50,8 @@ const response_200_Page = async (httpResponse, structure, linkSetDocument, quali
 
   try {
     if (jsonOrHtml === 'HTML') {
-      const pageHtml = await readFilePromise(`${__dirname}/../templates/responses/200.html`, 'utf8');
+      // const pageHtml = await readFilePromise(`${__dirname}/../templates/responses/200.html`, 'utf8');
+      const pageHtml = await readFilePromise(`${__dirname}/../public/responses/200.html`, 'utf8');
       jsonLinkSetDocument = pageHtml.replace('{"resolver_document": "here"}', jsonLinkSetDocument);
       additionalHttpHeaders['Content-Type'] = 'text/html';
       resolverHTTPResponse(httpResponse, additionalHttpHeaders, jsonLinkSetDocument, 200, processStartTime);
@@ -100,14 +101,24 @@ const response_404_Not_Found_JSON = async (httpResponse, processStartTime) => {
  * @param processStartTime
  * @returns {Promise<void>}
  */
-
-const response_410_Gone_Away_JSON = async (httpResponse, url, qualifierPathDoc, processStartTime) => {
+// Need to remove JSoN
+const response_410_Gone_Away = async (httpResponse, identifierKeyType, identifierKey, processStartTime) => {
   const additionalHttpHeaders = {
-    // Link: url,
-    // Location: url,
-    'Content-Type': 'application/json',
+    'Content-Type': 'text/html',
   };
-  await resolverHTTPResponse(httpResponse, additionalHttpHeaders, '{ERROR: "Entry Gone Away"}', 410, processStartTime);
+  let html = '';
+  try {
+    // const pageHtml = await readFilePromise(`${__dirname}/../templates/responses/410.html`, 'utf8');
+    const pageHtml = await readFilePromise(`${__dirname}/../public/responses/410.html`, 'utf8');
+    // Look for a specific string literal in the html with this template literals for gs1 key code and value,
+    // and replace them with an appropriate message.
+    html = pageHtml.replace('{"identifierKeyType"}', `${await convertAINumericToLabel(identifierKeyType)} (${identifierKeyType})`);
+    html = html.replace('{"identifierKey"}', identifierKey);
+  } catch (e) {
+    html = `<h2>Entry /${identifierKeyType}/${identifierKey} gone</h2>`;
+  }
+  resolverHTTPResponse(httpResponse, additionalHttpHeaders, html, 410, processStartTime);
+  // await resolverHTTPResponse(httpResponse, additionalHttpHeaders, '{ERROR: "Entry Gone Away"}', 410, processStartTime);
 };
 
 /**
@@ -121,7 +132,8 @@ const response_410_Gone_Away_JSON = async (httpResponse, url, qualifierPathDoc, 
 const response_404_Not_Found_HTML_Page = async (identifierKeyType, identifierKey, httpResponse, processStartTime) => {
   let html = '';
   try {
-    const pageHtml = await readFilePromise(`${__dirname}/../templates/responses/404.html`, 'utf8');
+    // const pageHtml = await readFilePromise(`${__dirname}/../templates/responses/404.html`, 'utf8');
+    const pageHtml = await readFilePromise(`${__dirname}/../public/responses/404.html`, 'utf8');
 
     // Look for a specific string literal in the html with this template literals for gs1 key code and value,
     // and replace them with an appropriate message.
@@ -211,7 +223,7 @@ module.exports = {
   response_303_See_Other,
   response_404_Not_Found_HTML_Page,
   response_404_Not_Found_JSON,
-  response_410_Gone_Away_JSON,
+  response_410_Gone_Away,
   calculateProcessingTime,
   formatRedirectLink,
 };

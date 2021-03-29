@@ -54,7 +54,7 @@ const global_UploadBatchSize = 100; // This shows how many entries are uploaded 
 let global_ResolverEntries = [];
 
 const convertValidationCodeToText = (validationCode) =>
-    Object.keys(global_entryResponseStatusCodes).find((key) => global_entryResponseStatusCodes[key] === parseInt(validationCode));
+  Object.keys(global_entryResponseStatusCodes).find((key) => global_entryResponseStatusCodes[key] === parseInt(validationCode));
 
 /**
  * Allows the use to see the auth key they have typed into the authentication key textbox:
@@ -117,9 +117,9 @@ const readFile = (input) => {
 
         // Set the global_officialGS1Template flag to true if this the official GS1 template spreadsheet
         if (
-            global_data_ExcelWorkBook.Sheets.Instructions !== undefined &&
-            global_data_ExcelWorkBook.Sheets.Instructions.A1 !== undefined &&
-            global_data_ExcelWorkBook.Sheets.Instructions.A1.v !== undefined
+          global_data_ExcelWorkBook.Sheets.Instructions !== undefined &&
+          global_data_ExcelWorkBook.Sheets.Instructions.A1 !== undefined &&
+          global_data_ExcelWorkBook.Sheets.Instructions.A1.v !== undefined
         ) {
           global_officialGS1Template = global_data_ExcelWorkBook.Sheets.Instructions.A1.v === 'GS1Templatev0.2';
         } else {
@@ -385,14 +385,14 @@ const showDataFromCSVFile = (officialExcelSpreadsheetWasSourceFlag) => {
  * @returns {boolean}
  */
 const lineIncludesInternetURIScheme = (dataLine) =>
-    dataLine.includes('http://') || // unencrypted web address
-    dataLine.includes('https://') || // encrypted web address
-    dataLine.includes('ftp://') || // file transfer protocol (file download)
-    dataLine.includes('sftp://') || // secure file transfer protocol (file download)
-    dataLine.includes('rtsp://') || // media streaming protocol
-    dataLine.includes('sip:') || // internet telephone number
-    dataLine.includes('tel:') || // standard telephone number
-    dataLine.includes('mailto:'); // create an email to send
+  dataLine.includes('http://') || // unencrypted web address
+  dataLine.includes('https://') || // encrypted web address
+  dataLine.includes('ftp://') || // file transfer protocol (file download)
+  dataLine.includes('sftp://') || // secure file transfer protocol (file download)
+  dataLine.includes('rtsp://') || // media streaming protocol
+  dataLine.includes('sip:') || // internet telephone number
+  dataLine.includes('tel:') || // standard telephone number
+  dataLine.includes('mailto:'); // create an email to send
 
 /**
  * Populates the list of LinkTypes from an API call to /reference/linktypes
@@ -655,8 +655,8 @@ const buildResolverEntry = (dataColumns, resolverEntry, resolverResponse) => {
           resolverEntry.qualifierPath = `${dataColumnValue.startsWith('/') ? '' : '/'}${dataColumnValue}`;
           break;
 
-          // It is important that cpv, batch_lot and serial are in this order for GTIN, and that
-          // batch_lot and serial can be appended to any existing qualifierPath data:
+        // It is important that cpv, batch_lot and serial are in this order for GTIN, and that
+        // batch_lot and serial can be appended to any existing qualifierPath data:
         case 'cpv':
           if (dataColumnValue.length > 0) {
             resolverEntry.qualifierPath += `/cpv/${dataColumnValue}`;
@@ -675,7 +675,7 @@ const buildResolverEntry = (dataColumns, resolverEntry, resolverResponse) => {
           }
           break;
 
-          // glnx is used by GLN
+        // glnx is used by GLN
         case 'glnx':
           if (dataColumnValue.length > 0) {
             resolverEntry.qualifierPath += `/${dataColumnValue}`;
@@ -767,8 +767,8 @@ const buildResolverEntry = (dataColumns, resolverEntry, resolverResponse) => {
 
 const performResolverEntryCheck = async (resolverEntry, divCheckResults, counter, dataLine, dataOKFlag, resolverResponse) => {
   // Removes any empty cell designators
-  console.log("DEBUG ===> resolverEntry", resolverEntry);
-  console.log("DEBUG ===> resolverResponse", resolverResponse);
+  console.log('DEBUG ===> resolverEntry', resolverEntry);
+  console.log('DEBUG ===> resolverResponse', resolverResponse);
   while (dataLine.includes(global_EMPTYCELL_FLAG)) {
     dataLine = dataLine.replace(global_EMPTYCELL_FLAG, '');
   }
@@ -1014,7 +1014,7 @@ const runDigitalLinkCheck = async (identificationKeyType, identificationKey, qua
     // Add a preceding forward-slash
     uriToTest += `/${qualifierPath}`;
   }
-  console.log("Testing DL with:", uriToTest);
+  console.log('Testing DL with:', uriToTest);
   try {
     const response = await fetch(uriToTest);
     return await response.json();
@@ -1046,12 +1046,12 @@ const groupResolverEntries = async () => {
     // Note: If uploading many thousands of entries, this .some() search will get slower and
     //       slower as the array grows in size:
     if (
-        !groupedResolverEntriesArray.some(
-            (element) =>
-                element.identificationKeyType === resolverEntry.identificationKeyType &&
-                element.identificationKey === resolverEntry.identificationKey &&
-                element.qualifierPath === resolverEntry.qualifierPath,
-        )
+      !groupedResolverEntriesArray.some(
+        (element) =>
+          element.identificationKeyType === resolverEntry.identificationKeyType &&
+          element.identificationKey === resolverEntry.identificationKey &&
+          element.qualifierPath === resolverEntry.qualifierPath,
+      )
     ) {
       // The resolver entry is NOT in the groupedResolverEntriesArray so push it all straight in:
       groupedResolverEntriesArray.push(resolverEntry);
@@ -1059,19 +1059,19 @@ const groupResolverEntries = async () => {
       // search for the entry in groupedResolverEntriesArray and update it.
       for (const i in groupedResolverEntriesArray) {
         if (
-            groupedResolverEntriesArray[i].identificationKeyType === resolverEntry.identificationKeyType &&
-            groupedResolverEntriesArray[i].identificationKey === resolverEntry.identificationKey &&
-            groupedResolverEntriesArray[i].qualifierPath === resolverEntry.qualifierPath
+          groupedResolverEntriesArray[i].identificationKeyType === resolverEntry.identificationKeyType &&
+          groupedResolverEntriesArray[i].identificationKey === resolverEntry.identificationKey &&
+          groupedResolverEntriesArray[i].qualifierPath === resolverEntry.qualifierPath
         ) {
           // Only push the response section into the resolverEntry.response array:
           if (
-              !groupedResolverEntriesArray[i].responses.some(
-                  (element) =>
-                      element.linkType === resolverEntry.responses[0].linkType &&
-                      element.ianaLanguage === resolverEntry.responses[0].ianaLanguage &&
-                      element.context === resolverEntry.responses[0].context &&
-                      element.mimeType === resolverEntry.responses[0].mimeType,
-              )
+            !groupedResolverEntriesArray[i].responses.some(
+              (element) =>
+                element.linkType === resolverEntry.responses[0].linkType &&
+                element.ianaLanguage === resolverEntry.responses[0].ianaLanguage &&
+                element.context === resolverEntry.responses[0].context &&
+                element.mimeType === resolverEntry.responses[0].mimeType,
+            )
           ) {
             groupedResolverEntriesArray[i].responses.push(resolverEntry.responses[0]);
             break;
@@ -1091,7 +1091,7 @@ const imgRotatingCircleGIF = (imgControlId) => {
   rotatingCircleGIF.width = '50';
   rotatingCircleGIF.height = '50';
   rotatingCircleGIF.alt =
-      "Spinning circle indicating 'please wait!'. Attribution: Gray_circles.svg: Nevit Dilmen (talk)derivative work: Nevit Dilmen / CC BY-SA (https://creativecommons.org/licenses/by-sa/3.0)";
+    "Spinning circle indicating 'please wait!'. Attribution: Gray_circles.svg: Nevit Dilmen (talk)derivative work: Nevit Dilmen / CC BY-SA (https://creativecommons.org/licenses/by-sa/3.0)";
   return rotatingCircleGIF;
 };
 
@@ -1157,7 +1157,7 @@ const uploadData = async (authKey) => {
           divUploadResults.innerText = `Uploading ${global_ResolverEntries.length} entries...`;
         } else {
           divUploadResults.innerText = `Uploading batch ${batchUploadCounter} (${Math.round(
-              (batchUploadCounter * global_UploadBatchSize * 100) / global_ResolverEntries.length,
+            (batchUploadCounter * global_UploadBatchSize * 100) / global_ResolverEntries.length,
           )}%) of ${global_ResolverEntries.length} entries...`;
         }
         const results = await uploadToAPI(entriesBatch, authKey);
@@ -1268,12 +1268,12 @@ const displayValidationErrors = () => {
     }
     for (const badEntry of batchEntry.badEntries) {
       divUploadResults.innerHTML += `/${badEntry.identificationKeyType}/${badEntry.identificationKey} error code: ${convertValidationCodeToText(
-          badEntry.validationCode,
+        badEntry.validationCode,
       )} (${badEntry.validationCode})<br />`;
     }
     for (const badEntry of validationErrorArray) {
       divUploadResults.innerHTML += `/${badEntry.identificationKeyType}/${badEntry.identificationKey} error code: ${convertValidationCodeToText(
-          badEntry.validationCode,
+        badEntry.validationCode,
       )} (${badEntry.validationCode})<br />`;
     }
   }

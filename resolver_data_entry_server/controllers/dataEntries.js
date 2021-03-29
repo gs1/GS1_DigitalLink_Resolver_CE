@@ -81,7 +81,7 @@ exports.getURIEntriesUsingIKeyAndGLN = asynchHandler(async (req, res, next) => {
   }
   const issuerGLN = isValidUser[0].member_primary_gln;
   const { identificationKeyType, identificationKey } = req.params;
-  const idKeyTypeAI = await utils.convertAILabelToNumeric(identificationKeyType);
+  const idKeyTypeAI = utils.convertShortCodeToAINumeric(identificationKeyType);
 
   const officialDef = await utils.getDigitalLinkStructure(`/${idKeyTypeAI}/${identificationKey}`);
 
@@ -132,7 +132,7 @@ exports.deleteURIEntriesUsingIKey = asynchHandler(async (req, res, next) => {
   }
   const issuerGLN = isValidUser[0].member_primary_gln;
   const { identificationKeyType, identificationKey } = req.params;
-  const idKeyTypeAI = await utils.convertAILabelToNumeric(identificationKeyType);
+  const idKeyTypeAI = utils.convertShortCodeToAINumeric(identificationKeyType);
   const officialDef = await utils.getDigitalLinkStructure(`/${idKeyTypeAI}/${identificationKey}`);
 
   if (!officialDef.SUCCESS) {

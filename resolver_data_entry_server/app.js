@@ -36,7 +36,7 @@ app.use(helmet(), customContentSecurityPolicy());
 // Handling XSS attacks middleware
 app.use(xssPrevent());
 
-// Prevent http params pollution middleware
+// Prevant http params pollution middleware
 app.use(hpp());
 
 // Set the maximum size limit to 10 MB

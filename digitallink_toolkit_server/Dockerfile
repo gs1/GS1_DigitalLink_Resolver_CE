@@ -1,8 +1,6 @@
-FROM node:15.1.0-alpine3.12
+FROM node:15.11.0-alpine3.13
 
 ENV TZ=Europe/London
-# These two environment variables ensure that the installation of the packages we need is all automatic and doesn't need
-# any interaction from us:
 
 RUN mkdir /app
 COPY package.json /app

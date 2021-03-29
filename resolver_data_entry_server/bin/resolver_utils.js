@@ -5,6 +5,93 @@
 const { response } = require('express');
 const fetch = require('node-fetch');
 
+const aiArray = [
+  {
+    title: 'Serial Shipping Container Code (SSCC) ',
+    label: 'SSCC',
+    shortcode: 'sscc',
+    ai: '00',
+  },
+  {
+    title: 'Global Trade Item Number (GTIN)',
+    label: 'GTIN',
+    shortcode: 'gtin',
+    ai: '01',
+  },
+  {
+    title: 'Global Document Type Identifier (GDTI)',
+    label: 'GDTI',
+    shortcode: 'gdti',
+    ai: '253',
+  },
+  {
+    title: 'Global Coupon Number (GCN)',
+    label: 'GCN',
+    shortcode: 'gcn',
+    ai: '255',
+  },
+  {
+    title: 'Global Identification Number for Consignment (GINC)',
+    label: 'GINC',
+    shortcode: 'ginc',
+    ai: '401',
+  },
+  {
+    title: 'Global Shipment Identification Number (GSIN)',
+    label: 'GSIN',
+    shortcode: 'gsin',
+    ai: '402',
+  },
+  {
+    title: 'Identification of a physical location - Global Location Number',
+    label: 'LOC No',
+    shortcode: 'gln',
+    ai: '414',
+  },
+  {
+    title: 'Global Location Number Extension (GLNX)',
+    label: 'LOC No extension',
+    shortcode: 'glnx',
+    ai: '254',
+  },
+  {
+    title: 'Global Returnable Asset Identifier (GRAI)',
+    label: 'GRAI',
+    shortcode: 'grai',
+    ai: '8003',
+  },
+  {
+    title: 'Global Individual Asset Identifier (GIAI)',
+    label: 'GIAI',
+    shortcode: 'giai',
+    ai: '8004',
+  },
+  {
+    title: 'Identification of an individual trade item piece',
+    label: 'ITIP',
+    shortcode: 'itip',
+    ai: '8006',
+  },
+  {
+    title: 'Component/Part Identifier (CPID)',
+    label: 'CPID',
+    shortcode: 'cpid',
+    ai: '8010',
+  },
+  {
+    title: 'Global Service Relation Number - Provider',
+    label: 'GSRN - PROVIDER',
+    shortcode: 'gsrnp',
+    ai: '8017',
+  },
+  {
+    title: 'Global Service Relation Number - Recipient',
+    label: 'GSRN - RECIPIENT',
+    shortcode: 'gsrn',
+    ai: '8018',
+  },
+];
+
 /**
  * Tests if the language incoming to the API matches the legal set of IANA languages.
  * Note that it must be lowercase - uppercase language alpha2s are not allowed and will return false.
@@ -112,30 +199,13 @@ const getLinkTypesFromGS1 = async () => {
  * Converts a text GS1 Identifier Into its numeric equivalent.
  * If the incoming value is a number, just returns it!
  * @param aiLabel
- * @returns {string}
+ * @returns @returns {*|null}
  */
-const convertAILabelToNumeric = async (aiLabel) => {
+const convertShortCodeToAINumeric = (aiLabel) => {
   const aiNumeric = aiLabel;
-  // const aiLabelLowerCase = aiLabel.toLowerCase();
   if (isNaN(aiNumeric)) {
-    // const aiEntry = dlToolkit.aitable.find((entry) => entry.shortcode === aiLabelLowerCase);
-    // aiNumeric = aiEntry.ai;
-
-    try {
-      const uriToTest = `http://digitallink-toolkit-service/ailookup/${aiLabel}`;
-      const fetchResponse = await fetch(uriToTest);
-      const result = await fetchResponse.json();
-      if (fetchResponse.status === 200) {
-        const aiEntry = result.data;
-        return aiEntry.shortcode;
-      }
-      logThis(`convertAINumericToLabel error: ${result}`);
-      return null;
-    } catch (err) {
-      logThis(`convertAINumericToLabel error: ${err}`);
-      officialDefinition.SUCCESS = false;
-    }
-    return null;
+    const result = aiArray.find((aiEntry) => aiEntry.shortcode === aiLabel);
+    return result.ai ? result.ai : null;
   }
   return aiNumeric;
 };
@@ -143,37 +213,29 @@ const convertAILabelToNumeric = async (aiLabel) => {
 /**
  * Converts a numeric GS1 Identifier Into its label (shortcode) equivalent.
  * If the incoming value is not a number, just returns it!
- * @param aiLabel
- * @returns {string}
+ * @param aiNumeric
+ * @returns {*|null}
  */
-const convertAINumericToLabel = async (aiNumeric) => {
+
+/**
+ * ]
+ * @param aiNumeric
+ * @returns {*|null}
+ */
+const convertAINumericToShortCode = (aiNumeric) => {
   if (!isNaN(aiNumeric)) {
     // const aiEntry = dlToolkit.aitable.find((entry) => entry.ai === aiNumeric);
     // return aiEntry.shortcode;
-
-    try {
-      const uriToTest = `http://digitallink-toolkit-service/ailookup/${aiNumeric}`;
-      const fetchResponse = await fetch(uriToTest);
-      const result = await fetchResponse.json();
-      if (fetchResponse.status === 200) {
-        return result.data;
-      }
-      logThis(`convertAINumericToLabel error: ${result}`);
-      return null;
-    } catch (err) {
-      logThis(`convertAINumericToLabel error: ${err}`);
-      officialDefinition.SUCCESS = false;
-    }
-    return null;
+    const result = aiArray.find((entry) => entry.ai === aiNumeric);
+    return result.shortcode ? result.shortcode : null;
   }
   return aiNumeric;
 };
 
 /**
  * This updated function now calls across to the separate digitallink toolkit server
- * @param identificationKeyType
- * @param identificationKey
  * @returns {Promise<{SUCCESS: boolean, identificationKey: string, identificationKeyType: string}>}
+ * @param uri
  */
 const getDigitalLinkStructure = async (uri) => {
   const officialDefinition = {
@@ -203,10 +265,10 @@ const getDigitalLinkStructure = async (uri) => {
 // Helper function to convert the object key to their camel Case type
 const toCamelCase = (s) => s.replace(/([-_][a-z])/gi, ($1) => $1.toUpperCase().replace('-', '').replace('_', ''));
 
-// Retrieve the Prop value from AI Label e.g  identification_key_type
-const retrievePropValueFromAILabel = async (propName, propValue) => {
+// Get the AI code for the identificationKeyType value
+const retrievePropValueFromAILabel = (propName, propValue) => {
   if (propName === 'identification_key_type') {
-    return convertAINumericToLabel(propValue);
+    return convertShortCodeToAINumeric(propValue);
   }
   return propValue;
 };
@@ -225,8 +287,8 @@ const convertPropsToAPIFormat = async (dbObject) => {
   if (Array.isArray(dbObject)) {
     dbObject.forEach((item) => {
       const _renameProps = {};
-      Object.keys(item).forEach(async (prop) => {
-        const _propValue = await retrievePropValueFromAILabel(prop, item[prop]);
+      Object.keys(item).forEach((prop) => {
+        const _propValue = retrievePropValueFromAILabel(prop, item[prop]);
         const _newProp = defaultKeyValue[prop] || toCamelCase(prop);
         _renameProps[_newProp] = _propValue;
       });
@@ -299,8 +361,8 @@ module.exports = {
   isValidIANALanguage,
   isValidMediaType,
   getDigitalLinkStructure,
-  convertAILabelToNumeric,
-  convertAINumericToLabel,
+  convertShortCodeToAINumeric,
+  convertAINumericToShortCode,
   getLinkTypesFromGS1,
   logThis,
   convertPropsToAPIFormat,

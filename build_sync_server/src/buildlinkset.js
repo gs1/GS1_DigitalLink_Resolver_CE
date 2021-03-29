@@ -190,7 +190,7 @@ const expandLinkType = (linkType) => {
 
 /**
  * Authors the linkset JSON for linkSet's "defaultLink" and optionally
- * defaultLink*" if there is more than one default language.
+ * defaultLinkMulti" if there is more than one default language.
  * @param responses
  * @param linkSet
  */
@@ -225,11 +225,11 @@ const authorLinkSetDefaultLinkType = (responses, linkSet) => {
         title: defaultLinkTypeResponses[0].title,
       };
 
-      // 2. We also create a new 'defaultLink*' entry that is like 'defaultLink' will include languages:
-      linkSet['https://gs1.org/voc/defaultLink*'] = [];
+      // 2. We also create a new 'defaultLinkMulti' entry that is like 'defaultLink' will include languages:
+      linkSet['https://gs1.org/voc/defaultLinkMulti'] = [];
 
       // 3. We create a temporary property storing the linktype - later, in getLinkSetJson(),
-      //   linkSet['https://gs1.org/voc/defaultLink*'] will be populated with the entirety of the array of that
+      //   linkSet['https://gs1.org/voc/defaultLinkMulti'] will be populated with the entirety of the array of that
       //   default linktype which has not be created yet. Finally, this temporary property will be deleted.
       linkSet._temp_default_linkType = expandLinkType(defaultLinkTypeResponses[0].linkType);
     } else {
@@ -271,18 +271,18 @@ const authorLinkSetDefaultLinkType = (responses, linkSet) => {
 };
 
 /**
- * Author the 'https://gs1.org/voc/defaultLink*' entry, a function executed once the linkSet has
- * been fully authored. 'defaultLink*' will have an array matching the array of the default linktype which is
+ * Author the 'https://gs1.org/voc/defaultLinkMulti' entry, a function executed once the linkSet has
+ * been fully authored. 'defaultLinkMulti' will have an array matching the array of the default linktype which is
  * now already authored in the linkSet. However, 'context' is not allowed and, if present, is specifically
- * removed from all elements of the 'defaultLink*' array where present.
+ * removed from all elements of the 'defaultLinkMulti' array where present.
  * @param linkSet
  */
 const authorLinkSetDefaultLinkTypeStar = (linkSet) => {
   if (linkSet._temp_default_linkType) {
-    linkSet['https://gs1.org/voc/defaultLink*'] = linkSet[linkSet._temp_default_linkType];
-    for (const i in linkSet['https://gs1.org/voc/defaultLink*']) {
-      if (linkSet['https://gs1.org/voc/defaultLink*'][i].context) {
-        delete linkSet['https://gs1.org/voc/defaultLink*'][i].context;
+    linkSet['https://gs1.org/voc/defaultLinkMulti'] = linkSet[linkSet._temp_default_linkType];
+    for (const i in linkSet['https://gs1.org/voc/defaultLinkMulti']) {
+      if (linkSet['https://gs1.org/voc/defaultLinkMulti'][i].context) {
+        delete linkSet['https://gs1.org/voc/defaultLinkMulti'][i].context;
       }
     }
 

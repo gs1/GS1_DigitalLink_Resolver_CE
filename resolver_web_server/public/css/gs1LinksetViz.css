@@ -1,0 +1,65 @@
+/* These are just some basic CSS rules to help layout the linkset for easier human-reading
+   Even if used, you're likely to want to do more
+*/
+
+/* All screens */
+
+
+/* Linksets are shown in sections and the DL URI is the header but it doesn't need to look like the big h2 header that it is */
+
+section.lsSection h2.lsSectionHead {
+  font-size:100%;
+}
+
+.error {
+  background-color: red;
+  color: white;
+}
+
+dl.linkList dd {
+  white-space: nowrap;
+  margin-left: .5em;
+}
+
+dl.linkList dd.href, dl.linkList dt.linkType {
+  margin-top:0.5em;
+}
+
+dl.linkList dd {
+  font-size: small;
+}
+
+dl.linkList dd span {
+  display: inline-block;
+  width:7em;
+}
+
+dl.linkList dd span.toTitle {
+  margin-left: 0;
+}
+
+p.metaElement span.metaTitle, h2.lsSectionHead span.metaTitle {
+  width: auto;
+  display: inline;
+}
+
+p.metaElement span.metaValue, h2.lsSectionHead span.metaValue {
+  display: block;
+  margin-left:0.5em;
+  font-size: small;
+}
+
+/* wider screens */
+
+@media screen and (min-width: 600px) {
+  p.metaElement span.metaTitle, h2.lsSectionHead span.metaTitle {
+    width: 11em;
+    display: inline-block;
+  }
+
+  p.metaElement span.metaValue, h2.lsSectionHead span.metaValue {
+    display: inline;
+    margin-left:0;
+    font-size: small;
+  }
+}

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title id="pagetitle">GS1 Digital Link linkset</title>
+    <meta name="viewport" content="width=device-width"/>
+    <script src="/scripts/gs1LinksetViz.js"></script>
+    <script src="/scripts/GS1DigitalLinkToolkit.js"></script>
+    <script src="/scripts/interpretGS1Scan.js"></script>
+    <link rel="stylesheet" href="/css/gs1LinksetViz.css" />
+    <link rel="stylesheet" href="/css/gs1Corporate.css" />
+
+    <script type="application/json" id="resolverDoc">
+        {"resolver_document": "here"}
+    </script>
+
+    <script>
+        window.onload = setup;
+        function setup() {
+            let linkset = JSON.parse(document.getElementById('resolverDoc').innerHTML);
+            let displayElement = document.getElementById('linksetVisualisation');
+            linksetViz(linkset, displayElement);
+            let interpretation = interpretScan(linkset.linkset[0].anchor);
+            let ol = document.createElement('ol');
+            for (i in interpretation.ol) {
+              let li = document.createElement('li');
+              let spanAI = document.createElement('span')
+              spanAI.classList.add('aiLabel');
+              spanAI.appendChild(document.createTextNode(interpretation.ol[i].label));
+              li.appendChild(spanAI);
+              let spanValue = document.createElement('span');
+              spanValue.classList.add('aiValue');
+              spanValue.appendChild(document.createTextNode(interpretation.ol[i].value));
+              li.appendChild(spanValue);
+              ol.appendChild(li);
+            }
+            document.getElementById('gs1Keys').appendChild(ol);
+        }
+    </script>
+</head>
+<body>
+
+<header id="corporateHead">
+    <img src="/images/gs1logo.png" alt="GS1 logo" id="logo"/>
+    <p id="headerTitle">GS1 Resolver</p>
+    <p id="strapline">The Global Language of Business</p>
+</header>
+
+<main id="main">
+    <h1 id="pageH1">Linkset</h1>
+    <section id="linksetVisualisation"></section>
+    <section id="gs1Keys"><h2>GS1 keys</h2></section>
+</main>
+
+<footer class="resFooter">
+    <p>Powered by <a href="https://www.gs1.org/">GS1</a></p>
+</footer>
+
+</body>
+</html>
