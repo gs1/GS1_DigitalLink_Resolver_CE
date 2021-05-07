@@ -12,7 +12,7 @@
     "biguint-format": "^1.0.2",
     "express": "^4.17.1",
     "mongodb": "^3.6.3",
-    "mssql": "^6.2.3",
+    "mssql": "^7.0.0",
     "node-fetch": "^2.6.1"
   },
   "devDependencies": {
