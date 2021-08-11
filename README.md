@@ -4,6 +4,24 @@
 Welcome! The purpose of this repository is to provide you with the ability to build a complete resolver service that will enable you to enter information about GTINs and other GS1 keys
 and resolve (that is, redirect) web clients to their appropriate destinations.
 
+## Overview
+The GS1 Digital Link Standard enables consistent representation of GS1 identification keys
+within web addresses to link to online information and services.
+
+A GS1 Digital Link URI is a Web URI that encodes one or more GS1 Application Identifiers and
+their value(s) according to the structure defined in this standard.
+So, for example, a product barcode (called its 'GTIN') value can be converted into a consistently formatted
+web address which connects that product to online information about it.
+
+GS1 is an organisation that defines a wide range of identifiers that underpin the supply chain and retail industry across the
+world. These are known as 'GS1 Application Identifiers' a
+
+A Resolver, in the context of a GS1 Digital Link, understands HTTPS requests conforming to the
+GS1 Digital Link standard, and resolves - that is, 'smart redirects' - to an onward destination.
+
+
+## Versions
+
 ### Version 2.4 Features
 1. Various bug fixes / code changes from triallists' feedback
 2. Performance improvements to existing code
@@ -33,21 +51,6 @@ and resolve (that is, redirect) web clients to their appropriate destinations.
 5. Lots of optimisations, enhancements and security improvements.   
 6. Optimised for working in Kubernetes clusters - tested on DigitalOcean and Microsoft Azure Kubernetes offerings.
 
-This repository consists of seven applications which work together to provide the resolving service:
-<table border="1">
-<tr><th>Folder Name</th><th>Project</th></tr>
-<tr><td>resolver_data_entry_server</td><td>The Data Entry service <b>dataentry-web-server</b> consisting of an API that provides controlled access to Create, Read, Update and Delete (CRUD) operations on resolver records, along with 
-a web-based example user interface that allows easy data entry of this information (and uses the API to perform its operations). 
-This project uses a SQL Server database to store information</td></tr>
-<tr><td>build_sync_server</td><td>This service runs a 'Build' process once a minute (configurable in Dockerfile) that takes any changes to the date in teh SQL database and builds a document for each GS1 key and value, which will be used by... </td></tr>
-<tr><td>resolver_web_server</td><td>The resolving service <b>resolver-web-server</b> is completely re-written in Node.js for improved performance and scalability which can be used by client applications that supply a GS1 key and value according to the GS1 Digital Link standard. This service performs a high-speed lookup of the specified GS1 key and value, and returns the appropriate redirection where possible.</td></tr>
-<tr><td>resolver_sql_server</td><td>The SQL database service <b>dataentry-sql-server</b> using SQL Server 2017 Express edition (free to use but with 10GB limit) to provide a stable data storage service for the resolver's data-entry needs.</td></tr>
-<tr><td>resolver_mongo_server</td><td>The <b>resolver-mongo-server</b> MongoDB database used by the resolver.</td></tr>
-<tr><td>frontend_proxy_server</td><td>The frontend web server routing traffic securely to the other containers. Using NGINX, this server's config can be adjusted to support load balancing and more,</td></tr>
-<tr><td>digitallink_toolkit_server</td><td>A library server available to all the other container applications that tests incoming data against the official reference implementation of the GS1 Digital Link standard</td></tr>
-</table>
-<hr />
-
 ### Important Notes for existing users of previous versions 1.0 and 1.1
 This is a brand new resolving architecture, not backwards compatible with version 1.0 or 1.1
 as it is updated to reflect big changes to the design and architecture of the service.
@@ -63,6 +66,7 @@ on copying the data from the old SQL format to the new much simpler SQL format. 
 using the older v1.x service and transition to this version as soon as possible.
 <hr />
 
+## Upgrading
 ### Important Notes for existing users of previous version 2.0
 The main upgrade of the service is to resolver_data_entry_server which has been upgraded to support batch
 uploading of data and a validation process which you can optionally harness to check uploaded entries 
@@ -152,6 +156,7 @@ Please refer to the document 'GS1 Resolver - Overview and Architecture.pdf' in t
 repository. This README contains a useful subset of information contained there, but please
 refer to that PDF for more complete reading. 
 
+
 ## Architecture
 
 The community edition of the GS1 Digital Link Resolver is an entirely self-contained set of applications, complete with databases and services for data entry and resolving.
@@ -163,6 +168,22 @@ We chose a Docker-based <i>containerisation</i> or <i>micro-services</i> archite
 * Most cloud computing providers have the ability to host containers easily within their service platforms. 
 
 It is for these reasons that this type of architecture has become so popular.
+
+
+This repository consists of seven applications which work together to provide the resolving service:
+<table border="1">
+<tr><th>Folder Name</th><th>Project</th></tr>
+<tr><td>resolver_data_entry_server</td><td>The Data Entry service <b>dataentry-web-server</b> consisting of an API that provides controlled access to Create, Read, Update and Delete (CRUD) operations on resolver records, along with 
+a web-based example user interface that allows easy data entry of this information (and uses the API to perform its operations). 
+This project uses a SQL Server database to store information</td></tr>
+<tr><td>build_sync_server</td><td>This service runs a 'Build' process once a minute (configurable in Dockerfile) that takes any changes to the data in the SQL database and builds a document for each GS1 key and value, which will be used by... </td></tr>
+<tr><td>resolver_web_server</td><td>The resolving service <b>resolver-web-server</b> is completely re-written in Node.js for improved performance and scalability which can be used by client applications that supply a GS1 key and value according to the GS1 Digital Link standard. This service performs a high-speed lookup of the specified GS1 key and value, and returns the appropriate redirection where possible.</td></tr>
+<tr><td>resolver_sql_server</td><td>The SQL database service <b>dataentry-sql-server</b> using SQL Server 2017 Express edition (free to use but with 10GB limit) to provide a stable data storage service for the resolver's data-entry needs.</td></tr>
+<tr><td>resolver_mongo_server</td><td>The <b>resolver-mongo-server</b> MongoDB database used by the resolver.</td></tr>
+<tr><td>frontend_proxy_server</td><td>The frontend web server routing traffic securely to the other containers. Using NGINX, this server's config can be adjusted to support load balancing and more,</td></tr>
+<tr><td>digitallink_toolkit_server</td><td>A library server available to all the other container applications that tests incoming data against the official reference implementation of the GS1 Digital Link standard</td></tr>
+</table>
+<hr />
 
 ![GS1 Resolver Community Edition v2.0 Architecture](Resolver%20v2.0.jpg)
 
@@ -204,19 +225,17 @@ There are two *not-fully-tested-yet*  backup and restore scripts for the SQL Ser
 
 
 ### How Resolver decides which response to choose
-When you examine Resolver's data structure, you will see that it is defined by seven unique attributes
-Entry:
-1. Identification Key Type (e.g. '01' for GTIN)
-2. Identification Key Value (the GTIN's 14-digit barcode value)
-3. Qualifier Path (often just the root path "/" but GTINs can have CPVs, lot number and serial number in the path)
+When you examine Resolver's data structure, you will see that it is defined by seven unique attributes:
+1. <b>Identification Key Type</b> (e.g. '01' for GTIN)
+2. <b>Identification Key Value</b> (the GTIN's 14-digit barcode value (8-, 12- and 13-digit GTINs are zero-padded to make them 14-digits))
+3. <b>Qualifier Path</b> (often just the root path "/" but GTINs can have CPVs, lot number and serial number in the path, each separated by "/")
+4. <b>LinkType</b> (a word from the GS1 Web Vocabulary describing what sort of information is being requested. e.g. Product Info? User Manual?)
+5. <b>Language</b> (which the information is authored in)
+6. <b>Context</b> (which in Community Edition can be any appropriate data value - in GS1 GO Resolver this is 'territory' auch as 'FR' for France)
+7. <b>MimeType</b> or MediaType (how the information is formatted. e.g. 'text/html', 'application/json')
 
-In Mongo, Identification Key Type and Identification Key Value joined in a URI stem in the "_id" primary index attribute.
-
-For each entry there are one or more Responses, each a unique combination 'the four contexts' which are:
-4. LinkType
-5. Language
-6. Context (which in Community Edition can be any appropriate data value - in GS1 GO Resolver this is 'territory')
-7. MimeType or MediaType 
+In relational data terms, the Identification Key Type, Identification Key Value, and Qualifier Path (1, 2, 3) form an 'entry'
+which can have one or more 'responses' based on unique combinations of LinkType, Language, Context and MimeType (4. 5, 6, 7).
 
 For example, if I was scanning a medicine product because I would like to find the patient information leaflet:
 I want the leaflet (linktype 'gs1:epil') in French (language 'fr') within the legal jurisdiction of Belgium (context 'BE') in PDF format (mimeType 'application/pdf').
@@ -230,7 +249,7 @@ If no default linktype flag is set at all for this entry, the linktype in the fi
 2. Linktype, Language, Context and default mimeType
 3. Linktype, Language and Context
 4. Linktype, Language and default Context
-5. Linktype and Language (<- missing until this fix)
+5. Linktype and Language
 6. Linktype and default Language
 7. Linktype
 8. *FAIL* (404 even though we have an entry as there is nothing we can do. Logically this can only happen if there aren't any responses in the response array).
