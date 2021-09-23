@@ -13,7 +13,9 @@ const findEntryInMongoDB = async (identificationKeyType, identificationKey, coll
   try {
     const mongoConn = await mongoConnection();
     const collection = mongoConn.db('gs1resolver').collection(collectionName);
-    return await collection.findOne({ _id: `/${identificationKeyType}/${identificationKey}` });
+    const result = await collection.findOne({ _id: `/${identificationKeyType}/${identificationKey}` });
+    await mongoConn.close();
+    return result;
   } catch (e) {
     utils.logThis('Error findEntryInMongoDB method of resolverDocumentOps');
     utils.logThis(e);
@@ -32,6 +34,7 @@ const deleteDocumentInMongoDB = async (doc, collectionName) => {
     const mongoConn = await mongoConnection();
     const collection = mongoConn.db('gs1resolver').collection(collectionName);
     const deleteResult = await collection.deleteOne({ _id: doc._id });
+    await mongoConn.close();
     return deleteResult.result.ok === 1; // <- equates to true or false
   } catch (e) {
     utils.logThis('Error deleteDocumentInMongoDB method of resolverDocumentOPs');
@@ -52,6 +55,7 @@ const updateDocumentInMongoDB = async (doc, collectionName) => {
     const db = mongoConn.db('gs1resolver');
     const collection = db.collection(collectionName);
     const updateResult = await collection.replaceOne({ _id: doc._id }, doc, { upsert: true });
+    await mongoConn.close();
     return updateResult.result.ok === 1; // <- equates to true or false
   } catch (e) {
     utils.logThis('Error updateDocumentInMongoDB method of resolverDocumentOps: ');

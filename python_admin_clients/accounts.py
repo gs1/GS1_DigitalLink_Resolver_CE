@@ -22,7 +22,7 @@ check_ssl_certs_flag = False
 if not check_ssl_certs_flag:
     urllib3.disable_warnings()
 
-domain = 'localhost'  # change when you host your Resolver on a given domain
+domain = 'resolver-dv1.gs1.org'  # change when you host your Resolver on a given domain
 api_token = 'MyAdminAuthKey' # this is set in environment variable 'ADMIN_AUTH_KEY' in resolver_data_entry_server/Dockerfile
 accounts_list = []
 api_url = 'https://' + domain + '/admin/accounts'

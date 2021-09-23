@@ -1,4 +1,4 @@
-FROM node:15.11.0-alpine3.13
+FROM node:16-alpine3.14
 
 ENV TZ=Europe/London
 # These two environment variables must point to the K8s DNS Service name for Mongo and Build Dync servers
@@ -15,7 +15,7 @@ COPY package.json /resolver
 COPY public /resolver/public
 
 WORKDIR /resolver
-RUN npm install && npm audit fix
+RUN npm install
 
 COPY src /resolver/src
 COPY public /resolver/public

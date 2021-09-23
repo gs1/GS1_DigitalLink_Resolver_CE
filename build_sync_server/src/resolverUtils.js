@@ -27,7 +27,7 @@ const getDigitalLinkStructure = async (uri) => {
       structuredObject = result.data;
       structuredObject.result = 'OK';
     } else {
-      logThis(`getDigitalLinkStructure error: ${result}`);
+      logThis(`getDigitalLinkStructure error: ${JSON.stringify(result.data, null, 2)}`);
     }
     return structuredObject;
   } catch (err) {

@@ -3605,6 +3605,17 @@ class GS1DigitalLinkToolkit {
         regex: '(\\d{13})',
       },
       {
+        title: 'Party Global Location Number (PGLN)',
+        label: 'PARTY',
+        shortcode: 'pgln',
+        ai: '417',
+        format: 'N13',
+        type: 'I',
+        fixedLength: true,
+        checkDigit: 'L',
+        regex: '(\\d{13})',
+      },
+      {
         title: 'Ship to - Deliver to postal code within a single postal authority',
         label: 'SHIP TO POST',
         ai: '420',
@@ -4333,6 +4344,32 @@ class GS1DigitalLinkToolkit {
       },
     ];
 
+    // Element Strings with predefined length using GS1 Application Identifiers, as defined in GS1 Gen Specs - see Figure 7.8.4-2 of GS1 Gen Specs v18 at https://www.gs1.org/docs/barcodes/GS1_General_Specifications.pdf
+    const fixedLengthTable = {
+      '00': 20,
+      '01': 16,
+      '02': 16,
+      '03': 16,
+      '04': 18,
+      11: 8,
+      12: 8,
+      13: 8,
+      14: 8,
+      15: 8,
+      16: 8,
+      17: 8,
+      18: 8,
+      19: 4,
+      20: 4,
+      31: 10,
+      32: 10,
+      33: 10,
+      34: 10,
+      35: 10,
+      36: 10,
+      41: 16,
+    };
+
     // tableP indicates for any initial two digits, what is the total length of the numeric AI key, e.g. "80":4 --> all AI keys beginning with 80 are four digit AI keys, 80xx
     const tableP = {
       '00': 2,
@@ -4363,6 +4400,7 @@ class GS1DigitalLinkToolkit {
       40: 3,
       41: 3,
       42: 3,
+      43: 4,
       70: 4,
       71: 3,
       72: 4,
@@ -4847,6 +4885,7 @@ class GS1DigitalLinkToolkit {
       414: [{ E: 'N', L: '13' }],
       415: [{ E: 'N', L: '13' }],
       416: [{ E: 'N', L: '13' }],
+      417: [{ E: 'N', L: '13' }],
       420: [{ E: 'X', M: '20' }],
       421: [
         { E: 'N', L: '3' },
@@ -5033,6 +5072,7 @@ class GS1DigitalLinkToolkit {
       CD: ['255', '3943'],
     };
 
+    // tableS1 is used for the semantic interpretation and expresses which simple keys or compound keys are instance identifiers (uniquely identifying only one thing globally)
     const tableS1 = {
       '01': { requires: ['21', '235'] },
       '00': { requires: null },
@@ -5044,6 +5084,10 @@ class GS1DigitalLinkToolkit {
       254: { minLength: 14 },
     }; // this is incomplete but sufficient for initial testing
     // TODO extend tableS1 fully.  Format is primary key : null or list of AIs of which one must be specified.
+
+    // pathSequenceConstraints is used to ensure that for those primary identification keys in which multiple key qualifiers may appear in the URI path information, they SHALL appear in the expected order
+    // note that currently only GTIN (01) and ITIP (8006)  have more than one permitted key qualifier
+    const pathSequenceConstraints = { '01': ['22', '10', '21'], 8006: ['22', '10', '21'] };
 
     const stringSemantics = {
       '01': ['gs1:gtin', 'schema:gtin'],
@@ -5069,7 +5113,6 @@ class GS1DigitalLinkToolkit {
       17: ['gs1:expirationDate'],
       7006: ['gs1:firstFreezeDate'],
     };
-
     const dateTimeSecondsSemantics = { 8008: ['gs1:productionDateTime'] };
     const dateTimeMinutesSemantics = { 7003: ['gs1:expirationDateTime'] };
     const dateRangeSemantics = { 7007: ['gs1:harvestDate'] };
@@ -5400,9 +5443,9 @@ class GS1DigitalLinkToolkit {
     const regexSafe64 = new RegExp('^[A-Za-z0-9_-]+$');
 
     const tableOptReverse = {};
-    const tableOptKeys = Object.keys(tableOpt);
-    for (const i in tableOptKeys) {
-      tableOptReverse[JSON.stringify(tableOpt[tableOptKeys[i]].sort())] = tableOptKeys[i];
+    let tableOptKeys = Object.keys(tableOpt);
+    for (let i in tableOptKeys) {
+      tableOptReverse[JSON.stringify(tableOpt[tableOptKeys[i]].slice(0).sort())] = tableOptKeys[i];
     }
 
     const aiRegex = {};
@@ -5410,9 +5453,9 @@ class GS1DigitalLinkToolkit {
     const aiQualifiers = {};
     const aiCheckDigitPosition = {};
 
-    for (const a in aitable) {
+    for (let a in aitable) {
       if (aitable[a] !== undefined) {
-        aiRegex[aitable[a].ai] = new RegExp(`^${aitable[a].regex}$`);
+        aiRegex[aitable[a].ai] = new RegExp('^' + aitable[a].regex + '$');
 
         if (aitable[a].shortcode !== undefined) {
           aiShortCode[aitable[a].ai] = aitable[a].shortcode;
@@ -5448,6 +5491,18 @@ class GS1DigitalLinkToolkit {
       return ai.fixedLength == false;
     }
 
+    function getMatchesKeyword(keyword) {
+      return function (ai) {
+        return ai.title.indexOf(keyword) > -1;
+      };
+    }
+
+    function getMatchesAI(num) {
+      return function (el) {
+        return el.ai == num;
+      };
+    }
+
     function byLength(length) {
       return function (element) {
         return element.ai.length == length;
@@ -5455,8 +5510,8 @@ class GS1DigitalLinkToolkit {
     }
 
     function getAIs(list) {
-      const rv = [];
-      for (const i in list) {
+      let rv = [];
+      for (let i in list) {
         rv.push(list[i].ai);
       }
       return rv;
@@ -5469,33 +5524,33 @@ class GS1DigitalLinkToolkit {
     const variableLength = aitable.filter(getVariableLength);
 
     const identifierMap = {};
-    for (const i in identifiers) {
+    for (let i in identifiers) {
       identifierMap[identifiers[i].ai] = identifiers[i];
     }
 
     const qualifierMap = {};
-    for (const q in qualifiers) {
+    for (let q in qualifiers) {
       if (qualifiers[q] !== undefined) {
         qualifierMap[qualifiers[q].ai] = qualifiers[q];
       }
     }
 
     const attributeMap = {};
-    for (const a in dataAttributes) {
+    for (let a in dataAttributes) {
       if (dataAttributes[a] !== undefined) {
         attributeMap[dataAttributes[a].ai] = dataAttributes[a];
       }
     }
 
     const fixedLengthMap = {};
-    for (const f in fixedLength) {
+    for (let f in fixedLength) {
       if (fixedLength[f] !== undefined) {
         fixedLengthMap[fixedLength[f].ai] = fixedLength[f];
       }
     }
 
     const variableLengthMap = {};
-    for (const v in variableLength) {
+    for (let v in variableLength) {
       if (variableLength[v] !== undefined) {
         variableLengthMap[variableLength[v].ai] = variableLength[v];
       }
@@ -5508,8 +5563,166 @@ class GS1DigitalLinkToolkit {
     aiMaps.fixedLength = Object.keys(fixedLengthMap);
     aiMaps.variableLength = Object.keys(variableLengthMap);
 
+    // TODO - not yet making checks on invalid and mandatory associations of GS1 Application Identifiers
+
+    // from GS1 Gen Specs Figure 4.14.1-1. Invalid pairs of element strings
+    // this table is symmetrical
+    const invalidAssociations = [
+      {
+        rule: 'All occurrences of GTIN SHALL have one value.  It is for example not allowed to include GTINs of other packaging levels.',
+        condition1: '01',
+        condition2: ['01'],
+      },
+      {
+        rule:
+          'GTIN of contained trade items is intended to list the trade items contained in a logistic unit, and SHALL NOT be used to identify the contents of a trade item',
+        condition1: '02',
+        condition2: ['01'],
+      },
+      {
+        rule: 'The count of units contained SHALL only be used with GTIN of contained trade items.',
+        condition1: '37',
+        condition2: ['01'],
+      },
+      { rule: 'A trade item SHALL NOT be identified as a coupon.', condition1: '255', condition2: ['01'] },
+      {
+        rule: 'Only one ship to postal code SHALL be applied on the same physical entity',
+        condition1: '420',
+        condition2: ['421'],
+      },
+      {
+        rule:
+          'Country of origin, initial processing, processing, or disassembly SHALL NOT be used in combination with country of full porcessing, since this would lead to ambiguous data.',
+        condition1: '426',
+        condition2: ['422', '423', '424', '425'],
+      },
+      {
+        rule: 'The element strings coupon value, percentage discount of a coupon and loyalty points of a coupon SHALL NOT be applied in combination.',
+        condition1: '390d',
+        condition2: ['394d', '8111'],
+      },
+      {
+        rule: 'Only one amount patable element string SHALL be applied on a payment slip.',
+        condition1: '391d',
+        condition2: ['390d'],
+      },
+      {
+        rule: 'Only one amount payable element string SHALL be applied on a variable measure trade item.',
+        condition1: '392d',
+        condition2: ['393d'],
+      },
+      {
+        rule: 'The element strings percentage discount of a coupon and the loyalty points of a coupon SHALL NOT be applied in combination.',
+        condition1: '394d',
+        condition2: ['8111'],
+      },
+      {
+        rule:
+          'The GTIN SHALL NOT be used in combination with the identification of an individual trade item piece.  The GTIN of the trade item to which the individual trade item piece belongs is contained in the element string',
+        condition1: '8006',
+        condition2: ['01'],
+      },
+      {
+        rule:
+          'Only one Global Service Relation Number (recipient of provider) SHALL be applied at one time for identification of an individual in a given service relationship',
+        condition1: '8018',
+        condition2: ['8017'],
+      },
+    ];
+
+    // need to also have mandatory association table and forbidden association table from GS1 Gen Specs
+
+    // from Figure 4.14.2-1. Mandatory association of element strings
+    // this table is not symmetrical - it's one-way, given condition, require OR, AND, XOR to be satisfied where specified
+    const mandatoryAssociations = [
+      {
+        designation: 'GTIN of a variable measure trade item scanned at POS',
+        rule:
+          'The GTIN of a variable measure trade item scanned at POS SHALL occur in combination with: * variable count of items; or * a trade measure ; Note: Master data will be needed to determine whether the GTIN represents a variable measure trade item scanned at POS. Also see the note below this table.',
+        condition: ['01'],
+        conditionN1: '0',
+        OR: ['30', '3d{3}'],
+      },
+
+      {
+        designation: 'GTIN of a variable measure trade item not scanned at POS',
+        rule:
+          "The GTIN of a variable measure trade item not scanned at POS SHALL occur in combination with: * variable count of items; or * a trade measure; or * the dimensions of a roll product. Note: The first position of the GTIN is '9' for such trade items. Also see the note below this table.",
+        condition: ['01', '02'],
+        conditionN1: '9',
+        OR: ['30', '3d{3}', '8001'],
+      },
+      {
+        designation: 'GTIN of a custom trade item.',
+        rule:
+          "The GTIN of a custom trade item SHALL be used in combination with the Made-to-Order variation number. Note: The first position of the GTIN is '9' for such trade items.",
+        condition: ['01'],
+        conditionN1: '9',
+        EXACTLY: ['242'],
+      },
+
+      {
+        designation: 'GTIN of contained trade items',
+        rule: 'The GTIN of contained trade items SHALL occur in combination with an SSCC and the count of the trade items.',
+        condition: ['02'],
+        AND: ['00', '37'],
+      },
+      {
+        designation: 'Batch/lot number',
+        rule:
+          'Batch/lot number SHALL occur in combination with: * a GTIN; or * a GTIN of contained trade items; or * the identification of an individual trade item piece.',
+        condition: ['10'],
+        XOR: ['01', '02', '8006'],
+      },
+      {
+        designation: 'Production date, packaging date, best before date, sell by date, expiration date (of a trade item)',
+        rule: 'These dates SHALL occur in combination with: * a GTIN; or * a GTIN of contained trade items; or * the identification of an individual trade item piece.',
+        condition: ['11', '13', '15', '16', '17'],
+        XOR: ['01', '02', '8006'],
+      },
+
+      {
+        designation: 'Due date',
+        rule: 'The due date SHALL occur in combination with the payment slip reference number and the GLN of the invoicing party',
+        condition: ['12'],
+        AND: ['8020', '415'],
+      },
+
+      {
+        designation: 'Expiration date (of a coupon)',
+        rule: 'The expiration date of a coupon SHALL occur in combination with the GCN.',
+        condition: ['17'],
+        EXACTLY: ['255'],
+      },
+
+      { designation: '', rule: '', condition: ['20'], XOR: ['01', '02', '8006'] },
+      { designation: '', rule: '', condition: ['21'], XOR: ['01', '8006'] },
+
+      { designation: '', rule: '', condition: ['22'], EXACTLY: ['01'] },
+      { designation: '', rule: '', condition: ['240'], XOR: ['01', '02', '8006'] },
+      { designation: '', rule: '', condition: ['241'], XOR: ['01', '02', '8006'] },
+
+      // *** 242 rule has N1=9 condition on 01,02,8006
+
+      { designation: '', rule: '', condition: ['243'], EXACTLY: ['01'] },
+
+      { designation: '', rule: '', condition: ['250'], AND: ['21'], XOR: ['01', '8006'] },
+
+      { designation: '', rule: '', condition: ['251'], XOR: ['01', '8006'] },
+
+      { designation: '', rule: '', condition: ['254'], EXACTLY: ['414'] },
+
+      { designation: '', rule: '', condition: ['30'], XOR: ['01', '02'] },
+      { designation: '', rule: '', condition: ['3d{3}'], XOR: ['01', '02'] },
+      { designation: '', rule: '', condition: ['3d{3}'], OR: ['00', '01'] },
+      { designation: '', rule: '', condition: ['337d'], EXACTLY: ['01'] },
+      { designation: '', rule: '', condition: ['37'], EXACTLY: ['02'] },
+      { designation: '', rule: '', condition: ['390d'], AND: ['8020', '415'] },
+      { designation: '', rule: '', condition: ['390d'], EXACTLY: ['255'] },
+    ];
+
     const shortCodeToNumeric = {};
-    for (const key in aiShortCode) {
+    for (let key in aiShortCode) {
       shortCodeToNumeric[aiShortCode[key]] = key;
     }
 
@@ -5530,6 +5743,7 @@ class GS1DigitalLinkToolkit {
     this.tableS1 = tableS1;
     this.classSemantics = classSemantics;
     this.stringSemantics = stringSemantics;
+    this.pathSequenceConstraints = pathSequenceConstraints;
     this.dateSemantics = dateSemantics;
     this.dateTimeSecondsSemantics = dateTimeSecondsSemantics;
     this.dateTimeMinutesSemantics = dateTimeMinutesSemantics;
@@ -5561,6 +5775,7 @@ class GS1DigitalLinkToolkit {
   // e.g. calculateCheckDigit('01','01234567890128');
   calculateCheckDigit(ai, gs1IDValue) {
     let counter = 0;
+    let reversed = '';
     let total = 0;
     let l;
     if (this.aiCheckDigitPosition[ai] == 'L') {
@@ -5570,7 +5785,7 @@ class GS1DigitalLinkToolkit {
     }
     let multiplier;
     for (let i = l - 2; i >= 0; i--) {
-      const d = gs1IDValue.substring(i, i + 1);
+      let d = gs1IDValue.substring(i, i + 1);
       if (counter % 2 == 0) {
         multiplier = 3;
       } else {
@@ -5579,7 +5794,7 @@ class GS1DigitalLinkToolkit {
       total += d * multiplier;
       counter++;
     }
-    const expectedCheckDigit = (10 - (total % 10)) % 10;
+    let expectedCheckDigit = (10 - (total % 10)) % 10;
     return expectedCheckDigit;
   }
 
@@ -5588,7 +5803,7 @@ class GS1DigitalLinkToolkit {
   // e.g. verifyCheckDigit('01','01234567890128');
   verifyCheckDigit(ai, gs1IDValue) {
     let expectedCheckDigit;
-    const rv = true;
+    let rv = true;
 
     let checkDigitPosition = this.aiCheckDigitPosition[ai];
     if (checkDigitPosition !== undefined) {
@@ -5598,11 +5813,19 @@ class GS1DigitalLinkToolkit {
       } else {
         checkDigitPosition = parseInt(checkDigitPosition);
       }
-      const actualCheckDigit = parseInt(gs1IDValue.charAt(checkDigitPosition - 1));
+      let actualCheckDigit = parseInt(gs1IDValue.charAt(checkDigitPosition - 1));
 
       if (actualCheckDigit !== expectedCheckDigit) {
+        rv = false;
         throw new Error(
-          `INVALID CHECK DIGIT:  An invalid check digit was found for the primary identification key (${ai})${gs1IDValue} ; the correct check digit should be ${expectedCheckDigit} at position ${checkDigitPosition}`,
+          'INVALID CHECK DIGIT:  An invalid check digit was found for the primary identification key (' +
+            ai +
+            ')' +
+            gs1IDValue +
+            ' ; the correct check digit should be ' +
+            expectedCheckDigit +
+            ' at position ' +
+            checkDigitPosition,
         );
       }
     }
@@ -5610,24 +5833,29 @@ class GS1DigitalLinkToolkit {
   }
 
   // tests the syntax of a value against the regular expression (expected format)
-  // throws an error when invalid syntax is detected
+  // throws an error when invalid syntax is detected. Allows template variables
+  // to be included that bypasses check - detects this with presence of '{' and '}'.
   // e.g. verifySyntax('01','01234567890128');
   verifySyntax(ai, value) {
+    if (value && value.includes('{') && value.includes('}')) {
+      return;
+    }
+
     if (ai !== null && this.regexAllNum.test(ai)) {
       if (!this.aiRegex[ai].test(value)) {
-        throw `SYNTAX ERROR: invalid syntax for value of (${ai})${value}`;
+        throw 'SYNTAX ERROR: invalid syntax for value of (' + ai + ')' + value;
       }
     }
   }
 
   // method to percent-encode all reserved characters mentioned in the GS1 Digital Link standard
   percentEncode(input) {
-    const charsToEscape = "#/%&+,!()*':;<=>?";
-    const escaped = [];
+    let charsToEscape = "#/%&+,!()*':;<=>?";
+    let escaped = [];
     for (let i = 0; i < input.length; i++) {
-      const testChar = input.substr(i, 1);
+      let testChar = input.substr(i, 1);
       if (charsToEscape.indexOf(testChar) > -1) {
-        escaped.push(`%${testChar.charCodeAt(0).toString(16).toUpperCase()}`);
+        escaped.push('%' + testChar.charCodeAt(0).toString(16).toUpperCase());
       } else {
         escaped.push(testChar);
       }
@@ -5650,13 +5878,13 @@ class GS1DigitalLinkToolkit {
   bin2base64(binstr) {
     let rv = '';
     if (binstr.length % 6 > 0) {
-      const numberRightPadZeros = 6 - (binstr.length % 6);
+      let numberRightPadZeros = 6 - (binstr.length % 6);
       binstr += '0'.repeat(numberRightPadZeros);
     }
-    const numChar = binstr.length / 6;
+    let numChar = binstr.length / 6;
     for (let i = 0; i < numChar; i++) {
-      const binFrag = binstr.substr(6 * i, 6);
-      const base64char = this.safeBase64Alphabet.substr(parseInt(binFrag, 2), 1);
+      let binFrag = binstr.substr(6 * i, 6);
+      let base64char = this.safeBase64Alphabet.substr(parseInt(binFrag, 2), 1);
       rv += base64char;
     }
     return rv;
@@ -5664,8 +5892,9 @@ class GS1DigitalLinkToolkit {
 
   base642bin(base64str) {
     let rv = '';
+
     for (let i = 0; i < base64str.length; i++) {
-      const dec = this.safeBase64Alphabet.indexOf(base64str.substr(i, 1));
+      let dec = this.safeBase64Alphabet.indexOf(base64str.substr(i, 1));
       let bin = dec.toString(2);
       if (bin.length < 6) {
         bin = '0'.repeat(6 - bin.length) + bin;
@@ -5677,9 +5906,9 @@ class GS1DigitalLinkToolkit {
   }
 
   canonical(obj) {
-    const rv = {};
-    const sortedKeys = Object.keys(obj).sort();
-    for (const el in sortedKeys) {
+    let rv = {};
+    let sortedKeys = Object.keys(obj).sort();
+    for (let el in sortedKeys) {
       if (obj.hasOwnProperty(sortedKeys[el])) {
         rv[sortedKeys[el]] = obj[sortedKeys[el]];
       }
@@ -5700,122 +5929,125 @@ class GS1DigitalLinkToolkit {
     elementStrings = elementStrings.replace(/^(]C1|]e0|]d2|]Q3)/, '');
 
     // check if the initial AI is enclosed within round brackets
-    const re = new RegExp('^\\((\\d{2,4}?)\\)');
+    let re = new RegExp('^\\((\\d{2,4}?)\\)');
     if (re.test(elementStrings)) {
       // do this if the input is a bracketed element string
-      const r1 = new RegExp('\\((\\d{2,4}?)\\)|([^(]+)', 'g');
-      const aikeys = Object.keys(this.aiRegex);
-      const obj = {};
+      let r1 = new RegExp('\\((\\d{2,4}?)\\)|([^(]+)', 'g');
+      let aikeys = Object.keys(this.aiRegex);
+      let obj = {};
       let k;
       if (r1.test(elementStrings)) {
-        const results = elementStrings.match(r1);
-        for (const a in results) {
+        let results = elementStrings.match(r1);
+        for (let a in results) {
           if (a % 2 == 0) {
-            const l = results[a].length;
+            let l = results[a].length;
             k = results[a].substr(1, l - 2);
-          } else if (aikeys.includes(k)) {
-            if (this.aiRegex[k].test(results[a])) {
-              obj[k] = results[a];
-            } else {
-              throw new Error(`SYNTAX ERROR: invalid syntax for value of (${k}) : ${results[a]}`);
+          } else {
+            if (aikeys.includes(k)) {
+              if (this.aiRegex[k].test(results[a])) {
+                obj[k] = results[a];
+              } else {
+                throw new Error('SYNTAX ERROR: invalid syntax for value of (' + k + ') : ' + results[a]);
+              }
             }
           }
         }
       }
       return obj;
-    }
-    // else do this if the input is an unbracketed element string
-    // changed logic here to make use of fixedLengthTable and flowchart from GenSpecs
+    } else {
+      // else do this if the input is an unbracketed element string
+      // changed logic here to make use of fixedLengthTable and flowchart from GenSpecs
 
-    const elementStringsLength = elementStrings.length;
+      let elementStringsLength = elementStrings.length;
 
-    const fixedLengths = {
-      '00': 20,
-      '01': 16,
-      '02': 16,
-      '03': 16,
-      '04': 18,
-      11: 8,
-      12: 8,
-      13: 8,
-      14: 8,
-      15: 8,
-      16: 8,
-      17: 8,
-      18: 8,
-      19: 8,
-      20: 4,
-      31: 10,
-      32: 10,
-      33: 10,
-      34: 10,
-      35: 10,
-      36: 10,
-      41: 16,
-    };
-    const fixedLengthAIs = Object.keys(fixedLengths);
-    const gs = String.fromCharCode(29);
-    let cursor = 0;
-    const buffer = [];
+      const fixedLengths = {
+        '00': 20,
+        '01': 16,
+        '02': 16,
+        '03': 16,
+        '04': 18,
+        11: 8,
+        12: 8,
+        13: 8,
+        14: 8,
+        15: 8,
+        16: 8,
+        17: 8,
+        18: 8,
+        19: 8,
+        20: 4,
+        31: 10,
+        32: 10,
+        33: 10,
+        34: 10,
+        35: 10,
+        36: 10,
+        41: 16,
+      };
+      const fixedLengthAIs = Object.keys(fixedLengths);
+      const gs = String.fromCharCode(29);
+      let cursor = 0;
+      let buffer = [];
 
-    // is any data present?
+      // is any data present?
 
-    do {
-      // are the first two digits in table of fixedLengths
-      const firstTwoDigits = elementStrings.substr(cursor, 2);
+      do {
+        // are the first two digits in table of fixedLengths
+        let firstTwoDigits = elementStrings.substr(cursor, 2);
 
-      if (fixedLengthAIs.indexOf(firstTwoDigits) > -1) {
-        // the first two digits are within the array of GS1 Application Identifiers of defined fixed length
+        if (fixedLengthAIs.indexOf(firstTwoDigits) > -1) {
+          // the first two digits are within the array of GS1 Application Identifiers of defined fixed length
 
-        // extract the AI and value to the buffer
-        const l = fixedLengths[firstTwoDigits];
-        buffer.push(elementStrings.substr(cursor, l));
-        cursor += l;
-
-        // if the next character is the group separator, move past it
-        if (elementStrings.substr(cursor, 1) == gs) {
-          cursor++;
-        }
-      } else {
-        // the first two digits are not within the array of GS1 Application Identifiers of defined fixed length
-
-        // if string contains group separator
-        const gsloc = elementStrings.substr(cursor).indexOf(gs);
-        if (gsloc > -1) {
-          // extract the AI and value up to the group separator to the buffer
-          buffer.push(elementStrings.substr(cursor).substr(0, gsloc));
-          cursor += gsloc;
-          cursor++;
-        } else {
           // extract the AI and value to the buffer
-          buffer.push(elementStrings.substr(cursor));
-          cursor = elementStringsLength;
+          let l = fixedLengths[firstTwoDigits];
+          buffer.push(elementStrings.substr(cursor, l));
+          cursor += l;
+
+          // if the next character is the group separator, move past it
+          if (elementStrings.substr(cursor, 1) == gs) {
+            cursor++;
+          }
+        } else {
+          // the first two digits are not within the array of GS1 Application Identifiers of defined fixed length
+
+          // if string contains group separator
+          let gsloc = elementStrings.substr(cursor).indexOf(gs);
+          if (gsloc > -1) {
+            // extract the AI and value up to the group separator to the buffer
+            buffer.push(elementStrings.substr(cursor).substr(0, gsloc));
+            cursor += gsloc;
+            cursor++;
+          } else {
+            // extract the AI and value to the buffer
+            buffer.push(elementStrings.substr(cursor));
+            cursor = elementStringsLength;
+          }
+        }
+      } while (cursor < elementStringsLength);
+
+      // process the buffer;
+
+      let obj = {};
+      let aiCandidate = '';
+      let matched = false;
+      for (let i = 0; i < buffer.length; i++) {
+        let el = buffer[i];
+
+        for (let k = 2; k <= 4; k++) {
+          aiCandidate = el.substr(0, k);
+          if (this.AIsByLength[k].indexOf(aiCandidate) > -1) {
+            obj[aiCandidate] = el.substr(k);
+            matched = true;
+          }
+        }
+
+        if (!matched) {
+          throw new Error('No matching GS1 AI found for ' + el);
         }
       }
-    } while (cursor < elementStringsLength);
 
-    // process the buffer;
-
-    const obj = {};
-    let aiCandidate = '';
-    let matched = false;
-    for (let i = 0; i < buffer.length; i++) {
-      const el = buffer[i];
-
-      for (let k = 2; k <= 4; k++) {
-        aiCandidate = el.substr(0, k);
-        if (this.AIsByLength[k].indexOf(aiCandidate) > -1) {
-          obj[aiCandidate] = el.substr(k);
-          matched = true;
-        }
-      }
-
-      if (!matched) {
-        throw new Error(`No matching GS1 AI found for ${el}`);
-      }
+      return obj;
     }
-
-    return obj;
   }
 
   // this method converts an associative array of GS1 Application Identifiers and their values into a GS1 Digital Link URI
@@ -5823,23 +6055,27 @@ class GS1DigitalLinkToolkit {
   // set uriStem to a value e.g. 'https://example.org' if you wish to use a specific domain name
   // setting uriStem to null, undefined or "" defaults to 'https://id.gs1.org' as the reference domain
   buildGS1digitalLink(gs1AIarray, useShortText, uriStem, nonGS1keyvaluePairs) {
-    const identifiers = [];
-    const qualifiers = [];
-    const attributes = [];
-    const otherKeys = [];
+    let identifiers = [];
+    let qualifiers = [];
+    let attributes = [];
+    let fixedLengthValues = [];
+    let variableLengthValues = [];
+    let otherKeys = [];
 
+    let valid = true;
     let path = '';
     let queryStringArray = [];
     let queryString = '';
     let webURI = '';
-    const canonicalStem = 'https://id.gs1.org';
+    let canonicalStem = 'https://id.gs1.org';
+    let rv = {};
 
     // Need to remove unwanted trailing slash
     if (uriStem !== undefined && uriStem !== null && uriStem !== '' && uriStem.endsWith('/')) {
       uriStem = uriStem.substr(0, uriStem.length - 1) + path + queryString;
     }
 
-    for (const a in gs1AIarray) {
+    for (let a in gs1AIarray) {
       let other = true;
       if (this.aiMaps.identifiers.includes(a)) {
         identifiers.push(a);
@@ -5854,9 +6090,11 @@ class GS1DigitalLinkToolkit {
         other = false;
       }
       if (this.aiMaps.fixedLength.includes(a)) {
+        fixedLengthValues.push(a);
         other = false;
       }
       if (this.aiMaps.variableLength.includes(a)) {
+        variableLengthValues.push(a);
         other = false;
       }
       if (other) {
@@ -5868,10 +6106,13 @@ class GS1DigitalLinkToolkit {
     // need exactly one identifier key
 
     if (identifiers.length !== 1) {
+      valid = false;
       throw new Error(
-        `The element string should contain exactly one primary identification key - it contained ${identifiers.length} ${JSON.stringify(
-          identifiers,
-        )}; please check for a syntax error`,
+        'The element string should contain exactly one primary identification key - it contained ' +
+          identifiers.length +
+          ' ' +
+          JSON.stringify(identifiers) +
+          '; please check for a syntax error',
       );
     } else {
       this.verifySyntax(identifiers[0], gs1AIarray[identifiers[0]]);
@@ -5881,31 +6122,31 @@ class GS1DigitalLinkToolkit {
       if (useShortText) {
         // Using short text names
         if (this.aiShortCode[identifiers[0]] !== undefined) {
-          path = `/${this.aiShortCode[identifiers[0]]}/${this.percentEncode(gs1AIarray[identifiers[0]])}`;
+          path = '/' + this.aiShortCode[identifiers[0]] + '/' + this.percentEncode(gs1AIarray[identifiers[0]]);
         } else {
-          path = `/${identifiers[0]}/${this.percentEncode(gs1AIarray[identifiers[0]])}`;
+          path = '/' + identifiers[0] + '/' + this.percentEncode(gs1AIarray[identifiers[0]]);
         }
       } else {
         // Using numeric AIs
-        path = `/${identifiers[0]}/${this.percentEncode(gs1AIarray[identifiers[0]])}`;
+        path = '/' + identifiers[0] + '/' + this.percentEncode(gs1AIarray[identifiers[0]]);
       }
 
       // append any data qualifiers in the expected order, as specified in this.aiQualifiers[identifiers[0]]
 
       if (this.aiQualifiers[identifiers[0]] !== undefined) {
-        for (const j in this.aiQualifiers[identifiers[0]]) {
-          const q = this.aiQualifiers[identifiers[0]][j];
+        for (let j in this.aiQualifiers[identifiers[0]]) {
+          let q = this.aiQualifiers[identifiers[0]][j];
           if (qualifiers.includes(q)) {
             if (useShortText) {
               // Using short text names
               if (this.aiShortCode[q] !== undefined) {
-                path += `/${this.aiShortCode[q]}/${this.percentEncode(gs1AIarray[q])}`;
+                path += '/' + this.aiShortCode[q] + '/' + this.percentEncode(gs1AIarray[q]);
               } else {
-                path += `/${q}/${this.percentEncode(gs1AIarray[q])}`;
+                path += '/' + q + '/' + this.percentEncode(gs1AIarray[q]);
               }
             } else {
               // Using numeric AIs
-              path += `/${q}/${this.percentEncode(gs1AIarray[q])}`;
+              path += '/' + q + '/' + this.percentEncode(gs1AIarray[q]);
             }
           }
         }
@@ -5914,22 +6155,22 @@ class GS1DigitalLinkToolkit {
       // if there are any data attributes, we need to add these to the query string
 
       if (attributes.length > 0) {
-        for (const k in attributes) {
-          const a = attributes[k];
+        for (let k in attributes) {
+          let a = attributes[k];
 
           if (useShortText) {
             // Using short text names
             if (this.aiShortCode[a] !== undefined) {
-              queryStringArray.push(`${this.aiShortCode[a]}=${this.percentEncode(gs1AIarray[a])}`);
+              queryStringArray.push(this.aiShortCode[a] + '=' + this.percentEncode(gs1AIarray[a]));
             } else {
-              queryStringArray.push(`${a}=${this.percentEncode(gs1AIarray[a])}`);
+              queryStringArray.push(a + '=' + this.percentEncode(gs1AIarray[a]));
             }
           } else {
             // Using numeric AIs
-            queryStringArray.push(`${a}=${this.percentEncode(gs1AIarray[a])}`);
+            queryStringArray.push(a + '=' + this.percentEncode(gs1AIarray[a]));
           }
         }
-        queryString = `?${queryStringArray.join('&')}`;
+        queryString = '?' + queryStringArray.join('&');
       }
 
       if (uriStem == null || uriStem == '') {
@@ -5940,28 +6181,28 @@ class GS1DigitalLinkToolkit {
       }
 
       if (otherKeys.length > 0) {
-        queryStringArray = [];
-        for (const iok in otherKeys) {
-          queryStringArray.push(`${otherKeys[iok]}=${gs1AIarray[otherKeys[iok]]}`);
+        let queryStringArray = [];
+        for (let iok in otherKeys) {
+          queryStringArray.push(otherKeys[iok] + '=' + gs1AIarray[otherKeys[iok]]);
         }
-        if (queryString === '') {
-          webURI += `?${queryStringArray.join('&')}`;
+        if (queryString == '') {
+          webURI += '?' + queryStringArray.join('&');
         } else {
-          webURI += `&${queryStringArray.join('&')}`;
+          webURI += '&' + queryStringArray.join('&');
         }
       }
 
       if (nonGS1keyvaluePairs !== {} && Object.keys(nonGS1keyvaluePairs).length > 0) {
-        queryStringArray = [];
-        const keys = Object.keys(nonGS1keyvaluePairs);
-        for (const iok in keys) {
-          const key = keys[iok];
-          queryStringArray.push(`${key}=${nonGS1keyvaluePairs[key]}`);
+        let queryStringArray = [];
+        let keys = Object.keys(nonGS1keyvaluePairs);
+        for (let iok in keys) {
+          let key = keys[iok];
+          queryStringArray.push(key + '=' + nonGS1keyvaluePairs[key]);
         }
-        if (queryString === '') {
-          webURI += `?${queryStringArray.join('&')}`;
+        if (queryString == '') {
+          webURI += '?' + queryStringArray.join('&');
         } else {
-          webURI += `&${queryStringArray.join('&')}`;
+          webURI += '&' + queryStringArray.join('&');
         }
       }
     }
@@ -5971,19 +6212,24 @@ class GS1DigitalLinkToolkit {
 
   // new method that converts a flat associative array of GS1 Application Identifiers and their values into a more structured object in which the primary identification key, key qualifiers, data attributes and other key=value pairs from the URI string are clearly identified as such.
   buildStructuredArray(gs1AIarray, otherArray) {
-    const keys = ['identifiers', 'qualifiers', 'dataAttributes'];
-    const map = {};
+    let keys = ['identifiers', 'qualifiers', 'dataAttributes'];
+    let map = {};
     map.identifiers = [];
     map.qualifiers = [];
     map.dataAttributes = [];
     map.other = [];
 
-    for (const a in gs1AIarray) {
-      const b = {};
+    let valid = true;
+    let path = '';
+    let queryStringArray = [];
+    let rv = {};
+
+    for (let a in gs1AIarray) {
+      let b = {};
       b[a] = gs1AIarray[a];
       let other = true;
 
-      for (const k in keys) {
+      for (let k in keys) {
         if (this.aiMaps[keys[k]].includes(a)) {
           map[keys[k]].push(b);
           other = false;
@@ -5995,18 +6241,21 @@ class GS1DigitalLinkToolkit {
       }
     }
 
-    for (const a in otherArray) {
-      const b = {};
+    for (let a in otherArray) {
+      let b = {};
       b[a] = otherArray[a];
       map.other.push(b);
     }
 
     // need exactly one identifier key
     if (map.identifiers.length !== 1) {
+      valid = false;
       throw new Error(
-        `The element string should contain exactly one primary identification key - it contained ${map.identifiers.length} ${JSON.stringify(
-          map.identifiers,
-        )}; please check for a syntax error`,
+        'The element string should contain exactly one primary identification key - it contained ' +
+          map.identifiers.length +
+          ' ' +
+          JSON.stringify(map.identifiers) +
+          '; please check for a syntax error',
       );
     } else {
       this.verifySyntax(map.identifiers[0], gs1AIarray[map.identifiers[0]]);
@@ -6016,58 +6265,62 @@ class GS1DigitalLinkToolkit {
   }
 
   analyseURIsemantics(gs1DigitalLinkURI) {
-    const rv = this.analyseURI(gs1DigitalLinkURI, true);
+    let rv = this.analyseURI(gs1DigitalLinkURI, true);
     let uncompressedDL = gs1DigitalLinkURI;
 
     if (rv.detected == 'fully compressed GS1 Digital Link' || rv.detected == 'partially compressed GS1 Digital Link') {
       uncompressedDL = this.decompressGS1DigitalLink(gs1DigitalLinkURI, false, rv.uriStem);
     }
-    const qpos = uncompressedDL.indexOf('?');
-    const excludeQueryString = uncompressedDL.substr(0, qpos);
 
-    const rv2 = this.analyseURI(excludeQueryString, false);
+    let excludeQueryString = uncompressedDL;
+    let qpos = uncompressedDL.indexOf('?');
+    if (qpos > -1) {
+      excludeQueryString = uncompressedDL.substr(0, qpos);
+    }
 
-    const { identifiers } = rv.structuredOutput;
-    const { qualifiers } = rv.structuredOutput;
-    const { dataAttributes } = rv.structuredOutput;
-    const nonID = {};
-    const elementStrings = {};
-    for (const q in qualifiers) {
-      const k = Object.keys(qualifiers[q]);
-      for (const ki in k) {
+    let rv2 = this.analyseURI(excludeQueryString, false);
+
+    let identifiers = rv.structuredOutput.identifiers;
+    let qualifiers = rv.structuredOutput.qualifiers;
+    let dataAttributes = rv.structuredOutput.dataAttributes;
+    let nonID = {};
+    let elementStrings = {};
+    for (let q in qualifiers) {
+      let k = Object.keys(qualifiers[q]);
+      for (let ki in k) {
         nonID[k[ki]] = qualifiers[q][k[ki]];
         elementStrings[k[ki]] = qualifiers[q][k[ki]];
       }
     }
-    for (const a in dataAttributes) {
-      const m = Object.keys(dataAttributes[a]);
-      for (const ki in m) {
+    for (let a in dataAttributes) {
+      let m = Object.keys(dataAttributes[a]);
+      for (let ki in m) {
         nonID[m[ki]] = dataAttributes[a][m[ki]];
         elementStrings[m[ki]] = dataAttributes[a][m[ki]];
       }
     }
-    for (const i in identifiers) {
-      const k = Object.keys(identifiers[i]);
-      for (const ki in k) {
+    for (let i in identifiers) {
+      let k = Object.keys(identifiers[i]);
+      for (let ki in k) {
         elementStrings[k[ki]] = identifiers[i][k[ki]];
       }
     }
 
     rv.nonID = nonID;
-    const nonIDKeys = Object.keys(rv.nonID);
-    const aiKeys = Object.keys(elementStrings);
+    let nonIDKeys = Object.keys(rv.nonID);
+    let aiKeys = Object.keys(elementStrings);
 
     rv.primaryIdentifierMap = rv.structuredOutput.identifiers[0];
 
-    const pimK = Object.keys(rv.primaryIdentifierMap);
+    let pimK = Object.keys(rv.primaryIdentifierMap);
 
     rv.primaryIdentifier = pimK[0];
 
-    const iiaqK = Object.keys(this.tableS1);
+    let iiaqK = Object.keys(this.tableS1);
     let isInstanceIdentifier = false;
-    const outputObject = {};
+    let outputObject = {};
 
-    const context = {
+    let context = {
       schema: 'http://schema.org/',
       gs1: 'https://gs1.org/voc/',
       rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
@@ -6080,7 +6333,7 @@ class GS1DigitalLinkToolkit {
     };
 
     if (iiaqK.includes(rv.primaryIdentifier)) {
-      const iiaqV = this.tableS1[rv.primaryIdentifier];
+      let iiaqV = this.tableS1[rv.primaryIdentifier];
 
       if (iiaqV.hasOwnProperty('minLength') && iiaqV.minLength !== null) {
         if (rv.primaryIdentifier.length >= iiaqV.minLength) {
@@ -6092,7 +6345,7 @@ class GS1DigitalLinkToolkit {
         if (iiaqV.requires == null) {
           isInstanceIdentifier = true;
         } else {
-          for (const v in iiaqV.requires) {
+          for (let v in iiaqV.requires) {
             if (nonIDKeys.includes(iiaqV.requires[v])) {
               isInstanceIdentifier = true;
             }
@@ -6103,7 +6356,7 @@ class GS1DigitalLinkToolkit {
 
     if (isInstanceIdentifier) {
       outputObject['@id'] = excludeQueryString; // this is now the uncompressed GS1 Digital Link without the query string
-      const osa = [uncompressedDL];
+      let osa = [uncompressedDL];
       if (gs1DigitalLinkURI !== uncompressedDL) {
         osa.push(gs1DigitalLinkURI);
       }
@@ -6116,36 +6369,36 @@ class GS1DigitalLinkToolkit {
 
     rv.isInstanceIdentifier = isInstanceIdentifier;
 
-    const csK = Object.keys(this.classSemantics);
-    const ssK = Object.keys(this.stringSemantics);
-    const qvK = Object.keys(this.quantitativeValueSemantics);
-    const dvK = Object.keys(this.dateSemantics);
-    const dtsvK = Object.keys(this.dateTimeSecondsSemantics);
-    const dtmvK = Object.keys(this.dateTimeMinutesSemantics);
-    const drK = Object.keys(this.dateRangeSemantics);
+    let csK = Object.keys(this.classSemantics);
+    let ssK = Object.keys(this.stringSemantics);
+    let qvK = Object.keys(this.quantitativeValueSemantics);
+    let dvK = Object.keys(this.dateSemantics);
+    let dtsvK = Object.keys(this.dateTimeSecondsSemantics);
+    let dtmvK = Object.keys(this.dateTimeMinutesSemantics);
+    let drK = Object.keys(this.dateRangeSemantics);
 
     // handle AIs for which class semantics are defined
 
     let otype = ['rdfs:Class', 'owl:Class'];
-    for (const i in csK) {
+    for (let i in csK) {
       if (aiKeys.includes(csK[i])) {
-        const c = this.classSemantics[csK[i]];
+        let c = this.classSemantics[csK[i]];
         otype = otype.concat(c);
       }
     }
     outputObject['@type'] = otype;
 
     // walk up the path information
-    const { uriStem } = rv2;
-    const pathComponents = rv2.pathComponents.substr(1).split('/');
+    let uriStem = rv2.uriStem;
+    let pathComponents = rv2.pathComponents.substr(1).split('/');
     if (pathComponents.length > 2 && pathComponents.length % 2 == 0) {
       let l = pathComponents.length - 2;
-      const superClasses = [];
+      let superClasses = [];
       do {
-        const sl = pathComponents.slice(0, l);
-        const superClass = `${uriStem}/${sl.join('/')}`;
+        let sl = pathComponents.slice(0, l);
+        let superClass = uriStem + '/' + sl.join('/');
         superClasses.push({ '@id': superClass });
-        l -= 2;
+        l = l - 2;
       } while (l >= 2);
       if (superClasses.length > 0) {
         outputObject['dcterms:isPartOf'] = superClasses;
@@ -6155,28 +6408,28 @@ class GS1DigitalLinkToolkit {
 
     // handle AIs and predicates that expect a string value
 
-    for (const i in ssK) {
+    for (let i in ssK) {
       if (aiKeys.includes(ssK[i])) {
-        for (const j in this.stringSemantics[ssK[i]]) {
-          const predicate = this.stringSemantics[ssK[i]][j];
-          const value = elementStrings[ssK[i]];
+        for (let j in this.stringSemantics[ssK[i]]) {
+          let predicate = this.stringSemantics[ssK[i]][j];
+          let value = elementStrings[ssK[i]];
           outputObject[predicate] = value;
         }
       }
     }
 
     // handle AIs and predicates that expect a quantitative value
-    for (const i in qvK) {
+    for (let i in qvK) {
       if (aiKeys.includes(qvK[i])) {
-        const predicate = this.quantitativeValueSemantics[qvK[i]].p[0];
-        const { rec20 } = this.quantitativeValueSemantics[qvK[i]];
-        const bareValue = elementStrings[qvK[i]];
-        const fourthDigit = qvK[i].charAt(3);
+        let predicate = this.quantitativeValueSemantics[qvK[i]]['p'][0];
+        let rec20 = this.quantitativeValueSemantics[qvK[i]]['rec20'];
+        let bareValue = elementStrings[qvK[i]];
+        let fourthDigit = qvK[i].charAt(3);
         let value = bareValue;
-        for (let j = 0; j < fourthDigit; j++) {
-          value /= 10;
+        for (let i = 0; i < fourthDigit; i++) {
+          value = value / 10;
         }
-        const qv = {};
+        let qv = {};
         qv['@type'] = 'gs1:QuantitativeValue';
         qv['gs1:unitCode'] = rec20;
         qv['gs1:value'] = value.toString();
@@ -6185,61 +6438,63 @@ class GS1DigitalLinkToolkit {
     }
 
     // handle AIs and predicates that expect a date value
-    for (const i in dvK) {
+    for (let i in dvK) {
       if (aiKeys.includes(dvK[i])) {
-        for (const j in this.dateSemantics[dvK[i]]) {
-          const predicate = this.dateSemantics[dvK[i]][j];
+        for (let j in this.dateSemantics[dvK[i]]) {
+          let predicate = this.dateSemantics[dvK[i]][j];
           context[predicate] = { '@type': 'xsd:date' };
-          const bareValue = elementStrings[dvK[i]];
-          const xsdDateValue = sixDigitToXsdDate(bareValue);
+          let bareValue = elementStrings[dvK[i]];
+          let xsdDateValue = sixDigitToXsdDate(bareValue);
           outputObject[predicate] = xsdDateValue;
         }
       }
     }
 
     // handle AIs and predicates that expect a dateTime value with second precision, e.g. AI 8008
-    for (const i in dtsvK) {
+    for (let i in dtsvK) {
       if (aiKeys.includes(dtsvK[i])) {
-        for (const j in this.dateTimeSecondsSemantics[dtsvK[i]]) {
-          const predicate = this.dateTimeSecondsSemantics[dtsvK[i]][j];
+        for (let j in this.dateTimeSecondsSemantics[dtsvK[i]]) {
+          let predicate = this.dateTimeSecondsSemantics[dtsvK[i]][j];
           context[predicate] = { '@type': 'xsd:dateTime' };
-          const bareValue = elementStrings[dtsvK[i]];
-          const xsdDateTimeValue = maxTwelveDigitToXsdDateTime(bareValue);
+          let bareValue = elementStrings[dtsvK[i]];
+          let xsdDateTimeValue = maxTwelveDigitToXsdDateTime(bareValue);
           outputObject[predicate] = xsdDateTimeValue;
         }
       }
     }
 
     // handle AIs and predicates that expect a dateTime value with minute precision, e.g. AI 7003
-    for (const i in dtmvK) {
+    for (let i in dtmvK) {
       if (aiKeys.includes(dtmvK[i])) {
-        for (const j in this.dateTimeMinutesSemantics[dtmvK[i]]) {
-          const predicate = this.dateTimeMinutesSemantics[dtmvK[i]][j];
+        for (let j in this.dateTimeMinutesSemantics[dtmvK[i]]) {
+          let predicate = this.dateTimeMinutesSemantics[dtmvK[i]][j];
           context[predicate] = { '@type': 'xsd:dateTime' };
-          const bareValue = elementStrings[dtmvK[i]];
-          const xsdDateTimeValue = tenDigitToXsdDateTime(bareValue);
+          let bareValue = elementStrings[dtmvK[i]];
+          let xsdDateTimeValue = tenDigitToXsdDateTime(bareValue);
           outputObject[predicate] = xsdDateTimeValue;
         }
       }
     }
 
     // handle AIs and predicates that expect a date range, e.g. AI 7007
-    for (const i in drK) {
+    for (let i in drK) {
       if (aiKeys.includes(drK[i])) {
-        for (const j in this.dateRangeSemantics[drK[i]]) {
-          const predicate = this.dateRangeSemantics[drK[i]][j];
-          const bareValue = elementStrings[drK[i]];
+        for (let j in this.dateRangeSemantics[drK[i]]) {
+          let predicate = this.dateRangeSemantics[drK[i]][j];
+          let bareValue = elementStrings[drK[i]];
           if (bareValue.length == 6) {
-            const xsdDateValue = sixDigitToXsdDate(bareValue);
+            let xsdDateValue = sixDigitToXsdDate(bareValue);
             context[predicate] = { '@type': 'xsd:dateTime' };
             outputObject[predicate] = xsdDateValue;
-          } else if (bareValue.length == 12) {
-            const xsdStartDateValue = sixDigitToXsdDate(bareValue.substr(0, 6));
-            const xsdEndDateValue = sixDigitToXsdDate(bareValue.substr(6, 6));
-            context[`${predicate}Start`] = { '@type': 'xsd:dateTime' };
-            context[`${predicate}End`] = { '@type': 'xsd:dateTime' };
-            outputObject[`${predicate}Start`] = xsdStartDateValue;
-            outputObject[`${predicate}End`] = xsdEndDateValue;
+          } else {
+            if (bareValue.length == 12) {
+              let xsdStartDateValue = sixDigitToXsdDate(bareValue.substr(0, 6));
+              let xsdEndDateValue = sixDigitToXsdDate(bareValue.substr(6, 6));
+              context[predicate + 'Start'] = { '@type': 'xsd:dateTime' };
+              context[predicate + 'End'] = { '@type': 'xsd:dateTime' };
+              outputObject[predicate + 'Start'] = xsdStartDateValue;
+              outputObject[predicate + 'End'] = xsdEndDateValue;
+            }
           }
         }
       }
@@ -6247,38 +6502,38 @@ class GS1DigitalLinkToolkit {
 
     outputObject['gs1:elementStrings'] = rv.elementStringsOutput;
 
-    rv.semantics = { '@context': context, ...outputObject };
+    rv.semantics = Object.assign({ '@context': context }, outputObject);
 
     return rv.semantics;
 
     function tenDigitToXsdDateTime(tenDigit) {
-      const re = new RegExp('\\d{2}(?:12|11|0\\d)(?:31|30|2\\d|1\\d|0[1-9])(?:0\\d|1\\d|2[0-4])(?:[0-5]\\d)');
+      var re = new RegExp('\\d{2}(?:12|11|0\\d)(?:31|30|2\\d|1\\d|0[1-9])(?:0\\d|1\\d|2[0-4])(?:[0-5]\\d)');
       if (!re.test(tenDigit)) {
         throw new Error('input to date conversion did not match valid YYMMDDhhmm pattern');
       } else {
-        const year = tenDigit.substr(0, 2);
-        const month = tenDigit.substr(2, 2);
-        const day = tenDigit.substr(4, 2);
-        const hour = tenDigit.substr(6, 2);
-        const mins = tenDigit.substr(8, 2);
-        const intendedYear = determineFourDigitYear(year);
+        var year = tenDigit.substr(0, 2);
+        var month = tenDigit.substr(2, 2);
+        var day = tenDigit.substr(4, 2);
+        var hour = tenDigit.substr(6, 2);
+        var mins = tenDigit.substr(8, 2);
+        var intendedYear = determineFourDigitYear(year);
 
-        const intendedDateTime = `${intendedYear}-${month}-${day}T${hour}:${mins}:00`;
+        var intendedDateTime = intendedYear + '-' + month + '-' + day + 'T' + hour + ':' + mins + ':00';
         return intendedDateTime;
       }
     }
 
     function maxTwelveDigitToXsdDateTime(twelveDigit) {
-      const re = new RegExp('\\d{2}(?:12|11|0\\d)(?:31|30|2\\d|1\\d|0[1-9])(?:0\\d|1\\d|2[0-4])(?:[0-5]\\d)?(?:[0-5]\\d)?');
+      var re = new RegExp('\\d{2}(?:12|11|0\\d)(?:31|30|2\\d|1\\d|0[1-9])(?:0\\d|1\\d|2[0-4])(?:[0-5]\\d)?(?:[0-5]\\d)?');
       if (!re.test(twelveDigit)) {
         throw new Error('input to date conversion did not match valid YYMMDDhh[mm][ss] pattern');
       } else {
-        const year = twelveDigit.substr(0, 2);
-        const month = twelveDigit.substr(2, 2);
-        const day = twelveDigit.substr(4, 2);
-        const hour = twelveDigit.substr(6, 2);
-        let min;
-        let sec;
+        var year = twelveDigit.substr(0, 2);
+        var month = twelveDigit.substr(2, 2);
+        var day = twelveDigit.substr(4, 2);
+        var hour = twelveDigit.substr(6, 2);
+        var min;
+        var sec;
         if (twelveDigit.length > 8) {
           min = twelveDigit.substr(8, 2);
         } else {
@@ -6291,47 +6546,49 @@ class GS1DigitalLinkToolkit {
           sec = '00';
         }
 
-        const intendedYear = determineFourDigitYear(year);
+        var intendedYear = determineFourDigitYear(year);
 
-        const intendedDateTime = `${intendedYear}-${month}-${day}T${hour}:${min}:${sec}`;
+        var intendedDateTime = intendedYear + '-' + month + '-' + day + 'T' + hour + ':' + min + ':' + sec;
         return intendedDateTime;
       }
     }
 
     function determineFourDigitYear(year) {
-      const dt = new Date();
-      const currentYear = 1900 + dt.getYear();
-      const currentCentury = `${currentYear}`.substr(0, 2);
-      const difference = year - (currentYear % 100);
-      let intendedYear;
+      var dt = new Date();
+      var currentYear = 1900 + dt.getYear();
+      var currentCentury = ('' + currentYear).substr(0, 2);
+      var difference = year - (currentYear % 100);
+      var intendedYear;
       if (difference >= 51 && difference <= 99) {
         intendedYear = currentCentury - 1 + year;
-      } else if (difference >= -99 && difference <= -50) {
-        intendedYear = currentCentury - -1 + year;
       } else {
-        intendedYear = currentCentury + year;
+        if (difference >= -99 && difference <= -50) {
+          intendedYear = currentCentury - -1 + year;
+        } else {
+          intendedYear = currentCentury + year;
+        }
       }
       return intendedYear;
     }
 
     function sixDigitToXsdDate(sixDigit) {
-      const re = new RegExp('\\d{2}(?:12|11|0\\d)(?:31|30|2\\d|1\\d|0\\d)');
+      var re = new RegExp('\\d{2}(?:12|11|0\\d)(?:31|30|2\\d|1\\d|0\\d)');
       if (!re.test(sixDigit)) {
         throw new Error('input to date conversion did not match valid YYMMDD pattern');
       } else {
-        const year = sixDigit.substr(0, 2);
-        const month = sixDigit.substr(2, 2);
-        const day = sixDigit.substr(4, 2);
+        var year = sixDigit.substr(0, 2);
+        var month = sixDigit.substr(2, 2);
+        var day = sixDigit.substr(4, 2);
 
-        const intendedYear = determineFourDigitYear(year);
+        var intendedYear = determineFourDigitYear(year);
 
-        let lastDay = 31;
-        if (month === '04' || month === '06' || month === '09' || month === '11') {
+        var lastDay = 31;
+        if (month == '04' || month == '06' || month == '09' || month == '11') {
           lastDay = 30;
         }
-        if (month === '02') {
+        if (month == '02') {
           lastDay = 28;
-          if (intendedYear % 400 === 0 || (intendedYear % 4 === 0 && intendedYear % 100 !== 0)) {
+          if (intendedYear % 400 == 0 || (intendedYear % 4 == 0 && !(intendedYear % 100 == 0))) {
             lastDay = 29;
           }
         }
@@ -6340,12 +6597,12 @@ class GS1DigitalLinkToolkit {
           throw new Error('input to date conversion was a YYMMDD pattern with a value of DD too large for MM, e.g. 31st of June, 30th of February');
         }
 
-        let intendedDate;
+        var intendedDate;
 
-        if (day === '00') {
-          intendedDate = `${intendedYear}-${month}-${lastDay}`;
+        if (day == '00') {
+          intendedDate = intendedYear + '-' + month + '-' + lastDay;
         } else {
-          intendedDate = `${intendedYear}-${month}-${day}`;
+          intendedDate = intendedYear + '-' + month + '-' + day;
         }
 
         return intendedDate;
@@ -6354,10 +6611,10 @@ class GS1DigitalLinkToolkit {
   }
 
   analyseURI(gs1DigitalLinkURI, extended) {
-    const rv = {};
+    let rv = {};
 
     rv.fragment = '';
-    const fi = gs1DigitalLinkURI.indexOf('#');
+    let fi = gs1DigitalLinkURI.indexOf('#');
 
     let beforeFragment = gs1DigitalLinkURI;
 
@@ -6369,14 +6626,14 @@ class GS1DigitalLinkToolkit {
     rv.queryString = '';
 
     let beforeQueryString = beforeFragment;
-    const qs = beforeFragment.indexOf('?');
+    let qs = beforeFragment.indexOf('?');
     if (qs > -1) {
       rv.queryString = beforeFragment.substr(1 + qs);
       beforeQueryString = beforeFragment.substr(0, qs);
     }
 
     // disregard any trailing forward slash
-    const bql = beforeQueryString.length;
+    let bql = beforeQueryString.length;
     if (beforeQueryString.substr(bql - 1, 1) == '/') {
       beforeQueryString = beforeQueryString.substr(0, bql - 1);
     }
@@ -6389,37 +6646,42 @@ class GS1DigitalLinkToolkit {
       cursor = 8;
     }
 
-    const protocol = beforeQueryString.substr(0, cursor);
-    const afterProtocol = beforeQueryString.substr(cursor);
+    let protocol = beforeQueryString.substr(0, cursor);
+    let afterProtocol = beforeQueryString.substr(cursor);
 
-    const firstSlashOfAllPath = afterProtocol.indexOf('/');
+    let firstSlashOfAllPath = afterProtocol.indexOf('/');
 
-    const pathInfo = afterProtocol.substr(1 + firstSlashOfAllPath);
+    let pathInfo = afterProtocol.substr(1 + firstSlashOfAllPath);
 
-    rv.uriPathInfo = `/${pathInfo}`;
+    rv.uriPathInfo = '/' + pathInfo;
 
-    const domain = afterProtocol.substr(0, firstSlashOfAllPath);
+    let domain = afterProtocol.substr(0, firstSlashOfAllPath);
 
-    const pathComponents = pathInfo.split('/');
+    let pathComponents = pathInfo.split('/');
 
     // iterate through pathComponents to find the path component corresponding to a primary GS1 ID key
     let relevantPathComponents = [];
     let uriStemPathComponents = [];
-    const pcr = pathComponents.reverse();
+    let pcr = pathComponents.reverse();
+    let pcl = pathComponents.length;
+    let pci = pcl;
     let searching = true;
     let numericPrimaryIdentifier = '';
-    for (const i in pcr) {
+    for (let i in pcr) {
       let numkey = '';
-      const pcc = pcr[i];
+      let pcc = pcr[i];
       if (this.regexAllNum.test(pcc)) {
         numkey = pcc;
-      } else if (this.shortCodeToNumeric.hasOwnProperty(pcc)) {
-        numkey = this.shortCodeToNumeric[pcc];
+      } else {
+        if (this.shortCodeToNumeric.hasOwnProperty(pcc)) {
+          numkey = this.shortCodeToNumeric[pcc];
+        }
       }
 
       if (numkey !== '' && searching) {
         if (this.aiMaps.identifiers.indexOf(numkey) > -1) {
           searching = false;
+          pci = pcl - i;
           numericPrimaryIdentifier = numkey;
           relevantPathComponents = pcr.slice(0, parseInt(i) + 1).reverse();
           uriStemPathComponents = pcr.slice(parseInt(i) + 1).reverse();
@@ -6428,13 +6690,13 @@ class GS1DigitalLinkToolkit {
     }
 
     if (relevantPathComponents.length > 0) {
-      rv.pathComponents = `/${relevantPathComponents.join('/')}`;
+      rv.pathComponents = '/' + relevantPathComponents.join('/');
     } else {
       rv.pathComponents = '';
     }
 
     if (uriStemPathComponents.length > 0) {
-      rv.uriStem = `${protocol + domain}/${uriStemPathComponents.join('/')}`;
+      rv.uriStem = protocol + domain + '/' + uriStemPathComponents.join('/');
     } else {
       rv.uriStem = protocol + domain;
     }
@@ -6443,20 +6705,21 @@ class GS1DigitalLinkToolkit {
     rv.queryString = rv.queryString.replace(new RegExp(';', 'g'), '&');
 
     // process URI path information
-    const pathCandidates = {};
-    const pathElements = pathInfo.split('/');
-    const l = pathElements.length;
+    let pathCandidates = {};
+    // let pathElements = pathInfo.split("/");
+    let pathElements = relevantPathComponents;
+    let l = pathElements.length;
     let pathElementIndex = l - 2;
     while (pathElementIndex >= 0) {
       pathCandidates[pathElements[pathElementIndex]] = this.percentDecode(pathElements[1 + pathElementIndex]);
       pathElementIndex -= 2;
     }
 
-    const queryStringCandidates = {};
+    let queryStringCandidates = {};
     if (rv.queryString !== '') {
-      const pairs = rv.queryString.split('&');
+      let pairs = rv.queryString.split('&');
       for (let i = 0; i < pairs.length; i++) {
-        const p = pairs[i].split('=');
+        let p = pairs[i].split('=');
         if (p[0] !== null && p[1] !== null) {
           if (this.shortCodeToNumeric.hasOwnProperty(p[0])) {
             queryStringCandidates[this.shortCodeToNumeric[p[0]]] = this.percentDecode(p[1]);
@@ -6478,16 +6741,16 @@ class GS1DigitalLinkToolkit {
     rv.structuredOutput = '';
 
     if (relevantPathComponents.length > 0 && relevantPathComponents.length % 2 == 0) {
-      if (this.aiRegex[numericPrimaryIdentifier].test(relevantPathComponents[1])) {
+      if (this.aiRegex[numericPrimaryIdentifier].test(decodeURIComponent(relevantPathComponents[1]))) {
         rv.detected = 'uncompressed GS1 Digital Link';
 
-        rv.uncompressedPath = `/${relevantPathComponents.join('/')}`;
+        rv.uncompressedPath = '/' + relevantPathComponents.join('/');
 
         if (extended) {
-          const extracted = this.extractFromGS1digitalLink(gs1DigitalLinkURI);
-          const gs1AIarray = extracted.GS1;
-          const otherArray = extracted.other;
-          const structuredArray = this.buildStructuredArray(gs1AIarray, otherArray);
+          let extracted = this.extractFromGS1digitalLink(gs1DigitalLinkURI);
+          let gs1AIarray = extracted.GS1;
+          let otherArray = extracted.other;
+          let structuredArray = this.buildStructuredArray(gs1AIarray, otherArray);
           rv.structuredOutput = structuredArray;
           rv.elementStringsOutput = this.gs1digitalLinkToGS1elementStrings(gs1DigitalLinkURI, true);
         }
@@ -6495,16 +6758,16 @@ class GS1DigitalLinkToolkit {
     }
 
     if (relevantPathComponents.length == 3 && this.regexSafe64.test(relevantPathComponents[2])) {
-      if (this.aiRegex[numericPrimaryIdentifier].test(relevantPathComponents[1])) {
+      if (this.aiRegex[numericPrimaryIdentifier].test(decodeURIComponent(relevantPathComponents[1]))) {
         rv.detected = 'partially compressed GS1 Digital Link';
-        rv.uncompressedPath = `/${relevantPathComponents.slice(0, 2).join('/')}`;
+        rv.uncompressedPath = '/' + relevantPathComponents.slice(0, 2).join('/');
         rv.compressedPath = relevantPathComponents[2];
 
         if (extended) {
-          const extracted = this.extractFromCompressedGS1digitalLink(gs1DigitalLinkURI);
-          const gs1AIarray = extracted.GS1;
-          const otherArray = extracted.other;
-          const structuredArray = this.buildStructuredArray(gs1AIarray, otherArray);
+          let extracted = this.extractFromCompressedGS1digitalLink(gs1DigitalLinkURI);
+          let gs1AIarray = extracted.GS1;
+          let otherArray = extracted.other;
+          let structuredArray = this.buildStructuredArray(gs1AIarray, otherArray);
           rv.structuredOutput = structuredArray;
           rv.elementStringsOutput = this.gs1compressedDigitalLinkToGS1elementStrings(gs1DigitalLinkURI, true);
         }
@@ -6517,10 +6780,10 @@ class GS1DigitalLinkToolkit {
       rv.compressedPath = pcr[0];
 
       if (extended) {
-        const extracted = this.extractFromCompressedGS1digitalLink(gs1DigitalLinkURI);
-        const gs1AIarray = extracted.GS1;
-        const otherArray = extracted.other;
-        const structuredArray = this.buildStructuredArray(gs1AIarray, otherArray);
+        let extracted = this.extractFromCompressedGS1digitalLink(gs1DigitalLinkURI);
+        let gs1AIarray = extracted.GS1;
+        let otherArray = extracted.other;
+        let structuredArray = this.buildStructuredArray(gs1AIarray, otherArray);
         rv.structuredOutput = structuredArray;
         rv.elementStringsOutput = this.gs1compressedDigitalLinkToGS1elementStrings(gs1DigitalLinkURI, true);
       }
@@ -6533,27 +6796,65 @@ class GS1DigitalLinkToolkit {
   // it is the inverse function of buildGS1gs1DigitalLinkURI(gs1AIarray,useShortText,uriStem)
   extractFromGS1digitalLink(gs1DigitalLinkURI) {
     // initialise internal variables
-    const obj = {};
-    const rv = {};
+    let obj = {};
+    let rv = {};
 
     // extract path info and query string from URI and parse these to extract AI key:value pairs
     //		let s=this.analyseURI(gs1DigitalLinkURI,false);
 
-    const s = this.analyseURI(gs1DigitalLinkURI, false);
-    const { pathCandidates } = s;
-    const { queryStringCandidates } = s;
-    const nonGS1queryStringCandidates = {};
+    let s = this.analyseURI(gs1DigitalLinkURI, false);
+    let queryString = s.queryString;
+    let uriPathInfo = s.uriPathInfo;
+    let pathCandidates = s.pathCandidates;
+
+    let splitPath = uriPathInfo.split('/').slice(1);
+
+    let aiSeq = [];
+    let l = splitPath.length;
+    for (let i = l - 1; i >= 0; i--) {
+      if (i % 2 == 0) {
+        let k = splitPath[i];
+        if (!this.regexAllNum.test(k)) {
+          k = this.shortCodeToNumeric[k];
+        }
+        aiSeq.push(k);
+      }
+    }
+    aiSeq = aiSeq.reverse();
+
+    // check that the URI path components appear in the correct sequence
+    if (this.pathSequenceConstraints.hasOwnProperty(aiSeq[0])) {
+      let lastIndex = -1;
+      for (let j = 1; j < aiSeq.length; j++) {
+        let i = this.pathSequenceConstraints[aiSeq[0]].indexOf(aiSeq[j]);
+        if (i <= lastIndex) {
+          throw new Error('Invalid GS1 Digital Link - invalid sequence of key qualifiers found in URI path information.');
+        }
+        lastIndex = i;
+      }
+    }
+
+    for (let k in pathCandidates) {
+      if (pathCandidates.hasOwnProperty(k)) {
+        if (!this.regexAllNum.test(k)) {
+          let numkey = this.shortCodeToNumeric[k];
+        }
+      }
+    }
+
+    let queryStringCandidates = s.queryStringCandidates;
+    let nonGS1queryStringCandidates = {};
 
     // merge pathCandidates and queryStringCandidates into a combined associative array, candidates
-    const candidates = { ...pathCandidates, ...queryStringCandidates };
+    let candidates = Object.assign({}, pathCandidates, queryStringCandidates);
 
     // process candidates;
-    for (const k in candidates) {
+    for (let k in candidates) {
       if (candidates.hasOwnProperty(k)) {
         if (!this.regexAllNum.test(k)) {
           // for keys that are not all-numeric, attempt to convert to all-numeric AI equivalent
           if (this.shortCodeToNumeric.hasOwnProperty(k)) {
-            const numkey = this.shortCodeToNumeric[k];
+            let numkey = this.shortCodeToNumeric[k];
             candidates[numkey] = candidates[k];
             delete candidates[k];
           } else {
@@ -6565,7 +6866,8 @@ class GS1DigitalLinkToolkit {
       }
     }
 
-    for (const k in candidates) {
+    // check that each entry in the associative array has correct syntax  and correct digit (where appropriate)
+    for (let k in candidates) {
       if (candidates.hasOwnProperty(k)) {
         this.verifySyntax(k, candidates[k]);
         this.verifyCheckDigit(k, candidates[k]);
@@ -6583,13 +6885,13 @@ class GS1DigitalLinkToolkit {
       let newvalue = value;
       if (ai == '01' || ai == '(01)' || ai == '02' || ai == '(02)') {
         if (value.length == 8) {
-          newvalue = `000000${value}`;
+          newvalue = '000000' + value;
         }
         if (value.length == 12) {
-          newvalue = `00${value}`;
+          newvalue = '00' + value;
         }
         if (value.length == 13) {
-          newvalue = `0${value}`;
+          newvalue = '0' + value;
         }
       }
       return newvalue;
@@ -6601,27 +6903,30 @@ class GS1DigitalLinkToolkit {
   extractFromCompressedGS1digitalLink(gs1DigitalLinkURI) {
     // initialise internal variables
     let objGS1 = {};
-    const rv = {};
+    let objOther = {};
+    let rv = {};
 
     // set cursor to 0 = start reading from the left-most part of the gs1 Digital Link URI provided as input
-    const s = this.analyseURI(gs1DigitalLinkURI, false);
+    let s = this.analyseURI(gs1DigitalLinkURI, false);
 
-    let { queryString } = s;
-    let { uriPathInfo } = s;
-    const nonGS1queryStringCandidates = {};
+    let queryString = s.queryString;
+    let uriPathInfo = s.uriPathInfo;
+    let candidates = s.pathCandidates;
+    let queryStringCandidates = s.queryStringCandidates;
+    let nonGS1queryStringCandidates = {};
 
     if (queryString !== '') {
       // if semicolon was used as delimiter between key=value pairs, replace with ampersand as delimiter
       queryString = queryString.replace(new RegExp(';', 'g'), '&');
 
-      const firstFragment = queryString.indexOf('#');
+      let firstFragment = queryString.indexOf('#');
       if (firstFragment > -1) {
         queryString = queryString.substring(0, firstFragment);
       }
 
-      const pairs = queryString.split('&');
+      let pairs = queryString.split('&');
       for (let i = 0; i < pairs.length; i++) {
-        const p = pairs[i].split('=');
+        let p = pairs[i].split('=');
         // if the key is not numeric AND is not a shortcode such as exp or expdt, then add to the nonGS1keyvalueePairs
         if (p[0] !== null && p[1] !== null && !this.regexAllNum.test(p[0]) && !this.shortCodeToNumeric.hasOwnProperty(p[0])) {
           nonGS1queryStringCandidates[p[0]] = this.percentDecode(p[1]);
@@ -6641,25 +6946,27 @@ class GS1DigitalLinkToolkit {
     uriPathInfo = uriPathInfo.substr(1);
 
     if (this.regexSafe64.test(uriPathInfo)) {
-      const binstr = this.base642bin(uriPathInfo);
+      let binstr = this.base642bin(uriPathInfo);
       objGS1 = this.decompressBinaryToGS1AIarray(binstr);
     } else {
       // handle situation where the primary identification key is not compressed
-      const index1 = uriPathInfo.indexOf('/');
-      const index2 = uriPathInfo.lastIndexOf('/');
-      const gs1primaryKey = uriPathInfo.substr(0, index1);
-      const base64segment = uriPathInfo.substr(1 + index2);
-      const gs1primaryKeyValue = uriPathInfo.substr(1 + index1, index2 - index1 - 1);
+      let index1 = uriPathInfo.indexOf('/');
+      let index2 = uriPathInfo.lastIndexOf('/');
+      let gs1primaryKey = uriPathInfo.substr(0, index1);
+      let base64segment = uriPathInfo.substr(1 + index2);
+      let gs1primaryKeyValue = uriPathInfo.substr(1 + index1, index2 - index1 - 1);
       objGS1 = this.decompressBinaryToGS1AIarray(this.base642bin(base64segment));
       if (this.regexAllNum.test(gs1primaryKey)) {
         objGS1[gs1primaryKey] = gs1primaryKeyValue;
-      } else if (this.shortCodeToNumeric.hasOwnProperty(gs1primaryKey)) {
-        objGS1[this.shortCodeToNumeric[gs1primaryKey]] = gs1primaryKeyValue;
+      } else {
+        if (this.shortCodeToNumeric.hasOwnProperty(gs1primaryKey)) {
+          objGS1[this.shortCodeToNumeric[gs1primaryKey]] = gs1primaryKeyValue;
+        }
       }
     }
 
     // insert into associative array return value any key=value pairs from the URI query string that were not compressed
-    for (const k in objGS1) {
+    for (let k in objGS1) {
       // need to change this to check whether key is exp / expdt or numeric GS1 key - see related method ~ refactor lines 951-967
       /*			if ((this.regexAllNum.test(k)) || (this.shortCodeToNumeric.hasOwnProperty(k))) {
                             objGS1[this.shortCodeToNumeric[k]]=objGS1[k];
@@ -6689,14 +6996,14 @@ class GS1DigitalLinkToolkit {
   buildGS1elementStrings(gs1AIarray, brackets) {
     // if brackets=true, use GS1 Digital Link ordering - identifier, qualifiers then data attributes in numeric order
 
-    const identifiers = [];
-    const qualifiers = [];
-    const attributes = [];
-    const fixedLengthValues = [];
-    const variableLengthValues = [];
+    let identifiers = [];
+    let qualifiers = [];
+    let attributes = [];
+    let fixedLengthValues = [];
+    let variableLengthValues = [];
     let elementStrings = [];
 
-    for (const a in gs1AIarray) {
+    for (let a in gs1AIarray) {
       if (gs1AIarray.hasOwnProperty(a)) {
         if (this.aiMaps.identifiers.includes(a)) {
           identifiers.push(a);
@@ -6719,57 +7026,58 @@ class GS1DigitalLinkToolkit {
     if (brackets == true) {
       if (identifiers.length !== 1) {
         throw new Error(
-          `The associative array should contain exactly one primary identification key - it contained ${identifiers.length} ${JSON.stringify(
-            identifiers,
-          )}; please check for a syntax error`,
+          'The associative array should contain exactly one primary identification key - it contained ' +
+            identifiers.length +
+            ' ' +
+            JSON.stringify(identifiers) +
+            '; please check for a syntax error',
         );
       } else {
         this.verifySyntax(identifiers[0], gs1AIarray[identifiers[0]]);
         this.verifyCheckDigit(identifiers[0], gs1AIarray[identifiers[0]]);
 
-        elementStrings = elementStringsPush(elementStrings, `(${identifiers[0]})`, gs1AIarray[identifiers[0]], '');
+        elementStrings = elementStringsPush(elementStrings, '(' + identifiers[0] + ')', gs1AIarray[identifiers[0]], '');
 
         // append any valid found qualifiers for that primary identifier to the elementStrings array
 
         if (this.aiQualifiers.hasOwnProperty(identifiers[0])) {
-          const qualifiersForPrimary = this.aiQualifiers[identifiers[0]];
+          let qualifiersForPrimary = this.aiQualifiers[identifiers[0]];
 
-          for (const qindex in qualifiersForPrimary) {
+          for (let qindex in qualifiersForPrimary) {
             if (qualifiers.indexOf(qualifiersForPrimary[qindex]) > -1) {
-              elementStrings = elementStringsPush(elementStrings, `(${qualifiersForPrimary[qindex]})`, gs1AIarray[qualifiersForPrimary[qindex]], '');
+              elementStrings = elementStringsPush(elementStrings, '(' + qualifiersForPrimary[qindex] + ')', gs1AIarray[qualifiersForPrimary[qindex]], '');
             }
           }
         }
 
         // append any found attributes to the elementStrings array
-        attributes.sort();
-        for (const a in attributes) {
-          elementStrings = elementStringsPush(elementStrings, `(${attributes[a]})`, gs1AIarray[attributes[a]], '');
+        let sortedAttributes = attributes.sort();
+        for (let a in sortedAttributes) {
+          elementStrings = elementStringsPush(elementStrings, '(' + attributes[a] + ')', gs1AIarray[attributes[a]], '');
         }
       }
     } else {
       // if brackets=false, concatenate defined-length AIs first, then variable-length AIs
       // identify which AIs in gs1AIarray are defined fixed length
 
-      const fixedLengthPrimaryIdentifier = [];
-      const fixedLengthValuesOther = fixedLengthValues.slice(0);
-
-      for (const i in fixedLengthValuesOther) {
+      let fixedLengthPrimaryIdentifier = [];
+      let fixedLengthValuesOther = fixedLengthValues.slice(0);
+      for (let i in fixedLengthValuesOther) {
         if (identifiers.indexOf(fixedLengthValuesOther[i]) > -1) {
           fixedLengthPrimaryIdentifier.push(fixedLengthValuesOther[i]);
           fixedLengthValuesOther.splice(i, 1);
         }
       }
 
-      for (const i in fixedLengthPrimaryIdentifier) {
+      for (let i in fixedLengthPrimaryIdentifier) {
         elementStrings = elementStringsPush(elementStrings, fixedLengthPrimaryIdentifier[i], gs1AIarray[fixedLengthPrimaryIdentifier[i]], '');
       }
 
-      for (const i in fixedLengthValuesOther) {
+      for (let i in fixedLengthValuesOther) {
         elementStrings = elementStringsPush(elementStrings, fixedLengthValuesOther[i], gs1AIarray[fixedLengthValuesOther[i]], '');
       }
 
-      for (const i in variableLengthValues) {
+      for (let i in variableLengthValues) {
         let gs = '';
         if (i < variableLengthValues.length - 1) {
           gs = this.groupSeparator;
@@ -6780,22 +7088,22 @@ class GS1DigitalLinkToolkit {
 
     return elementStrings.join('');
 
-    function elementStringsPush(theseElementStrings, ai, value, gs) {
-      let newValue = value;
+    function elementStringsPush(elementStrings, ai, value, gs) {
+      let newvalue = value;
       // always pad the value of any GTIN [ AI (01) or (02) ] to 14 digits in element string representation
-      if (ai === '01' || ai === '(01)' || ai === '02' || ai === '(02)') {
-        if (value.length === 8) {
-          newValue = `000000${value}`;
+      if (ai == '01' || ai == '(01)' || ai == '02' || ai == '(02)') {
+        if (value.length == 8) {
+          newvalue = '000000' + value;
         }
-        if (value.length === 12) {
-          newValue = `00${value}`;
+        if (value.length == 12) {
+          newvalue = '00' + value;
         }
-        if (value.length === 13) {
-          newValue = `0${value}`;
+        if (value.length == 13) {
+          newvalue = '0' + value;
         }
       }
-      theseElementStrings.push(ai + newValue + gs);
-      return theseElementStrings;
+      elementStrings.push(ai + newvalue + gs);
+      return elementStrings;
     }
   }
 
@@ -6820,26 +7128,26 @@ class GS1DigitalLinkToolkit {
     switch (enc) {
       case 0:
         // handle all-numeric encoding
-        const binLength = this.numberOfValueBits(charstr.length);
-        let binValue = parseInt(charstr).toString(2);
+        let binLength = this.numberOfValueBits(charstr.length);
+        let binValue = BigInt(charstr).toString(2);
         binValue = this.padToLength(binValue, binLength);
-        binstr += `000${lengthBits}${binValue}`;
+        binstr += '000' + lengthBits + binValue;
         break;
 
       case 1:
-        binstr += `001${lengthBits}${this.buildBinaryValue(charstr.toUpperCase(), 4, this.hexAlphabet)}`;
+        binstr += '001' + lengthBits + this.buildBinaryValue(charstr.toUpperCase(), 4, this.hexAlphabet);
         break;
 
       case 2:
-        binstr += `010${lengthBits}${this.buildBinaryValue(charstr.toUpperCase(), 4, this.hexAlphabet)}`;
+        binstr += '010' + lengthBits + this.buildBinaryValue(charstr.toUpperCase(), 4, this.hexAlphabet);
         break;
 
       case 3:
-        binstr += `011${lengthBits}${this.buildBinaryValue(charstr, 6, this.safeBase64Alphabet)}`;
+        binstr += '011' + lengthBits + this.buildBinaryValue(charstr, 6, this.safeBase64Alphabet);
         break;
 
       case 4:
-        binstr += `100${lengthBits}${this.buildBinaryValue(charstr, 7, null)}`;
+        binstr += '100' + lengthBits + this.buildBinaryValue(charstr, 7, null);
         break;
     }
     return binstr;
@@ -6849,9 +7157,10 @@ class GS1DigitalLinkToolkit {
     // this method converts a string charstr into binary, using n bits per character and decoding from the supplied alphabet or from ASCII when n=7
     // this is almost the inverse method to buildString
     let binValue = '';
+    let binLength = n * charstr.length;
     for (let i = 0; i < charstr.length; i++) {
       let index;
-      if (n === 7) {
+      if (n == 7) {
         // set index to the ASCII code for each character
         index = charstr.charAt(i).charCodeAt(0);
       } else {
@@ -6878,70 +7187,70 @@ class GS1DigitalLinkToolkit {
     switch (enc) {
       case 0:
         // digits only at 3.32 bits per character
-        const numBitsForValue = this.numberOfValueBits(numChars);
-        const rbv = binstr.substr(cursor, numBitsForValue);
+        let numBitsForValue = this.numberOfValueBits(numChars);
+        let rbv = binstr.substr(cursor, numBitsForValue);
         cursor += numBitsForValue;
-        const s = parseInt(rbv, 2).toString();
-        gs1AIarray[key] = s;
+        let s = BigInt('0b' + rbv).toString();
+        gs1AIarray[key] += s;
         break;
 
       case 1:
         // lower case hexadecimal characters
         rv = buildString(numChars, this.hexAlphabet, cursor, 4, binstr);
         cursor = rv.cursor;
-        gs1AIarray[key] = rv.s.toLowerCase();
+        gs1AIarray[key] += rv.s.toLowerCase();
         break;
 
       case 2:
         // upper case hexadecimal characters
         rv = buildString(numChars, this.hexAlphabet, cursor, 4, binstr);
         cursor = rv.cursor;
-        gs1AIarray[key] = rv.s.toUpperCase();
+        gs1AIarray[key] += rv.s.toUpperCase();
         break;
 
       case 3:
         // URI safe base64 alphabet at 6 bits per character
         rv = buildString(numChars, this.safeBase64Alphabet, cursor, 6, binstr);
         cursor = rv.cursor;
-        gs1AIarray[key] = rv.s;
+        gs1AIarray[key] += rv.s;
         break;
 
       case 4:
         // ASCII at 7 bits per character
         rv = buildString(numChars, null, cursor, 7, binstr);
         cursor = rv.cursor;
-        gs1AIarray[key] = rv.s;
+        gs1AIarray[key] += rv.s;
         break;
     }
     rv.gs1AIarray = gs1AIarray;
     rv.cursor = cursor;
     return rv;
 
-    function buildString(theseNumChars, alphabet, thisCursor, multiplier, thisBinstr) {
+    function buildString(numChars, alphabet, cursor, multiplier, binstr) {
       // this is almost the inverse function to buildBinaryValue
 
-      const thisRv = {};
+      let rv = {};
       let s = '';
-      const numBitsForValue = multiplier * theseNumChars;
-      const rbv = thisBinstr.substr(thisCursor, numBitsForValue);
-      thisCursor += numBitsForValue;
-      for (let i = 0; i < theseNumChars; i++) {
-        const index = parseInt(rbv.substr(multiplier * i, multiplier), 2);
+      let numBitsForValue = multiplier * numChars;
+      let rbv = binstr.substr(cursor, numBitsForValue);
+      cursor += numBitsForValue;
+      for (let i = 0; i < numChars; i++) {
+        let index = parseInt(rbv.substr(multiplier * i, multiplier), 2);
         // assume 6 bits encode an index 0-63 within the URI-safe base 64 alphabet
-        if (multiplier === 7) {
-          s += String.fromCharCode(index);
+        if (multiplier == 7) {
+          s += String.fromCharCode(parseInt(index));
         } else {
           s += alphabet.substr(index, 1);
         }
       }
-      thisRv.cursor = thisCursor;
-      thisRv.s = s;
-      return thisRv;
+      rv.cursor = cursor;
+      rv.s = s;
+      return rv;
     }
   }
 
   decompressBinaryToGS1AIarray(binstr) {
-    const totallength = binstr.length;
+    let totallength = binstr.length;
     // start at left-most bit position
     let cursor = 0;
 
@@ -6950,22 +7259,23 @@ class GS1DigitalLinkToolkit {
 
     // read h1,h2 and convert binary to hex
     while (totallength - cursor > 8) {
-      const h1 = this.binstrToHex(binstr.substr(cursor, 4));
-      const h2 = this.binstrToHex(binstr.substr(4 + cursor, 4));
+      let h1 = this.binstrToHex(binstr.substr(cursor, 4));
+      let h2 = this.binstrToHex(binstr.substr(4 + cursor, 4));
       let h3 = '';
+      let h4 = '';
       let ai = '';
 
-      const h1h2 = `${h1}${h2}`;
+      let h1h2 = '' + h1 + h2;
       cursor += 8;
 
-      const d1 = parseInt(h1, 16);
-      const d2 = parseInt(h2, 16);
+      let d1 = parseInt(h1, 16);
+      let d2 = parseInt(h2, 16);
 
       // check if h1h2 is within the range 00-99
       if (d1 >= 0 && d2 >= 0 && d1 <= 9 && d2 <= 9) {
         // check if h1h2 has entry in table P
         if (this.tableP.hasOwnProperty(h1h2)) {
-          const l = this.tableP[h1h2];
+          let l = this.tableP[h1h2];
 
           if (l == 2) {
             ai = h1h2;
@@ -6973,27 +7283,27 @@ class GS1DigitalLinkToolkit {
           if (l == 3 || l == 4) {
             h3 = this.binstrToHex(binstr.substr(cursor, 4));
             cursor += 4;
-            const d3 = parseInt(h3, 16);
+            let d3 = parseInt(h3, 16);
             if (d3 > 9) {
-              throw new Error(`GS1 Application Identifier keys should be all-numeric; ${h1h2}${h3} is not all-numeric`);
+              throw new Error('GS1 Application Identifier keys should be all-numeric; ' + h1h2 + h3 + ' is not all-numeric');
             }
             ai = h1h2 + h3;
           }
-          if (l === 4) {
-            const h4 = this.binstrToHex(binstr.substr(cursor, 4));
+          if (l == 4) {
+            let h4 = this.binstrToHex(binstr.substr(cursor, 4));
             cursor += 4;
             ai = h1h2 + h3 + h4;
-            const d4 = parseInt(h4, 16);
+            let d4 = parseInt(h4, 16);
             if (d4 > 9) {
-              throw new Error(`GS1 Application Identifier keys should be all-numeric; ${h1h2}${h3}${h4} is not all-numeric`);
+              throw new Error('GS1 Application Identifier keys should be all-numeric; ' + h1h2 + h3 + h4 + ' is not all-numeric');
             }
           }
 
-          const tmp = this.decodeBinaryValue(ai, gs1AIarray, binstr, cursor);
+          let tmp = this.decodeBinaryValue(ai, gs1AIarray, binstr, cursor);
           gs1AIarray = tmp.gs1AIarray;
           cursor = tmp.cursor;
         } else {
-          throw new Error(`Fail: Unsupported AI (reserved range) - no entry in tableP; h1h2=${h1h2}`);
+          throw new Error('Fail: Unsupported AI (reserved range) - no entry in tableP; h1h2=' + h1h2);
         }
       } else {
         // h1h2 is outside 00-99, using some hex characters
@@ -7001,39 +7311,42 @@ class GS1DigitalLinkToolkit {
         if (this.tableOpt.hasOwnProperty(h1h2)) {
           // we found an optimisation for h1h2
 
-          const seq = this.tableOpt[h1h2];
-          for (const i in seq) {
-            const thisAi = seq[i];
-            const tmp = this.decodeBinaryValue(thisAi, gs1AIarray, binstr, cursor);
+          let seq = this.tableOpt[h1h2];
+          for (let i in seq) {
+            let ai = seq[i];
+            let tmp = this.decodeBinaryValue(ai, gs1AIarray, binstr, cursor);
             gs1AIarray = tmp.gs1AIarray;
             cursor = tmp.cursor;
           }
-        } else if (h1 === 'F') {
-          // handle decompression of non-GS1 key=value pairs
-          const keyLength = parseInt(binstr.substr(cursor - 4, 7), 2);
-          cursor += 3; // 3 extra bits beyond h2
-
-          const keyBits = binstr.substr(cursor, 6 * keyLength);
-          cursor += 6 * keyLength;
-
-          let key = '';
-          for (let i = 0; i < keyLength; i++) {
-            const index = parseInt(keyBits.substr(6 * i, 6), 2);
-            // assume 6 bits encode an index 0-63 within the URI-safe base 64 alphabet
-            key += this.safeBase64Alphabet.substr(index, 1);
-          }
-
-          const encBits = binstr.substr(cursor, 3);
-          cursor += 3;
-          const enc = parseInt(encBits, 2);
-          const numChars = parseInt(binstr.substr(cursor, 7), 2);
-          cursor += 7;
-          const rv = this.handleDecodings(enc, binstr, cursor, gs1AIarray, key, numChars);
-
-          gs1AIarray = rv.gs1AIarray;
-          cursor = rv.cursor;
         } else {
-          throw new Error(`No optimisation defined for hex code hh=${h1h2}`);
+          if (h1 == 'F') {
+            // handle decompression of non-GS1 key=value pairs
+            let bitsIncludingF = binstr.substr(cursor - 8, 11);
+            let keyLength = parseInt(binstr.substr(cursor - 4, 7), 2);
+            cursor += 3; // 3 extra bits beyond h2
+
+            let keyBits = binstr.substr(cursor, 6 * keyLength);
+            cursor += 6 * keyLength;
+
+            let key = '';
+            for (let i = 0; i < keyLength; i++) {
+              let index = parseInt(keyBits.substr(6 * i, 6), 2);
+              // assume 6 bits encode an index 0-63 within the URI-safe base 64 alphabet
+              key += this.safeBase64Alphabet.substr(index, 1);
+            }
+
+            let encBits = binstr.substr(cursor, 3);
+            cursor += 3;
+            let enc = parseInt(encBits, 2);
+            let numChars = parseInt(binstr.substr(cursor, 7), 2);
+            cursor += 7;
+            let rv = this.handleDecodings(enc, binstr, cursor, gs1AIarray, key, numChars);
+
+            gs1AIarray = rv.gs1AIarray;
+            cursor = rv.cursor;
+          } else {
+            throw new Error('No optimisation defined for hex code hh=' + h1h2);
+          }
         }
       }
     }
@@ -7042,79 +7355,83 @@ class GS1DigitalLinkToolkit {
   }
 
   decodeBinaryValue(key, gs1AIarray, binstr, cursor) {
-    const thisRv = {};
+    let rv = {};
     gs1AIarray[key] = '';
 
     if (this.tableF.hasOwnProperty(key)) {
-      for (const j in this.tableF[key]) {
-        const tx = this.tableF[key][j];
+      for (let j in this.tableF[key]) {
+        let tx = this.tableF[key][j];
 
         // handle fixed-length numeric component
         if (tx.hasOwnProperty('L') && tx.E == 'N') {
           // fixed-length, so no length indicator
-          const b1 = this.numberOfValueBits(tx.L);
-          const rbv = binstr.substr(cursor, b1);
+          let b1 = this.numberOfValueBits(tx.L);
+          let rbv = binstr.substr(cursor, b1);
           cursor += b1;
-          let s = parseInt(rbv, 2).toString();
+          let s = BigInt('0b' + rbv).toString();
           s = this.padToLength(s, tx.L);
-          gs1AIarray[key] += `${s}`;
+          gs1AIarray[key] += '' + s;
         }
 
         // handle variable-length numeric component
         if (tx.hasOwnProperty('M') && tx.E == 'N') {
-          const v2 = this.numberOfLengthBits(tx.M);
-          const lengthBits = binstr.substr(cursor, v2);
+          let v2 = this.numberOfLengthBits(tx.M);
+          let lengthBits = binstr.substr(cursor, v2);
           cursor += v2;
-          const numDigits = parseInt(lengthBits, 2);
-          const numBitsForValue = this.numberOfValueBits(numDigits);
-          const rbv = binstr.substr(cursor, numBitsForValue);
+          let numDigits = parseInt(lengthBits, 2);
+          let numBitsForValue = this.numberOfValueBits(numDigits);
+          let rbv = binstr.substr(cursor, numBitsForValue);
           cursor += numBitsForValue;
-          let s = parseInt(rbv, 2).toString();
+          let s = BigInt('0b' + rbv).toString();
           if (numDigits == 0) {
             s = '';
           }
 
-          gs1AIarray[key] += `${s}`;
+          gs1AIarray[key] += '' + s;
         }
 
         // handle fixed-length alphanumeric component
         if (tx.hasOwnProperty('L') && tx.E == 'X') {
-          const encBits = binstr.substr(cursor, 3);
+          let encBits = binstr.substr(cursor, 3);
           cursor += 3;
-          const enc = parseInt(encBits, 2);
-          const numChars = tx.L;
-          const rvd = this.handleDecodings(enc, binstr, cursor, gs1AIarray, key, numChars);
+          let enc = parseInt(encBits, 2);
+          let numChars = tx.L;
+          let rvd = this.handleDecodings(enc, binstr, cursor, gs1AIarray, key, numChars);
           gs1AIarray = rvd.gs1AIarray;
           cursor = rvd.cursor;
         }
 
         // handle variable-length alphanumeric component
         if (tx.hasOwnProperty('M') && tx.E == 'X') {
-          const encBits = binstr.substr(cursor, 3);
+          let encBits = binstr.substr(cursor, 3);
           cursor += 3;
-          const v3 = this.numberOfLengthBits(tx.M);
-          const lengthBits = binstr.substr(cursor, v3);
+          let v3 = this.numberOfLengthBits(tx.M);
+          let lengthBits = binstr.substr(cursor, v3);
           cursor += v3;
-          const numChars = parseInt(lengthBits, 2);
-          const enc = parseInt(encBits, 2);
-          const rvd = this.handleDecodings(enc, binstr, cursor, gs1AIarray, key, numChars);
+          let numChars = parseInt(lengthBits, 2);
+          let enc = parseInt(encBits, 2);
+          let rvd = this.handleDecodings(enc, binstr, cursor, gs1AIarray, key, numChars);
           gs1AIarray = rvd.gs1AIarray;
           cursor = rvd.cursor;
         }
       }
     }
-    thisRv.gs1AIarray = gs1AIarray;
-    thisRv.cursor = cursor;
-    return thisRv;
+    rv.gs1AIarray = gs1AIarray;
+    rv.cursor = cursor;
+    return rv;
   }
 
   compressGS1AIarrayToBinary(gs1AIarray, useOptimisations, nonGS1keyvaluePairs) {
     let binstr = '';
+    let cursor;
+    let value;
     // identify candidate optimisations from tableOpt
     let akeysa = Object.keys(gs1AIarray).sort();
-    const optimisations = [];
+    let optimisations = [];
 
     if (useOptimisations) {
+      let akeys = JSON.stringify(akeysa);
+
       let candidatesFromTableOpt;
 
       do {
@@ -7122,7 +7439,9 @@ class GS1DigitalLinkToolkit {
 
         // pick candidatesFromTableOpt that can save the highest number of AI key characters
 
-        const bestCandidate = findBestOptimisationCandidate(candidatesFromTableOpt);
+        let bestCandidate = findBestOptimisationCandidate(candidatesFromTableOpt);
+
+        let v = this.tableOpt[bestCandidate];
 
         if (bestCandidate !== '') {
           akeysa = removeOptimisedKeysFromAIlist(akeysa, this.tableOpt[bestCandidate]);
@@ -7134,19 +7453,19 @@ class GS1DigitalLinkToolkit {
     }
 
     // encode binary string for any optimised values from tableOpt first
-    for (const i in optimisations) {
-      const key = optimisations[i];
+    for (let i in optimisations) {
+      let key = optimisations[i];
       binstr += this.binaryEncodingOfGS1AIKey(key);
-      const optArray = this.tableOpt[key];
-      for (const j in optArray) {
-        const k = optArray[j];
+      let optArray = this.tableOpt[key];
+      for (let i in optArray) {
+        let k = optArray[i];
         binstr += this.binaryEncodingOfValue(gs1AIarray, k);
       }
     }
 
     // then append this further by encoding binary string values for any other AI key=value pairs for which no optimisations were found
-    for (const i in akeysa) {
-      const key = akeysa[i];
+    for (let i in akeysa) {
+      let key = akeysa[i];
       if (gs1AIarray.hasOwnProperty(key)) {
         binstr += this.binaryEncodingOfGS1AIKey(key);
         binstr += this.binaryEncodingOfValue(gs1AIarray, key);
@@ -7157,14 +7476,14 @@ class GS1DigitalLinkToolkit {
     // note that hex value F ('1111') is used as a flag (as a reserved value of h1) to indicate that what follows is a compressed binary representation of a non-GS1 key=value pair
     // we permit key lengths up to 128 characters only from the URI-safe base64 alphabet (A-Z a-z 0-9 hyphen and underscore)
     if (Object.keys(nonGS1keyvaluePairs).length > 0) {
-      for (const key in nonGS1keyvaluePairs) {
+      for (let key in nonGS1keyvaluePairs) {
         let lengthBits = key.length.toString(2);
         lengthBits = this.padToLength(lengthBits, 7);
         binstr += '1111'; // 'F' (flag for foreign keys)
         binstr += lengthBits;
         let binKey = '';
         for (let i = 0; i < key.length; i++) {
-          const index = this.safeBase64Alphabet.indexOf(key.charAt(i));
+          let index = this.safeBase64Alphabet.indexOf(key.charAt(i));
           let binChar = index.toString(2);
           binChar = this.padToLength(binChar, 6);
           binKey += binChar;
@@ -7178,13 +7497,13 @@ class GS1DigitalLinkToolkit {
 
     return binstr;
 
-    function findCandidatesFromTableOpt(thisAkeysa, tableOpt) {
-      const candidatesFromTableOpt = {};
-      for (const i in tableOpt) {
-        const a = tableOpt[i];
+    function findCandidatesFromTableOpt(akeysa, tableOpt) {
+      let candidatesFromTableOpt = {};
+      for (let i in tableOpt) {
+        let a = tableOpt[i];
         let b = true;
-        for (const j in a) {
-          if (thisAkeysa.indexOf(a[j]) === -1) {
+        for (let j in a) {
+          if (akeysa.indexOf(a[j]) == -1) {
             b = false;
           }
         }
@@ -7198,7 +7517,7 @@ class GS1DigitalLinkToolkit {
     function findBestOptimisationCandidate(candidatesFromTableOpt) {
       let maxkey = '';
       let max = 0;
-      for (const i in candidatesFromTableOpt) {
+      for (let i in candidatesFromTableOpt) {
         if (candidatesFromTableOpt[i] > max) {
           maxkey = i;
           max = candidatesFromTableOpt[i];
@@ -7207,14 +7526,14 @@ class GS1DigitalLinkToolkit {
       return maxkey;
     }
 
-    function removeOptimisedKeysFromAIlist(thisAkeys, v) {
-      for (const i in v) {
-        const ind = thisAkeys.indexOf(v[i]);
+    function removeOptimisedKeysFromAIlist(akeysa, v) {
+      for (let i in v) {
+        let ind = akeysa.indexOf(v[i]);
         if (ind > -1) {
-          thisAkeys.splice(ind, 1);
+          akeysa.splice(ind, 1);
         }
       }
-      return thisAkeys;
+      return akeysa;
     }
   }
 
@@ -7232,44 +7551,44 @@ class GS1DigitalLinkToolkit {
     let binstr = '';
     if (this.tableF.hasOwnProperty(key)) {
       let cursor = 0;
-      const value = gs1AIarray[key];
+      let value = gs1AIarray[key];
 
-      for (const j in this.tableF[key]) {
-        const tx = this.tableF[key][j];
+      for (let j in this.tableF[key]) {
+        let tx = this.tableF[key][j];
 
         if (tx.hasOwnProperty('L') && tx.E == 'N') {
           // handle fixed-length numeric component
-          const charstr = value.substr(cursor, tx.L);
+          let charstr = value.substr(cursor, tx.L);
           cursor += parseInt(tx.L);
-          const binValue = this.padToLength(parseInt(charstr).toString(2), this.numberOfValueBits(tx.L));
+          let binValue = this.padToLength(BigInt(charstr).toString(2), this.numberOfValueBits(tx.L));
           binstr += binValue;
         }
 
         if (tx.hasOwnProperty('M') && tx.E == 'N') {
           // handle variable-length numeric component
-          const charstr = value.substr(cursor);
+          let charstr = value.substr(cursor);
           cursor += charstr.length;
-          const lengthBits = this.padToLength(charstr.length.toString(2), this.numberOfLengthBits(tx.M));
-          const binValue = this.padToLength(parseInt(charstr).toString(2), this.numberOfValueBits(charstr.length));
+          let lengthBits = this.padToLength(charstr.length.toString(2), this.numberOfLengthBits(tx.M));
+          let binValue = this.padToLength(BigInt(charstr).toString(2), this.numberOfValueBits(charstr.length));
           binstr += lengthBits + binValue;
         }
 
         if (tx.hasOwnProperty('L') && tx.E == 'X') {
           // handle fixeed-length alphanumeric component
-          const charstr = value.substr(cursor, tx.L);
+          let charstr = value.substr(cursor, tx.L);
           cursor += parseInt(tx.L);
-          const enc = this.determineEncoding(charstr);
-          const lengthBits = '';
-          binstr += this.handleEncodings(enc, lengthBits, charstr, binstr);
+          let enc = this.determineEncoding(charstr);
+          let lengthBits = '';
+          binstr = this.handleEncodings(enc, lengthBits, charstr, binstr);
         }
 
         if (tx.hasOwnProperty('M') && tx.E == 'X') {
           // handle variable-length alphanumeric component
-          const charstr = value.substr(cursor);
+          let charstr = value.substr(cursor);
           cursor += charstr.length;
-          const lengthBits = this.padToLength(charstr.length.toString(2), this.numberOfLengthBits(tx.M));
-          const enc = this.determineEncoding(charstr);
-          binstr += this.handleEncodings(enc, lengthBits, charstr, binstr);
+          let lengthBits = this.padToLength(charstr.length.toString(2), this.numberOfLengthBits(tx.M));
+          let enc = this.determineEncoding(charstr);
+          binstr = this.handleEncodings(enc, lengthBits, charstr, binstr);
         }
       }
     }
@@ -7296,25 +7615,34 @@ class GS1DigitalLinkToolkit {
   binaryEncodingOfNonGS1Value(charstr) {
     let lengthBits = charstr.length.toString(2);
     lengthBits = this.padToLength(lengthBits, 7);
-    const enc = this.determineEncoding(charstr);
-    const binstr = this.handleEncodings(enc, lengthBits, charstr, '');
+    let enc = this.determineEncoding(charstr);
+    let binstr = this.handleEncodings(enc, lengthBits, charstr, '');
     return binstr;
   }
 
   buildCompressedGS1digitalLink(gs1AIarray, useShortText, uriStem, useOptimisations, compressOtherKeyValuePairs, nonGS1keyvaluePairs) {
+    let identifiers = [];
+    let qualifiers = [];
+    let attributes = [];
+    let fixedLengthValues = [];
+    let variableLengthValues = [];
+
+    let valid = true;
     let path = '';
+    let queryStringArray = [];
     let queryString = '';
     let webURI = '';
-    const canonicalStem = 'https://id.gs1.org';
+    let canonicalStem = 'https://id.gs1.org';
+    let rv = {};
 
     if (!compressOtherKeyValuePairs) {
       // do pass-through of query string params
-      const akv = [];
-      for (const k in nonGS1keyvaluePairs) {
-        akv.push(`${k}=${nonGS1keyvaluePairs[k]}`);
+      let akv = [];
+      for (let k in nonGS1keyvaluePairs) {
+        akv.push(k + '=' + nonGS1keyvaluePairs[k]);
       }
       if (akv.length > 0) {
-        queryString = `?${akv.join('&')}`;
+        queryString = '?' + akv.join('&');
       }
     }
 
@@ -7323,7 +7651,7 @@ class GS1DigitalLinkToolkit {
       uriStem = uriStem.substr(0, uriStem.length);
     }
 
-    path = `/${this.bin2base64(this.compressGS1AIarrayToBinary(gs1AIarray, useOptimisations, compressOtherKeyValuePairs ? nonGS1keyvaluePairs : {}))}`;
+    path = '/' + this.bin2base64(this.compressGS1AIarrayToBinary(gs1AIarray, useOptimisations, compressOtherKeyValuePairs ? nonGS1keyvaluePairs : {}));
 
     if (uriStem == null || uriStem == '') {
       // prepare a canonical Web URI
@@ -7336,26 +7664,26 @@ class GS1DigitalLinkToolkit {
   }
 
   decompressGS1DigitalLink(compressedDigitalLinkURI, useShortText, uriStem) {
-    const extracted = this.extractFromCompressedGS1digitalLink(compressedDigitalLinkURI);
-    const gs1AIarray = extracted.GS1;
-    const otherArray = extracted.other;
-    const uncompressedDL = this.buildGS1digitalLink(gs1AIarray, useShortText, uriStem, otherArray);
+    let extracted = this.extractFromCompressedGS1digitalLink(compressedDigitalLinkURI);
+    let gs1AIarray = extracted.GS1;
+    let otherArray = extracted.other;
+    let uncompressedDL = this.buildGS1digitalLink(gs1AIarray, useShortText, uriStem, otherArray);
     return uncompressedDL;
   }
 
   decompressGS1DigitalLinkToStructuredArray(compressedDigitalLinkURI) {
-    const extracted = this.extractFromCompressedGS1digitalLink(compressedDigitalLinkURI);
-    const gs1AIarray = extracted.GS1;
-    const otherArray = extracted.other;
-    const structuredArray = this.buildStructuredArray(gs1AIarray, otherArray);
+    let extracted = this.extractFromCompressedGS1digitalLink(compressedDigitalLinkURI);
+    let gs1AIarray = extracted.GS1;
+    let otherArray = extracted.other;
+    let structuredArray = this.buildStructuredArray(gs1AIarray, otherArray);
     return structuredArray;
   }
 
   compressGS1DigitalLink(digitalLinkURI, useShortText, uriStem, uncompressedPrimary, useOptimisations, compressOtherKeyValuePairs) {
     // extract query string
-    const firstQuestionMark = digitalLinkURI.indexOf('?');
+    let firstQuestionMark = digitalLinkURI.indexOf('?');
     let queryString = '';
-    const nonGS1keyvaluePairs = {};
+    let nonGS1keyvaluePairs = {};
     if (firstQuestionMark > -1) {
       queryString = digitalLinkURI.substr(1 + firstQuestionMark);
     }
@@ -7363,14 +7691,14 @@ class GS1DigitalLinkToolkit {
       // if semicolon was used as delimiter between key=value pairs, replace with ampersand as delimiter
       queryString = queryString.replace(new RegExp(';', 'g'), '&');
 
-      const firstFragment = queryString.indexOf('#');
+      let firstFragment = queryString.indexOf('#');
       if (firstFragment > -1) {
         queryString = queryString.substring(0, firstFragment);
       }
 
-      const pairs = queryString.split('&');
+      let pairs = queryString.split('&');
       for (let i = 0; i < pairs.length; i++) {
-        const p = pairs[i].split('=');
+        let p = pairs[i].split('=');
         // if the key is not numeric AND is not a shortcode such as exp or expdt, then add to the nonGS1keyvalueePairs
         if (p[0] !== null && p[1] !== null && !this.regexAllNum.test(p[0]) && !this.shortCodeToNumeric.hasOwnProperty(p[0])) {
           nonGS1keyvaluePairs[p[0]] = this.percentDecode(p[1]);
@@ -7378,28 +7706,29 @@ class GS1DigitalLinkToolkit {
       }
     }
 
-    const gs1AIarray = this.extractFromGS1digitalLink(digitalLinkURI).GS1;
-    const compressedDL = this.buildCompressedGS1digitalLink(gs1AIarray, useShortText, uriStem, useOptimisations, compressOtherKeyValuePairs, nonGS1keyvaluePairs);
+    let gs1AIarray = this.extractFromGS1digitalLink(digitalLinkURI).GS1;
+    let compressedDL = this.buildCompressedGS1digitalLink(gs1AIarray, useShortText, uriStem, useOptimisations, compressOtherKeyValuePairs, nonGS1keyvaluePairs);
     return compressedDL;
   }
 
   gs1ElementStringsToCompressedGS1DigitalLink(elementString, useShortText, uriStem, uncompressedPrimary, useOptimisations) {
-    const gs1AIarray = this.extractFromGS1elementStrings(elementString);
-    const separated = this.separateIDnonID(gs1AIarray);
+    let gs1AIarray = this.extractFromGS1elementStrings(elementString);
+    let separated = this.separateIDnonID(gs1AIarray);
     if (uncompressedPrimary) {
-      return `${this.buildGS1digitalLink(separated.ID, useShortText, uriStem, {})}/${this.bin2base64(
-        this.compressGS1AIarrayToBinary(separated.nonID, useOptimisations, {}),
-      )}`;
+      return (
+        this.buildGS1digitalLink(separated.ID, useShortText, uriStem, {}) + '/' + this.bin2base64(this.compressGS1AIarrayToBinary(separated.nonID, useOptimisations, {}))
+      );
+    } else {
+      return this.buildCompressedGS1digitalLink(this.extractFromGS1elementStrings(elementString), useShortText, uriStem, useOptimisations, false, {});
     }
-    return this.buildCompressedGS1digitalLink(this.extractFromGS1elementStrings(elementString), useShortText, uriStem, useOptimisations, false, {});
   }
 
   separateIDnonID(gs1AIarray) {
-    const rv = {};
-    const idArray = {};
-    const nonIDarray = {};
-    const keys = Object.keys(gs1AIarray);
-    for (const i in keys) {
+    let rv = {};
+    let idArray = {};
+    let nonIDarray = {};
+    let keys = Object.keys(gs1AIarray);
+    for (let i in keys) {
       if (gs1AIarray.hasOwnProperty(keys[i])) {
         if (this.aiMaps.identifiers.indexOf(keys[i]) > -1) {
           idArray[keys[i]] = gs1AIarray[keys[i]];
@@ -7414,6 +7743,6 @@ class GS1DigitalLinkToolkit {
   }
 }
 
-if (typeof module !== 'undefined') {
+if (typeof module != 'undefined') {
   module.exports = GS1DigitalLinkToolkit;
 }

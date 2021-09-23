@@ -7,8 +7,22 @@
     <link rel="stylesheet" href="/css/gs1LinksetViz.css" />
     <link rel="stylesheet" href="/css/gs1Corporate.css" />
     <style>
-      .chartDiv{
-        display: inline-block;
+    #chart-container {
+    border:1px solid gray;
+    position: relative;
+    padding-bottom: 80%;
+    height: 0;
+    overflow:hidden;
+}
+      .chartDiv1{
+        position: absolute;
+        top: 0;
+        left: 0;
+        width:100%;
+        height:100%;
+      }
+      #chartArea{
+        display: none;
       }
     </style>
 </head>
@@ -24,18 +38,26 @@
     <h1 id="pageH1">Dashboard</h1>
     <section id="linksetVisualisation"></section>
     <section id="gs1Keys">
-       <div id="chart-container">
-        <label for="cars">Select Chart Type to view:</label>
+      <div id="chartLogin">
+        Please paste your authentication key here for get chart access: <input type="password" id="chartAuthKey"><button id="checkChartAuthKey" onclick="drawChart();">Show Chart</button>
+        <p id="invalidAuthKey" style="color: red; font-weight: bold;"></p>
+      </div>
+      <div id="chartArea">
+      <label for="cars">Select Chart Type to view:</label>
 
-        <select name="charttype" id="charttype" onchange="selectChartType()">
-          <option value="BarChart">BarChart</option>
-          <option value="StackedBarChart">Stacked BarChart</option>
-          <option value="PieChart">PieChart</option>
-          <option value="ColumnChart">ColumnChart</option>
-          <option value="BubbleChart">BubbleChart</option>
-        </select>
+      <select name="charttype" id="charttype" onchange="selectChartType()">
+        <option value="StackedBarChart">Stacked BarChart</option>
+        <option value="BarChart">BarChart</option>
+        
+        <!-- <option value="PieChart">PieChart</option> -->
+        <option value="ColumnChart">ColumnChart</option>
+        <!-- <option value="BubbleChart">BubbleChart</option> -->
+      </select>
+       <div id="chart-container">
+       
         <div id="chart_div" class="chartDiv1"></div>
       </div>
+    </div>
     </section>
 </main>
 

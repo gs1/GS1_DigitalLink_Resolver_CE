@@ -56,7 +56,7 @@ const requestHandler = async (request, response) => {
       httpHeaders['X-Resolver-ProcessTimeMS'] = calculateProcessingTime(processStartTime);
       response.writeHead(200, httpHeaders);
       response.end(JSON.stringify(result));
-      console.log(request.url, ' ===> analyseuri OK');
+      console.log(request.url, ' ===> analyseuri OK: ', JSON.stringify(result));
     } catch (err) {
       const errorResponse = {
         result: 'ERROR',

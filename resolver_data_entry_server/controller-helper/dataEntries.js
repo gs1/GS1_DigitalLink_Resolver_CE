@@ -2,12 +2,10 @@
 const format = require('biguint-format');
 const crypto = require('crypto');
 const utils = require('../bin/resolver_utils');
-// const validate = require('../bin/validate');
-// const db = require('../db/query-controller/data-entries');
 
 const processBatchValidationResp = (batchRespFromDB) => {
   const resultSet = { validations: [] };
-  if (batchRespFromDB && Array.isArray(batchRespFromDB)) {
+  if (batchRespFromDB && Array.isArray(batchRespFromDB) && batchRespFromDB.length > 0) {
     // if a batch is pending, the call to [VALIDATE_Get_Validation_Results] will result in a single row
     // with column 'PENDING' set to 'Y'.
     if (batchRespFromDB.length === 1 && batchRespFromDB[0].PENDING === 'Y') {
@@ -15,15 +13,17 @@ const processBatchValidationResp = (batchRespFromDB) => {
     } else {
       resultSet.STATUS = 1; // A value used by the VbG platform to denote 'completed'
       resultSet.validations = batchRespFromDB;
+
+      // Convert the response status from DB value to API equivalent value
+      // eslint-disable-next-line guard-for-in
+      for (const resultIndex in resultSet.validations) {
+        resultSet.validations[resultIndex].validation_code = convertResponseStatusCodeFromDBValue(resultSet.validations[resultIndex].validation_code);
+      }
     }
+  } else {
+    resultSet.STATUS = 7;
   }
-  // Convert the response status from DB value to API equivalant value
-  if (resultSet.STATUS === 1) {
-    // eslint-disable-next-line guard-for-in
-    for (const resultIndex in resultSet.validations) {
-      resultSet.validations[resultIndex].validation_code = convertResponseStatusCodeFromDBValue(resultSet.validations[resultIndex].validation_code);
-    }
-  }
+
   return resultSet;
 };
 
@@ -104,7 +104,6 @@ const validateResolverEntry_QuickCheck = async (resolverEntry) => {
     // If the title of the linktype was uploaded, change it to the CURIE version in this function call:
     // console.log('BEFORE', resolverEntry.responses[i]);
     setLinkType(resolverEntry.responses[i]);
-    // console.log('AFTER', resolverEntry.responses[i]);
 
     // Now check it:
     setMissingDefaultsForAbsentResolverResponseProperties(cleanResolverEntry(resolverEntry.responses[i]));
@@ -116,19 +115,18 @@ const validateResolverEntry_QuickCheck = async (resolverEntry) => {
 
     // Validate URI Template variables
     const element = resolverEntry.responses[i];
-    // let qualifierPathURIVariables = decodeURI(resolverEntry.qualifierPath) ?? ''; // ES2020 Nullish Coalescing Operator ??
     const _qualifierPath = decodeURI(resolverEntry.qualifierPath);
     let qualifierPathURIVariables = _qualifierPath !== null && _qualifierPath !== 0 ? _qualifierPath : '';
-    // let targetURLURIVariables = decodeURI(element.targetUrl) ?? '';
     const _targetUrl = decodeURI(element.targetUrl);
     let targetURLURIVariables = _targetUrl !== null && _targetUrl !== 0 ? _targetUrl : '';
     qualifierPathURIVariables = qualifierPathURIVariables.match(/\{.+?\}/g) || [];
     targetURLURIVariables = targetURLURIVariables.match(/\{.+?\}/g) || [];
 
-    // eslint-disable-next-line no-plusplus
-    for (let j = 0; j < targetURLURIVariables.length; j++) {
-      const temp = qualifierPathURIVariables.includes(targetURLURIVariables[i]);
-      if (!temp) {
+    // make sure that variables mentioned in responses are also in the qualifier path.
+    // The exception is special variable '{0}' used to denote the serial number found embedded
+    // in the identifier key value itself, and {1) is used for the entire identifier key value
+    for (const variable of targetURLURIVariables) {
+      if (variable !== '{0}' && variable !== '{1}' && !qualifierPathURIVariables.includes(variable)) {
         returnObj.validationCode = global.entryResponseStatusCode.RESOLVER_ENTRY_MISMATCH_URI_VARIABLES;
         return returnObj;
       }

@@ -1,4 +1,4 @@
-FROM node:15.11.0-alpine3.13
+FROM node:16-alpine3.14
 ENV TZ=Europe/London
 
 # App Insights env config variable (if you wish to use Microsoft Azure App Insights)
@@ -39,7 +39,7 @@ COPY package.json /app
 WORKDIR /app
 
 #Install all the necessary dependendies described in package.json
-RUN npm install && npm audit fix
+RUN npm install
 
 # Copy in the application
 COPY bin                /app/bin

@@ -9,6 +9,7 @@ const base64EncodingAndDecoding = require('./base64_encoding_and_decoding');
 /**
  * getLinkSetJson builds the json output for HTTP header "accept: application/json"
  * querystring and linktype=all or linktype=linkset
+ * If qualifierpath is just this value: '/' then remove that final '/' from the anchor URL
  * @param qualifierPathDoc
  * @param gs1KeyCode
  * @param gs1KeyValue
@@ -18,7 +19,7 @@ const base64EncodingAndDecoding = require('./base64_encoding_and_decoding');
  */
 const getLinkSetJson = (qualifierPathDoc, gs1KeyCode, gs1KeyValue, qualifierPath, unixtime) => {
   const result = {
-    anchor: `${process.env.RESOLVER_FQDN ? process.env.RESOLVER_FQDN : 'https://id.gs1.org'}/${gs1KeyCode}/${gs1KeyValue}${qualifierPath}`,
+    anchor: `${process.env.RESOLVER_FQDN ? process.env.RESOLVER_FQDN : 'https://id.gs1.org'}/${gs1KeyCode}/${gs1KeyValue}${qualifierPath === '/' ? '' : qualifierPath}`,
     itemDescription: qualifierPathDoc.itemDescription,
     unixtime,
   };

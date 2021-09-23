@@ -22,7 +22,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static('public'));
 
 // Setup the routes for API or requested endpoint(s)
-app.use('/descriptionfile.schema.json', resolverDescFileRouter);
+app.use('/resolverdescriptionfile.schema.json', resolverDescFileRouter);
+app.use('/.well-known/resolverdescriptionfile.schema.json', resolverDescFileRouter);
 app.use('/hello', heartBeatRouter);
 app.use('/.well-known', wellKnownRouter);
 app.use('/unixtime', unixTimeRouter);
@@ -44,7 +45,7 @@ app.listen(PORT, (err) => {
     console.log('Server listen error:', err);
     return;
   }
-  console.log(`Resolver Web Server is listening on port ${PORT} in this container`);
+  console.log(`GS1 DigitalLink ID Server is listening on port ${PORT} in this container`);
 });
 
 /**

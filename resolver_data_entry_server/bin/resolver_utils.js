@@ -49,6 +49,12 @@ const aiArray = [
     ai: '414',
   },
   {
+    title: 'Party Global Location Number (PGLN)',
+    label: 'PARTY',
+    shortcode: 'pgln',
+    ai: '417',
+  },
+  {
     title: 'Global Location Number Extension (GLNX)',
     label: 'LOC No extension',
     shortcode: 'glnx',
@@ -192,6 +198,14 @@ const getLinkTypesFromGS1 = async () => {
   } else {
     await getLinkTypesFromElsewhere(process.env.LINKTYPES_SOURCE_URL);
   }
+  // Remove gs1:defaultLink, gs1:defaultLinkMulti, and gs1:handledBy from allowed linktypes
+  const tempLinksArray = [];
+  global.linkTypesArray.forEach((element) => {
+    if (element.curie !== 'gs1:defaultLink' && element.curie !== 'gs1:defaultLinkMulti' && element.curie !== 'gs1:handledBy') {
+      tempLinksArray.push(element);
+    }
+  });
+  global.linkTypesArray = tempLinksArray;
   logThis(`${global.linkTypesArray.length} linkType entries loaded`);
 };
 

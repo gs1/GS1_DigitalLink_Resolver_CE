@@ -12,6 +12,9 @@ aiRouterApp.use('/gtin', processGTINDigitalLinkRouter);
 aiRouterApp.use('/414', processDigitalLinkRouter);
 aiRouterApp.use('/gln', processDigitalLinkRouter);
 
+// Party Global Location Number (only numeric '417' will work for Party GLN)
+aiRouterApp.use('/417', processDigitalLinkRouter);
+
 // Global Location Number Extension (GLNX)
 aiRouterApp.use('/254', processDigitalLinkRouter);
 aiRouterApp.use('/glnx', processDigitalLinkRouter);

@@ -34,7 +34,8 @@ const addNewAccount = async ({ issuerGLN, accountName, authenticationKey }) => {
     await ps.unprepare();
     return queryResponse.recordset;
   } catch (error) {
-    utils.logThis('Error to connect DB for add new account');
+    utils.logThis('Error trying to prepare the stored procedure statement call to add a new account');
+    utils.logThis(`IssuerGLN: ${issuerGLN}  accountName: ${accountName}  authenticationKey: ${authenticationKey} `);
   }
 };
 // For query to delete resolver auth account

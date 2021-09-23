@@ -767,8 +767,6 @@ const buildResolverEntry = (dataColumns, resolverEntry, resolverResponse) => {
 
 const performResolverEntryCheck = async (resolverEntry, divCheckResults, counter, dataLine, dataOKFlag, resolverResponse) => {
   // Removes any empty cell designators
-  console.log('DEBUG ===> resolverEntry', resolverEntry);
-  console.log('DEBUG ===> resolverResponse', resolverResponse);
   while (dataLine.includes(global_EMPTYCELL_FLAG)) {
     dataLine = dataLine.replace(global_EMPTYCELL_FLAG, '');
   }

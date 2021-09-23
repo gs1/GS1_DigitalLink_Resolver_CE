@@ -30,6 +30,7 @@ const buildSyncRun = async () => {
     await dropCollection('resolver_dashboard');
   } else {
     utils.logThis(`Build: '${global.syncId}' last heard ${lastHeardDateTime} - running 'update' build`);
+    console.log('process.memoryUsage().heapUsed on last heard:>> ', process.memoryUsage().heapUsed);
   }
 
   // build GCPs before URIs as there are far fewer entries to build with GCP.
@@ -37,6 +38,7 @@ const buildSyncRun = async () => {
   await performSyncURIDocumentBuild(lastHeardDateTime, fullBuildFlag);
 
   global.buildRunningFlag = false;
+  return true;
 };
 
 module.exports = buildSyncRun;

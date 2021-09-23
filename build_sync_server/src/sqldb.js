@@ -22,6 +22,7 @@ const global_sqlServerConfig = {
   options: {
     encrypt: true,
     enableArithAbort: true,
+    trustServerCertificate: true,
   },
 };
 

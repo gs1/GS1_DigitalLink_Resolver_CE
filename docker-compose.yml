@@ -27,11 +27,32 @@ services:
       - SQLDBCONN_PASSWORD=its@SECR3T!
       - SQLDBCONN_SERVER=sql-server
       - SQLDBCONN_DB=gs1-resolver-ce-v2-1-db
+      - BUILD_HOSTNAME=build_job
+      - DOCKER_COMPOSE_RUN=Y
+      - DOCKER_RUN_INTERVAL_SECS=60
     depends_on:
       - resolver-mongo-service
     restart: always
     networks:
       - resolver-internal-network
+
+  dashboard-sync-service:
+    build: './dashboard_sync_server'
+    container_name: dashboard-sync-server
+    environment:
+      - SQLDBCONN_USER=sa
+      - SQLDBCONN_PASSWORD=its@SECR3T!
+      - SQLDBCONN_SERVER=sql-server
+      - SQLDBCONN_DB=gs1-resolver-ce-v2-1-db
+      - BUILD_HOSTNAME=dashboard_job
+      - DOCKER_COMPOSE_RUN=Y
+      - DOCKER_RUN_INTERVAL_SECS=120
+    depends_on:
+      - resolver-mongo-service
+    restart: always
+    networks:
+      - resolver-internal-network
+
 
   data-entry-service:
     build: './resolver_data_entry_server'

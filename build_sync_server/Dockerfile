@@ -1,4 +1,4 @@
-FROM node:15.11.0-alpine3.13
+FROM node:16-alpine3.14
 
 ENV TZ=Europe/London
 
@@ -31,7 +31,7 @@ ENV BUILD_MAX_ENTROPY_SECONDS=10
 RUN mkdir /buildsync
 COPY *.json /buildsync/
 WORKDIR /buildsync
-RUN npm install && npm audit fix
+RUN npm install
 
 COPY src /buildsync/src
 

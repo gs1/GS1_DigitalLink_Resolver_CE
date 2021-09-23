@@ -185,6 +185,8 @@ INSERT [dbo].[uri_entries] ([uri_entry_id], [member_primary_gln], [identificatio
 GO
 INSERT [dbo].[uri_entries] ([uri_entry_id], [member_primary_gln], [identification_key_type], [identification_key], [item_description], [date_inserted], [date_last_updated], [qualifier_path], [active], [flagged_for_deletion]) VALUES (4, N'9506000038186', N'01', N'09506000134376', N'[]RGFsIEdpYXJkaW5vIE1lZGljaW5hbCBDb21wb3VuZCA1MCB4IDIwMG1nIHdpdGggc2VyaWFsIG51bWJlcg==', CAST(N'2020-11-09T16:17:45.553' AS DateTime), CAST(N'2020-11-09T16:26:16.493' AS DateTime), N'/ser/{serial}', 1, 0)
 GO
+INSERT [dbo].[uri_entries] ([uri_entry_id], [member_primary_gln], [identification_key_type], [identification_key], [item_description], [date_inserted], [date_last_updated], [qualifier_path], [active], [flagged_for_deletion]) VALUES (5, N'9506000038186', N'8004', N'95060001', N'[]RGFsIEdpYXJkaW5vIE1lZGljaW5hbCBDb21wb3VuZCAtIHRoZSBHSUFJIEFzc2V0IQ==', CAST(N'2021-09-22T16:17:45.553' AS DateTime), CAST(N'2021-09-22T16:26:16.493' AS DateTime), N'/', 1, 0)
+GO
 SET IDENTITY_INSERT [dbo].[uri_entries] OFF
 GO
 SET IDENTITY_INSERT [dbo].[uri_responses] ON 
@@ -230,6 +232,10 @@ GO
 INSERT [dbo].[uri_responses] ([uri_response_id], [uri_entry_id], [linktype], [iana_language], [context], [mime_type], [link_title], [target_url], [default_linktype], [default_iana_language], [default_context], [default_mime_type], [forward_request_querystrings], [active], [flagged_for_deletion], [date_inserted], [date_last_updated]) VALUES (20, 3, N'gs1:pip', N'ja', N'xx', N'text/html', N'[]UHJvZHVjdCBJbmZvcm1hdGlvbiBQYWdl', N'https://dalgiardino.com/medicinal-compound/index.html.ja', 0, 1, 1, 1, 1, 1, 0, CAST(N'2020-06-29T15:36:09.917' AS DateTime), CAST(N'2020-06-30T07:46:58.487' AS DateTime))
 GO
 INSERT [dbo].[uri_responses] ([uri_response_id], [uri_entry_id], [linktype], [iana_language], [context], [mime_type], [link_title], [target_url], [default_linktype], [default_iana_language], [default_context], [default_mime_type], [forward_request_querystrings], [active], [flagged_for_deletion], [date_inserted], [date_last_updated]) VALUES (41, 4, N'gs1:pip', N'en', N'xx', N'text/html', N'Product Information Page', N'https://dalgiardino.com/medicinal-compound/index.html?serialnumber={serial}', 0, 1, 1, 1, 1, 1, 0, CAST(N'2020-11-09T16:17:45.557' AS DateTime), CAST(N'2020-11-09T16:26:16.493' AS DateTime))
+GO
+INSERT [dbo].[uri_responses] ([uri_response_id], [uri_entry_id], [linktype], [iana_language], [context], [mime_type], [link_title], [target_url], [default_linktype], [default_iana_language], [default_context], [default_mime_type], [forward_request_querystrings], [active], [flagged_for_deletion], [date_inserted], [date_last_updated]) VALUES (42, 5, N'gs1:pip', N'en', N'xx', N'text/html', N'Asset Information Page (just serial number)', N'https://dalgiardino.com/medicinal-compound/index.html?assetnumber={0}', 1, 1, 1, 1, 1, 1, 0, CAST(N'2021-09-22T16:17:45.557' AS DateTime), CAST(N'2021-09-22T16:26:16.493' AS DateTime))
+GO
+INSERT [dbo].[uri_responses] ([uri_response_id], [uri_entry_id], [linktype], [iana_language], [context], [mime_type], [link_title], [target_url], [default_linktype], [default_iana_language], [default_context], [default_mime_type], [forward_request_querystrings], [active], [flagged_for_deletion], [date_inserted], [date_last_updated]) VALUES (43, 5, N'gs1:faqs', N'en', N'xx', N'text/html', N'Asset FAQs (full GIAI)', N'https://dalgiardino.com/medicinal-compound/index.html?assetnumber={1}', 0, 1, 1, 1, 1, 1, 0, CAST(N'2021-09-22T16:17:45.557' AS DateTime), CAST(N'2021-09-22T16:26:16.493' AS DateTime))
 GO
 
 SET IDENTITY_INSERT [dbo].[uri_responses_prevalid] OFF

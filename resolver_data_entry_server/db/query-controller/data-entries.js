@@ -60,6 +60,8 @@ const searchURIResponsesByURIEntryId = async (uriEntryId) => {
     await ps.unprepare();
     return queryResponse.recordset;
   } catch (e) {
+    // This means that the batch_id cannot be found in the table - it may well be
+    // because no rows have been entered into the uri_entries_prevalid SQL table yet.
     utils.logThis('Error to getting URI Responses');
   }
 };
@@ -134,7 +136,7 @@ const upsertURIEntry = async (resolverEntry) => {
     await ps.unprepare();
     return queryResponse.recordset;
   } catch (e) {
-    utils.logThis(e.message);
+    utils.logThis(`upsertURIEntry Error: ${e.message}`);
   }
 };
 
@@ -152,7 +154,7 @@ const upsertURIResponse = async (resolverResponse) => {
     ps.input('ianaLanguage', sql.TYPES.NChar(2));
     ps.input('context', sql.TYPES.NVarChar(100));
     ps.input('mimeType', sql.TYPES.NVarChar(45));
-    ps.input('linkTitle', sql.TYPES.NVarChar(100));
+    ps.input('linkTitle', sql.TYPES.NVarChar(45));
     ps.input('targetUrl', sql.TYPES.NVarChar(1024));
     ps.input('fwqs', sql.TYPES.Bit());
     ps.input('active', sql.TYPES.Bit());
@@ -205,9 +207,16 @@ const publishValidatedEntries = async (batchId) => {
     await ps.prepare('EXEC [VALIDATE_Publish_Validated_Entries] @batchId');
     const queryResponse = await ps.execute({ batchId });
     await ps.unprepare();
-    return queryResponse.recordset;
+    if (!queryResponse.recordset) {
+      return { SUCCESS: false, reason: 'No recordset in response' };
+    }
+    return { success: true, reason: `${queryResponse.recordset.length} entries affected`, data: queryResponse.recordset };
   } catch (e) {
     utils.logThis(e.message);
+    if (e.message.includes('No rows were updated or deleted')) {
+      return { SUCCESS: false, reason: 'Batch Id could not be found in database' };
+    }
+    return { SUCCESS: false, reason: 'Error in DB' };
   }
 };
 module.exports = {

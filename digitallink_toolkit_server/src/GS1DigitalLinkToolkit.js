@@ -3605,6 +3605,17 @@ class GS1DigitalLinkToolkit {
         regex: '(\\d{13})',
       },
       {
+        title: 'Party Global Location Number (PGLN)',
+        label: 'PARTY',
+        shortcode: 'pgln',
+        ai: '417',
+        format: 'N13',
+        type: 'I',
+        fixedLength: true,
+        checkDigit: 'L',
+        regex: '(\\d{13})',
+      },
+      {
         title: 'Ship to - Deliver to postal code within a single postal authority',
         label: 'SHIP TO POST',
         ai: '420',
@@ -4874,6 +4885,7 @@ class GS1DigitalLinkToolkit {
       414: [{ E: 'N', L: '13' }],
       415: [{ E: 'N', L: '13' }],
       416: [{ E: 'N', L: '13' }],
+      417: [{ E: 'N', L: '13' }],
       420: [{ E: 'X', M: '20' }],
       421: [
         { E: 'N', L: '3' },
@@ -5340,6 +5352,12 @@ class GS1DigitalLinkToolkit {
       3123: { p: ['gs1:outOfPackageWidth'], rec20: 'MTR' },
       3124: { p: ['gs1:outOfPackageWidth'], rec20: 'MTR' },
       3125: { p: ['gs1:outOfPackageWidth'], rec20: 'MTR' },
+      3460: { p: ['gs1:outOfPackageWidth'], rec20: 'YRD' },
+      3461: { p: ['gs1:outOfPackageWidth'], rec20: 'YRD' },
+      3462: { p: ['gs1:outOfPackageWidth'], rec20: 'YRD' },
+      3463: { p: ['gs1:outOfPackageWidth'], rec20: 'YRD' },
+      3464: { p: ['gs1:outOfPackageWidth'], rec20: 'YRD' },
+      3465: { p: ['gs1:outOfPackageWidth'], rec20: 'YRD' },
       3450: { p: ['gs1:inPackageWidth'], rec20: 'FOT' },
       3451: { p: ['gs1:inPackageWidth'], rec20: 'FOT' },
       3452: { p: ['gs1:inPackageWidth'], rec20: 'FOT' },
@@ -5358,12 +5376,6 @@ class GS1DigitalLinkToolkit {
       3323: { p: ['gs1:inPackageWidth'], rec20: 'MTR' },
       3324: { p: ['gs1:inPackageWidth'], rec20: 'MTR' },
       3325: { p: ['gs1:inPackageWidth'], rec20: 'MTR' },
-      3460: { p: ['gs1:inPackageWidth'], rec20: 'YRD' },
-      3461: { p: ['gs1:inPackageWidth'], rec20: 'YRD' },
-      3462: { p: ['gs1:inPackageWidth'], rec20: 'YRD' },
-      3463: { p: ['gs1:inPackageWidth'], rec20: 'YRD' },
-      3464: { p: ['gs1:inPackageWidth'], rec20: 'YRD' },
-      3465: { p: ['gs1:inPackageWidth'], rec20: 'YRD' },
       3510: { p: ['gs1:netArea'], rec20: 'FTK' },
       3511: { p: ['gs1:netArea'], rec20: 'FTK' },
       3512: { p: ['gs1:netArea'], rec20: 'FTK' },
@@ -5821,15 +5833,19 @@ class GS1DigitalLinkToolkit {
   }
 
   // tests the syntax of a value against the regular expression (expected format)
-  // throws an error when invalid syntax is detected
+  // throws an error when invalid syntax is detected. Allows template variables
+  // to be included that bypasses check - detects this with presence of '{' and '}'.
   // e.g. verifySyntax('01','01234567890128');
-  // UPDATE by Nick Lansley - if value starts with { and ends with } then it is
-  // a 'template variable' and the syntax does not need to be checked (as it will fail!))
   verifySyntax(ai, value) {
-    if (!ai) return;
-    if (!this.regexAllNum.test(ai)) return;
-    if (value && value.startsWith('{') && value.endsWith('}')) return;
-    if (!this.aiRegex[ai].test(value)) throw 'SYNTAX ERROR: invalid syntax for value of (' + ai + ')' + value;
+    if (value && value.includes('{') && value.includes('}')) {
+      return;
+    }
+
+    if (ai !== null && this.regexAllNum.test(ai)) {
+      if (!this.aiRegex[ai].test(value)) {
+        throw 'SYNTAX ERROR: invalid syntax for value of (' + ai + ')' + value;
+      }
+    }
   }
 
   // method to percent-encode all reserved characters mentioned in the GS1 Digital Link standard
@@ -6255,8 +6271,12 @@ class GS1DigitalLinkToolkit {
     if (rv.detected == 'fully compressed GS1 Digital Link' || rv.detected == 'partially compressed GS1 Digital Link') {
       uncompressedDL = this.decompressGS1DigitalLink(gs1DigitalLinkURI, false, rv.uriStem);
     }
+
+    let excludeQueryString = uncompressedDL;
     let qpos = uncompressedDL.indexOf('?');
-    let excludeQueryString = uncompressedDL.substr(0, qpos);
+    if (qpos > -1) {
+      excludeQueryString = uncompressedDL.substr(0, qpos);
+    }
 
     let rv2 = this.analyseURI(excludeQueryString, false);
 
@@ -6721,7 +6741,7 @@ class GS1DigitalLinkToolkit {
     rv.structuredOutput = '';
 
     if (relevantPathComponents.length > 0 && relevantPathComponents.length % 2 == 0) {
-      if (this.aiRegex[numericPrimaryIdentifier].test(relevantPathComponents[1])) {
+      if (this.aiRegex[numericPrimaryIdentifier].test(decodeURIComponent(relevantPathComponents[1]))) {
         rv.detected = 'uncompressed GS1 Digital Link';
 
         rv.uncompressedPath = '/' + relevantPathComponents.join('/');
@@ -6738,7 +6758,7 @@ class GS1DigitalLinkToolkit {
     }
 
     if (relevantPathComponents.length == 3 && this.regexSafe64.test(relevantPathComponents[2])) {
-      if (this.aiRegex[numericPrimaryIdentifier].test(relevantPathComponents[1])) {
+      if (this.aiRegex[numericPrimaryIdentifier].test(decodeURIComponent(relevantPathComponents[1]))) {
         rv.detected = 'partially compressed GS1 Digital Link';
         rv.uncompressedPath = '/' + relevantPathComponents.slice(0, 2).join('/');
         rv.compressedPath = relevantPathComponents[2];

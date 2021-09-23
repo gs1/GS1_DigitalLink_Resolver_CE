@@ -5,13 +5,14 @@ const { AuthenticationError, ValidationError, ServerResponseError } = require('.
 const errorHandler = (err, req, res, next) => {
   utils.logThis('Inside the ErrorHandler function of resolver_data_entry_service');
   utils.logThis(`${err.cause || err.message} -- ${err.name}`);
+  utils.logThis(JSON.stringify(err, null, 2));
 
   if (!(err.message || err.cause)) {
     next();
   }
   const _err = {
     statusCode: 500,
-    message: 'Something went wrong in server!!!',
+    message: 'Something went wrong in resolver_data_entry_server!',
   };
 
   if (err instanceof AuthenticationError || err instanceof ValidationError || err instanceof ServerResponseError) {

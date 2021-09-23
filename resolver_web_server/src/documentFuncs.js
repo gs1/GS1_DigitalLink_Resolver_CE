@@ -74,11 +74,17 @@ function matchPathVariables(doc, qualifiers) {
         // Now replace all variables in the doc[qualifierPath] with actual values
         // To this, loop through all the responses.link in doc[qualifierPath] and replace them!
         qualifiers.forEach((qualifier) => {
-          // eslint-disable-next-line no-plusplus
-          for (let i = 0; i < doc[qualifierPath].responses.length; i++) {
-            let { link } = doc[qualifierPath].responses[i];
-            link = decodeURI(link).replace(qualifier.variable, Object.values(qualifier)[0].toString());
-            doc[qualifierPath].responses[i].link = link;
+          for (const i in doc[qualifierPath].responses) {
+            // eslint-disable-next-line no-prototype-builtins
+            if (doc[qualifierPath].responses.hasOwnProperty(i)) {
+              let { link } = doc[qualifierPath].responses[i];
+              link = decodeURI(link).replace(qualifier.variable, Object.values(qualifier)[0].toString());
+              doc[qualifierPath].responses[i].link = link;
+              // Also replace the template variables in the link header
+              while (doc[qualifierPath].linkHeaderText.includes(qualifier.variable)) {
+                doc[qualifierPath].linkHeaderText = doc[qualifierPath].linkHeaderText.replace(qualifier.variable, Object.values(qualifier)[0].toString());
+              }
+            }
           }
         });
         // Return the altered responses document

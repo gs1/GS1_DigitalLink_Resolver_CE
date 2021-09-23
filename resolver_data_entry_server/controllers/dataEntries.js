@@ -1,4 +1,4 @@
-const asynchHandler = require('../middleware/asyncHandler');
+const asyncHandler = require('../middleware/asyncHandler');
 const utils = require('../bin/resolver_utils');
 const validate = require('../bin/validate');
 
@@ -30,7 +30,7 @@ const {
 } = require('../controller-helper/dataEntries');
 
 // get URI Date
-exports.getDataEntryDate = asynchHandler(async (req, res) => {
+exports.getDataEntryDate = asyncHandler(async (req, res) => {
   const dateObj = new Date();
   res.send({
     staus: true,
@@ -44,9 +44,9 @@ exports.getDataEntryDate = asynchHandler(async (req, res) => {
  * * @desc   Get and returns a count of all the resolver entries owned by the specified GLN.
  * * @route  GET /resolver/all/count
  * * @access Private
- * * @params required auth bearer token <auththentication-key>
+ * * @params required auth bearer token <authentication-key>
  */
-exports.getAllDataEntriesCount = asynchHandler(async (req, res, next) => {
+exports.getAllDataEntriesCount = asyncHandler(async (req, res, next) => {
   const { authToken } = req;
   const isValidUser = await checkAPIAuth(authToken);
 
@@ -72,7 +72,7 @@ exports.getAllDataEntriesCount = asynchHandler(async (req, res, next) => {
  * * @access Private
  * * @params required auth bearer token <auththentication-key>
  */
-exports.getURIEntriesUsingIKeyAndGLN = asynchHandler(async (req, res, next) => {
+exports.getURIEntriesUsingIKeyAndGLN = asyncHandler(async (req, res, next) => {
   const { authToken } = req;
   const isValidUser = await checkAPIAuth(authToken);
 
@@ -123,7 +123,7 @@ exports.getURIEntriesUsingIKeyAndGLN = asynchHandler(async (req, res, next) => {
  * * @access Private
  * * @params required auth bearer token <auththentication-key>
  */
-exports.deleteURIEntriesUsingIKey = asynchHandler(async (req, res, next) => {
+exports.deleteURIEntriesUsingIKey = asyncHandler(async (req, res, next) => {
   const { authToken } = req;
   const isValidUser = await checkAPIAuth(authToken);
 
@@ -146,7 +146,11 @@ exports.deleteURIEntriesUsingIKey = asynchHandler(async (req, res, next) => {
 
   res.status(200).json({
     status: true,
-    data: { SUCCESS: deleteURIEntryResp[0].SUCCESS, identificationKeyType: officialDef.identificationKeyType, identificationKey: officialDef.identificationKey },
+    data: {
+      SUCCESS: deleteURIEntryResp[0].SUCCESS,
+      identificationKeyType: officialDef.identificationKeyType,
+      identificationKey: officialDef.identificationKey,
+    },
   });
 });
 
@@ -158,7 +162,7 @@ exports.deleteURIEntriesUsingIKey = asynchHandler(async (req, res, next) => {
  * * @params required auth bearer token <auththentication-key>
  * * @param batchId
  */
-exports.validateBatchURI = asynchHandler(async (req, res, next) => {
+exports.validateBatchURI = asyncHandler(async (req, res, next) => {
   const { authToken } = req;
   const isValidUser = await checkAPIAuth(authToken);
   if (!isValidUser[0].success) {
@@ -190,7 +194,7 @@ exports.validateBatchURI = asynchHandler(async (req, res, next) => {
  * * @params required auth bearer token <auththentication-key>
  * * @param pageNumber, pageSize
  */
-exports.getDataEntriesByPage = asynchHandler(async (req, res, next) => {
+exports.getDataEntriesByPage = asyncHandler(async (req, res, next) => {
   const { authToken } = req;
   const isValidUser = await checkAPIAuth(authToken);
   if (!isValidUser[0].success) {
@@ -231,10 +235,10 @@ exports.getDataEntriesByPage = asynchHandler(async (req, res, next) => {
  * * @desc   Post for Resolver Entries using Identification Key Type and Identification Key
  * * @route  POST /resolver
  * * @access Private
- * * @params required auth bearer token <auththentication-key>
+ * * @params required auth bearer token <authentication-key>
  *   @params in Array i.e. [{}]
  */
-exports.addDataURIEntry = asynchHandler(async (req, res, next) => {
+exports.addDataURIEntry = asyncHandler(async (req, res, next) => {
   const { authToken, body } = req;
   const isValidUser = await checkAPIAuth(authToken);
 
@@ -265,7 +269,7 @@ exports.addDataURIEntry = asynchHandler(async (req, res, next) => {
   }
 });
 
-// This function is for create batchId and validate addDataEntry parameters in request
+// This function is to create batchId and validate addDataEntry parameters in request
 const processBatchAndValidateEntries = async (entriesObj) => {
   const processObj = { batchId: 0, badEntries: [] };
   processObj.batchId = generateBatchId_v2();
@@ -275,8 +279,61 @@ const processBatchAndValidateEntries = async (entriesObj) => {
   return processObj;
 };
 
-// Definition to process data entries to DB using batch
-const processBatchToSaveDataEntries = asynchHandler(async ({ issuerGLN, requestBody, batchId }) => {
+/**
+ * Formats the resolver entry ready to enter the SQL database *
+ * for example, True / False properties become 1 or 0.
+ * Also makes use of the Digital Link Toolkit's official definition for the
+ * identificationKeyType (which becomes an AI code) and identificationKey which can be
+ * formatted to fit an ideal length - for example a GTIN-12/13 becomes always 14 characters.
+ * @param resolverEntry
+ * @param officialDef
+ * @param issuerGLN
+ * @param batchId
+ */
+function formatResolverEntryForSQL(resolverEntry, officialDef, issuerGLN, batchId) {
+  // this will change any identificationKeyType as a shortcode (e.g. 'gtin') to its numeric equivalent (e.g.'01')
+  resolverEntry.identificationKeyType = officialDef.identificationKeyType;
+  resolverEntry.identificationKey = officialDef.identificationKey;
+  // Convert active flag into 1 or 0, and add issuerGLN just for the SQL call, convert item description to use SQLSafe
+  resolverEntry.active = resolverEntry.active ? 1 : 0;
+  resolverEntry.issuerGLN = issuerGLN;
+  resolverEntry.itemDescription = utils.convertTextToSQLSafe_v2(resolverEntry.itemDescription);
+  // Add the batchId property ready for entry into the database
+  resolverEntry.batchId = batchId;
+  // Value 255 is 'pending validation check'
+  resolverEntry.validationCode = 255;
+}
+
+/**
+ * Updates or Inserts ('upserts'!) responses for an Entry
+ * @param entryUpsertResultResp
+ * @param resolverEntry
+ * @param savedUpsertArray
+ * @param issuerGLN
+ * @returns {Promise<void>}
+ */
+async function upsertEntryResponses(entryUpsertResultResp, resolverEntry, savedUpsertArray, issuerGLN) {
+  const uriEntryId = entryUpsertResultResp[0].uri_entry_id;
+  // Loop through each of the resolver response entries:
+  for await (const resolverResponse of resolverEntry.responses) {
+    resolverResponse.uriEntryId = uriEntryId;
+    // Make a call to DB for inserting responses data
+    await makeDBReqForDataURIResponses(resolverResponse);
+  }
+  // Add the successful save to the 'savedUpsertArray':
+  savedUpsertArray.push({
+    identificationKeyType: resolverEntry.identificationKeyType,
+    identificationKey: resolverEntry.identificationKey,
+    issuerGLN,
+  });
+}
+
+/**
+ * Definition to process data entries to DB using batch (the client has disconnected and
+ * should next use the /resolver/validation/batch/nnnnnnnnn API command to find out how processing is progressing
+ * @type {(function(*=, *=, *=): Promise<*>)|*}
+ */
+const processBatchToSaveDataEntries = asyncHandler(async ({ issuerGLN, requestBody, batchId }) => {
   const savedUpsertArray = [];
   const dataEntriesResponseArr = await cleanAndParseDataEntryResponse(requestBody);
 
@@ -284,43 +341,22 @@ const processBatchToSaveDataEntries = asynchHandler(async ({ issuerGLN, requestB
   // an object like this: { SUCCESS: true, uriEntryID: 12345 }
   // ..where uriEntryID is the primary key identity ID of the saved request part of
   // the resolver entry. This value will be used to link the responses to the request in
-  // the SQL database.try
+  // the SQL database.
   for await (const resolverEntry of dataEntriesResponseArr) {
     if (resolverEntry.validationCode === global.entryResponseStatusCode.OK) {
       // get official definitions for GS1 Key Code and Value as this is what we must store in the SQL database
       const officialDef = await utils.getDigitalLinkStructure(`/${resolverEntry.identificationKeyType}/${resolverEntry.identificationKey}`);
-      if (!officialDef.SUCCESS) {
-        // Failed the Digital Link toolkit test
-        utils.logThis(`${resolverEntry.identificationKeyType}/${resolverEntry.identificationKey} - failed the Digital Link toolkit test`);
-      } else {
-        // this will change any identificationKeyType as a shortcode (e.g. 'gtin') to its numeric equivalent (e.g.'01')
-        resolverEntry.identificationKeyType = officialDef.identificationKeyType;
-        resolverEntry.identificationKey = officialDef.identificationKey;
-        // Convert active flag into 1 or 0, and add issuerGLN just for the SQL call, convert item description to use SQLSafe
-        resolverEntry.active = resolverEntry.active ? 1 : 0;
-        resolverEntry.issuerGLN = issuerGLN;
-        resolverEntry.itemDescription = utils.convertTextToSQLSafe_v2(resolverEntry.itemDescription);
-        // Add the batchId property ready for entry into the database
-        resolverEntry.batchId = batchId;
-        // Value 255 is 'pending validation check'
-        resolverEntry.validationCode = 255;
+      if (officialDef.SUCCESS) {
+        // We have an officially sanctioned entry from the Digital Link Toolkit so let's format and insert it into SQL database
+        formatResolverEntryForSQL(resolverEntry, officialDef, issuerGLN, batchId);
         const entryUpsertResultResp = await upsertURIEntry(resolverEntry);
         // check if the upsert URI Entry data response success if yes than make a call to uriResponse to DB
         if (entryUpsertResultResp[0].SUCCESS) {
-          const uriEntryId = entryUpsertResultResp[0].uri_entry_id;
-          // Loop through each of the resolver response entries:
-          for await (const resolverResponse of resolverEntry.responses) {
-            resolverResponse.uriEntryId = uriEntryId;
-            // Make a call to DB for inserting responses data
-            await makeDBReqForDataURIResponses(resolverResponse);
-          }
-          // Add the successful save to the 'savedUpsertArray':
-          savedUpsertArray.push({
-            identificationKeyType: resolverEntry.identificationKeyType,
-            identificationKey: resolverEntry.identificationKey,
-            issuerGLN,
-          });
+          await upsertEntryResponses(entryUpsertResultResp, resolverEntry, savedUpsertArray, issuerGLN);
         }
+      } else {
+        // Failed the Digital Link toolkit test
+        utils.logThis(`${resolverEntry.identificationKeyType}/${resolverEntry.identificationKey} - failed the Digital Link toolkit test`);
       }
     }
   }
@@ -329,14 +365,19 @@ const processBatchToSaveDataEntries = asynchHandler(async ({ issuerGLN, requestB
   // Validate the entries
   await validate.validateBatchOfEntries(savedUpsertArray);
   // Publish any entries validated as OK
-  const publishCount = await publishValidatedEntries(batchId);
-  utils.logThis(`${publishCount[0].entriesPublishedCount} entries were published`);
+  const publishResult = await publishValidatedEntries(batchId);
+  if (publishResult.success) {
+    utils.logThis(`processBatchToSaveDataEntries: ${publishResult.reason}`);
+  } else {
+    utils.logThis(`processBatchToSaveDataEntries Error: ${publishResult.reason}`);
+  }
 });
 
 // Method to loop over each entries and response to make insert request to DB
 const makeDBReqForDataURIResponses = async (incomingResolverResponse) => {
   const resolverResponse = setMissingDefaultsForAbsentResolverResponseProperties(cleanResolverEntry(incomingResolverResponse));
   if (checkResolverResponsePropertiesArePresent(resolverResponse)) {
+    resolverResponse.linkTitle = resolverResponse.linkTitle.substring(0, 45);
     const upsertURIDataResp = await upsertURIResponse(resolverResponse);
     return upsertURIDataResp.SUCCESS;
   }

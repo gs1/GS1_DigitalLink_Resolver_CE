@@ -15,6 +15,7 @@ const sqlServerConfig = {
   options: {
     encrypt: true,
     enableArithAbort: true,
+    trustServerCertificate: true,
   },
   pool: {
     max: +process.env.SQLDBCONN_MAX_POOL || 10,
@@ -45,7 +46,7 @@ const getConnection = async () => {
     if (pool) {
       // has the connection pool already been created?
       // if so, return the existing pool
-      utils.logThis('Return existing pool connection without creating a new connection to DB');
+      // utils.logThis('Return existing pool connection without creating a new connection to DB');
       return pool;
     }
     // create a new connection pool

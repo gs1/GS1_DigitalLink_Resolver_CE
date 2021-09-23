@@ -4,7 +4,8 @@ const { ValidationError, ServerResponseError } = require('../utils/custom-error'
 
 const errorHandler = (err, req, res, next) => {
   utils.logThis('Inside the ErrorHandler function of resolver_web_service');
-
+  utils.logThis(`err.message = ${err.message}`);
+  utils.logThis(`err.cause = ${err.cause}`);
   if (!(err.message || err.cause)) {
     next();
   }

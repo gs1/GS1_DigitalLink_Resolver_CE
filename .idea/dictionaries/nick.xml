@@ -1,8 +1,32 @@
 <component name="ProjectDictionaryState">
   <dictionary name="nick">
     <words>
+      <w>appname</w>
+      <w>cpid</w>
+      <w>dataentry</w>
+      <w>dbbackup</w>
+      <w>digitallink</w>
+      <w>dltoolkit</w>
+      <w>epil</w>
+      <w>fwqs</w>
+      <w>gdti</w>
+      <w>giai</w>
+      <w>ginc</w>
+      <w>glnx</w>
+      <w>grai</w>
+      <w>gsin</w>
+      <w>gsrn</w>
       <w>kubectl</w>
+      <w>kustomization</w>
+      <w>lansley</w>
+      <w>linkset</w>
       <w>linktype</w>
+      <w>myvar</w>
+      <w>prevalid</w>
+      <w>resolverdata</w>
+      <w>sqldb</w>
+      <w>sscc</w>
+      <w>unixtime</w>
     </words>
   </dictionary>
 </component>

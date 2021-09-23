@@ -5,6 +5,57 @@ const { decodeSQLSafeResolverArray, formatUriDocument } = require('./controllerU
 const linksetBuilder = require('../buildlinkset');
 
 /**
+ * Publishes the new or updated URI Entry in Mongo
+ * @param identificationKeyType
+ * @param identificationKey
+ * @param fullBuildIfTrue
+ * @param sqlDBEntryRow
+ * @param qualifierPath
+ * @param sortedQualifiers
+ * @param structure
+ * @returns {Promise<void>}
+ */
+async function publishURIEntry(identificationKeyType, identificationKey, fullBuildIfTrue, sqlDBEntryRow, qualifierPath, sortedQualifiers, structure) {
+  // Go and get the existing entry document from the MongoDB database
+  const mongoEntry = await findEntryInMongoDB(identificationKeyType, identificationKey, 'uri');
+
+  if (fullBuildIfTrue) {
+    await updateUriDocument(sqlDBEntryRow, qualifierPath, mongoEntry, identificationKeyType, identificationKey, sortedQualifiers, structure);
+  } else {
+    const updateOrDeleteFlag = sqlDBEntryRow.active;
+    if (updateOrDeleteFlag) {
+      await updateUriDocument(sqlDBEntryRow, qualifierPath, mongoEntry, identificationKeyType, identificationKey, sortedQualifiers, structure);
+    } else {
+      await deleteUriDocument(mongoEntry, qualifierPath);
+    }
+  }
+}
+
+function buildURIDocument(structure) {
+  // These are the identificationKeyTypes and values as the official GS1 Digital Link Toolkit understands them,
+  // which is the same toolkit also used by id_web_server to gain that same understanding.
+  // by having both servers rely on the toolkit, we get consistency of data (e.g. '01' and not 'gtin').
+  const identificationKeyType = Object.keys(structure.identifiers[0])[0];
+  const identificationKey = structure.identifiers[0][identificationKeyType];
+
+  // qualifierPath is now rebuilt according to the values in structure.qualifiers, and we build
+  // in the order of .sortedQualifiers[] if it exists:
+  let qualifierPath = '';
+  const sortedQualifiers = structure.sortedQualifiers ? structure.sortedQualifiers : structure.qualifiers;
+
+  for (const qualifier of sortedQualifiers) {
+    const qualifierKey = Object.keys(qualifier);
+    const qualifierValue = qualifier[qualifierKey];
+    qualifierPath += `/${qualifierKey}/${qualifierValue}`;
+  }
+
+  if (qualifierPath === '') {
+    qualifierPath = '/';
+  }
+  return { identificationKeyType, identificationKey, qualifierPath, sortedQualifiers };
+}
+
+/**
  * buildURIDocuments takes a sqlDBEntrySet of entry rows and processes them into MongoDB by building each document.
  * If fullBuildIfTrue = true, this function will always process this entry as an update. If false, the added column
  * 'update_or_delete_flag' is examined (it is part of the entry record).
@@ -28,47 +79,18 @@ const buildURIDocuments = async (sqlDBEntrySet, fullBuildIfTrue) => {
 
       // Get the qualifier_path
       // There are no variant attributes so we'll just define this entry as the 'root variant' denoted by '/':
-      let qualifierPath = sqlDBEntryRow.qualifier_path.trim() || '/';
-      // qualifierPath = qualifierPath.replace(/{/g, "%7B").replace(/}/g, "%7B");
-      qualifierPath = encodeURI(qualifierPath);
+      let entryQualifierPath = sqlDBEntryRow.qualifier_path.trim() || '/';
+      entryQualifierPath = encodeURI(entryQualifierPath);
+
       // test that the entry is DigitalLink compliant
-      const urlToTest = `/${sqlDBEntryRow.identification_key_type.trim()}/${sqlDBEntryRow.identification_key.trim()}${qualifierPath}`;
+      const urlToTest = `/${sqlDBEntryRow.identification_key_type.trim()}/${sqlDBEntryRow.identification_key.trim()}${entryQualifierPath}`;
       const structure = await getDigitalLinkStructure(urlToTest);
+
       if (structure.result === 'OK') {
-        // These are the identificationKeyTypes and values as the official GS1 Digital Link Toolkit understands them,
-        // which is the same toolkit also used by id_web_server to gain that same understanding.
-        // by having both servers rely on the toolkit, we get consistency of data (e.g. '01' and not 'gtin').
-        const identificationKeyType = Object.keys(structure.identifiers[0])[0];
-        const identificationKey = structure.identifiers[0][identificationKeyType];
-
-        // qualifierPath is now rebuilt according to the values in structure.qualifiers, and we build
-        // in the order of .sortedQualifiers[] if it exists:
-        qualifierPath = '';
-        const sortedQualifiers = structure.sortedQualifiers ? structure.sortedQualifiers : structure.qualifiers;
-
-        for (const qualifier of sortedQualifiers) {
-          const qualifierKey = Object.keys(qualifier);
-          const qualifierValue = qualifier[qualifierKey];
-          qualifierPath += `/${qualifierKey}/${qualifierValue}`;
-        }
-
-        if (qualifierPath === '') {
-          qualifierPath = '/';
-        }
-
-        // Go and get the existing entry document from the MongoDB database
-        const mongoEntry = await findEntryInMongoDB(identificationKeyType, identificationKey, 'uri');
-
-        if (fullBuildIfTrue) {
-          await updateUriDocument(sqlDBEntryRow, qualifierPath, mongoEntry, identificationKeyType, identificationKey, sortedQualifiers, structure);
-        } else {
-          const updateOrDeleteFlag = sqlDBEntryRow.active;
-          if (updateOrDeleteFlag) {
-            await updateUriDocument(sqlDBEntryRow, qualifierPath, mongoEntry, identificationKeyType, identificationKey, sortedQualifiers, structure);
-          } else {
-            await deleteUriDocument(mongoEntry, qualifierPath);
-          }
-        }
+        // Build the document
+        const { identificationKeyType, identificationKey, qualifierPath, sortedQualifiers } = buildURIDocument(structure);
+        // Publish the built document
+        await publishURIEntry(identificationKeyType, identificationKey, fullBuildIfTrue, sqlDBEntryRow, qualifierPath, sortedQualifiers, structure);
       } else {
         logThis(`Warning: Non DigitalLink-compliant resolver data entry record rejected: ${urlToTest} - error is: ${structure.error}`);
       }
@@ -79,6 +101,79 @@ const buildURIDocuments = async (sqlDBEntrySet, fullBuildIfTrue) => {
 };
 
 /**
+ * Process a standard URI update from a Mongo Entry that does have at least one response (the normally-found format).
+ * Function processMalformedURIUpdate() exists for malformed Mango entries (a safety feature which should never happen).
+ * @param mongoEntry
+ * @param identKeyType
+ * @param identKey
+ * @param qualifierPath
+ * @param qualifierPathEntry
+ * @param sortedQualifiers
+ * @param structure
+ * @returns {Promise<{}>}
+ */
+async function processURIUpdate(mongoEntry, identKeyType, identKey, qualifierPath, qualifierPathEntry, sortedQualifiers, structure) {
+  if (mongoEntry === null) {
+    // Create a brand new document
+    mongoEntry = {
+      _id: `/${identKeyType}/${identKey}`,
+      // qualifierPaths: [ qualifierPathEntry ]
+      [qualifierPath]: qualifierPathEntry,
+    };
+  } else {
+    mongoEntry[qualifierPath] = qualifierPathEntry;
+  }
+
+  // If the qualifierPath includes template variables signified by {variablename} format
+  // Populate a variables[] array with the variable names. Later, Resolver's web server
+  // will look for variables array having variables, and replace them with actual values
+  // being resolved (see function getQualifierPathDoc() in reseolver_web_server code).
+  if (qualifierPath.includes('{')) {
+    mongoEntry[qualifierPath].variables = sortedQualifiers;
+  }
+
+  // update unixtime to this current second:
+  mongoEntry.unixtime = Math.round(new Date().getTime() / 1000);
+
+  // format the document for best efficient parsing by the resolving application:
+  mongoEntry = formatUriDocument(mongoEntry);
+
+  // Add the linkset info:
+  mongoEntry[qualifierPath].linkset = linksetBuilder.getLinkSetJson(mongoEntry[qualifierPath], identKeyType, identKey, qualifierPath, mongoEntry.unixtime);
+  mongoEntry[qualifierPath].linkHeaderText = linksetBuilder.getLinkHeaderText(mongoEntry[qualifierPath], structure);
+
+  // update in document in the Mongo database
+  const success = await updateDocumentInMongoDB(mongoEntry, 'uri');
+  if (!success) {
+    logThis(`Failed to update Mongo database with entry: ${JSON.stringify(mongoEntry)}`);
+  }
+  return mongoEntry;
+}
+
+/**
+ * A entry with no responses has been found in the database (thus 'malformed'), so this safety function
+ * removes the qualifierPath from the record (or the entire record) in MongoDB (if mongoEntry isn't
+ * null, which would be the case if no record exists in MongoDB anyway).
+ * @param mongoEntry
+ * @param qualifierPath
+ * @returns {Promise<void>}
+ */
+async function processMalformedURIUpdate(mongoEntry, qualifierPath) {
+  if (mongoEntry !== null) {
+    if (mongoEntry[qualifierPath] !== null) {
+      delete mongoEntry[qualifierPath];
+    }
+    if (Object.keys(mongoEntry).length < 3) {
+      // Now we've removed that qualifierPath, there are no qualifierPaths left! Delete the record.
+      await deleteDocumentInMongoDB(mongoEntry, 'uri');
+    } else {
+      // There is still at least one qualifierPath left, so update the record which has had this qualifierPath removed.
+      await updateDocumentInMongoDB(mongoEntry, 'uri');
+    }
+  }
+}
+
+/**
  * Updates the resolver URI document with the included qualifier path entry, inserting it if
  * does not exist already.
  * @param sqlDBEntryRow
@@ -87,6 +182,7 @@ const buildURIDocuments = async (sqlDBEntrySet, fullBuildIfTrue) => {
  * @param identKeyType
  * @param identKey
  * @param sortedQualifiers
+ * @param structure
  * @returns {Promise<*>}
  */
 const updateUriDocument = async (sqlDBEntryRow, qualifierPath, mongoEntry, identKeyType, identKey, sortedQualifiers, structure) => {
@@ -104,57 +200,12 @@ const updateUriDocument = async (sqlDBEntryRow, qualifierPath, mongoEntry, ident
       const qualifierPathEntry = buildQualifierPathEntry(qualifierPath, sqlDBEntryRow, responseSet);
 
       if (qualifierPathEntry !== null) {
-        if (mongoEntry === null) {
-          // Create a brand new document
-          mongoEntry = {
-            _id: `/${identKeyType}/${identKey}`,
-            // qualifierPaths: [ qualifierPathEntry ]
-            [qualifierPath]: qualifierPathEntry,
-          };
-        } else {
-          mongoEntry[qualifierPath] = qualifierPathEntry;
-        }
-
-        // If the qualifierPath includes template variables signified by {variablename} format
-        // Populate a variables[] array with the variable names. Later, Resolver's web server
-        // will look for variables array having variables, and replace them with actual values
-        // being resolved (see function getQualifierPathDoc() in reseolver_web_server code).
-        if (qualifierPath.includes('{')) {
-          mongoEntry[qualifierPath].variables = sortedQualifiers;
-        }
-
-        // update unixtime to this current second:
-        mongoEntry.unixtime = Math.round(new Date().getTime() / 1000);
-
-        // format the document for best efficient parsing by the resolving application:
-        mongoEntry = formatUriDocument(mongoEntry);
-
-        // Add the linkset info:
-        mongoEntry[qualifierPath].linkset = linksetBuilder.getLinkSetJson(mongoEntry[qualifierPath], identKeyType, identKey, qualifierPath, mongoEntry.unixtime);
-        mongoEntry[qualifierPath].linkHeaderText = linksetBuilder.getLinkHeaderText(mongoEntry[qualifierPath], structure);
-
-        // update in document in the Mongo database
-        const success = await updateDocumentInMongoDB(mongoEntry, 'uri');
-        if (!success) {
-          logThis(`Failed to update Mongo database with entry: ${JSON.stringify(mongoEntry)}`);
-        }
+        mongoEntry = await processURIUpdate(mongoEntry, identKeyType, identKey, qualifierPath, qualifierPathEntry, sortedQualifiers, structure);
       } else {
         // A entry with no responses has been found in the database, so this safety feature kicks in
         // to remove the qualifierPath from the record (or the entire record) in MongoDB (if mongoEntry isn't
         // null, which would be the case if no record exists in MongoDB anyway).
-        /* eslint-disable no-lonely-if */
-        if (mongoEntry !== null) {
-          if (mongoEntry[qualifierPath] !== null) {
-            delete mongoEntry[qualifierPath];
-          }
-          if (Object.keys(mongoEntry).length < 3) {
-            // Now we've removed that qualifierPath, there are no qualifierPaths left! Delete the record.
-            await deleteDocumentInMongoDB(mongoEntry, 'uri');
-          } else {
-            // There is still at least one qualifierPath left, so update the record which has had this qualifierPath removed.
-            await deleteDocumentInMongoDB(mongoEntry, 'uri');
-          }
-        }
+        await processMalformedURIUpdate(mongoEntry, qualifierPath);
       }
     } else {
       logThis('updateUriDocument: A null response array was returned');
@@ -162,7 +213,7 @@ const updateUriDocument = async (sqlDBEntryRow, qualifierPath, mongoEntry, ident
 
     return mongoEntry;
   } catch (err) {
-    logThis(`updateUriDocument error: ${err}`);
+    logThis(`updateUriDocument of buildURIDocumentsController error: ${err}`);
     return null;
   }
 };

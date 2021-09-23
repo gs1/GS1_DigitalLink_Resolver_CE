@@ -384,7 +384,40 @@ const processRequest = (httpRequest, incomingRequestDigitalLinkStructure, resolv
  * @param identifierKeyType
  */
 const processGCPRedirect = (httpRequest, gcpDoc, httpResponse, processStartTime, identifierKeyType) => {
-  const additionalHttpHeaders = { Location: `${gcpDoc.resolve_url_format}/${identifierKeyType}${httpRequest.url}` };
+  let encodedURL = '';
+  // Here we need to ensure that the finished URL is URL-encoded properly.
+  // THis is to cope with certain Identifiers that include the % symbol which must be url-encoded
+  // This section of code:
+  // 1) Splits the original URL by '?' (the query-string boundary in a URL) to array identifierPlusQueryString
+  const identifierPlusQueryString = httpRequest.url.split('?');
+
+  // 2) Splits identifierPlusQueryString[0] (the section before the '?') by '/'
+  // 3) Each element is passed through the encodeURIComponent() function
+  // 4) All the elements are rejoined.
+  /* eslint-disable no-return-assign */
+  identifierPlusQueryString[0].split('/').forEach((element) => (encodedURL += `/${encodeURIComponent(element)}`));
+
+  // 5) IF the URL contains with '//' (usually as a side-effect of the split/join, convert to a //'
+  encodedURL = encodedURL.replace('//', '/');
+
+  // 6) If encodeUrl ends with  '/' it is removed.
+  if (encodedURL.endsWith('/')) {
+    encodedURL = encodedURL.substring(0, encodedURL.length - 1);
+  }
+
+  // 7) Add the querystrings to encodedURL
+  if (identifierPlusQueryString.length > 1) {
+    // Add the query-string boundary marker:
+    encodedURL += '?';
+
+    // Add the query strings back starting at identifierPlusQueryString[1]
+    // There should be only one but you never know...!
+    for (let index = 1; index < identifierPlusQueryString.length; index += 1) {
+      encodedURL += identifierPlusQueryString[index];
+    }
+  }
+
+  const additionalHttpHeaders = { Location: `${gcpDoc.resolve_url_format}/${identifierKeyType}${encodedURL}` };
   // Add 'gs1:handledBy' to GCP Redirects as link header
   additionalHttpHeaders.Link = '<linkType>; rel="gs1:handledBy"';
   responseFuncs.resolverHTTPResponse(httpResponse, additionalHttpHeaders, null, 307, processStartTime);

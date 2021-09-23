@@ -1,5 +1,5 @@
 const express = require('express');
-const bodyParser = require('body-parser');
+// const bodyParser = require('body-parser');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
@@ -25,8 +25,9 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
 app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+// Set the maximum size limit to 10 MB
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true, parameterLimit: 100000 }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -38,16 +39,6 @@ app.use(xssPrevent());
 
 // Prevant http params pollution middleware
 app.use(hpp());
-
-// Set the maximum size limit to 10 MB
-app.use(bodyParser.json({ limit: '10mb', extended: true, parameterLimit: 100000 }));
-app.use(
-  bodyParser.urlencoded({
-    limit: '10mb',
-    extended: true,
-    parameterLimit: 100000,
-  }),
-);
 
 // Set up the API and UI endpoints
 app.use('/ui', express.static('public'));

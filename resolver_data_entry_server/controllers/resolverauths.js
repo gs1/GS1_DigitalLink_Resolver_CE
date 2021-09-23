@@ -57,7 +57,7 @@ exports.postAccount = asynchHandler(async (req, res, next) => {
         authenticationKey,
       });
       if (!accountAddStatus[0].SUCCESS) {
-        return next(new ErrorResponse('Error to creating new account', 500));
+        return next(new ErrorResponse('Error when attempting to create new account', 500));
       }
     }
     res.status(200).json({
