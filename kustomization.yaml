@@ -10,6 +10,7 @@ resources:
   - k8s/resolver-pvc-drives.yaml
   - k8s/resolver-sql-server.yaml
   - k8s/build-sync-server.yaml
+  - k8s/dashboard-sync-server.yaml
   - k8s/frontend-proxy-server.yaml
   - k8s/resolver-data-entry-server.yaml
   - k8s/resolver-mongo-server.yaml

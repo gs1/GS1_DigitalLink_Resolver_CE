@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: resolver-mongo-server
-          image: nicklansley/gs1_digitallink_resolver_ce_resolver-mongo-server:v2.4.0
+          image: nicklansley/gs1_digitallink_resolver_ce_resolver-mongo-server:v2.5.0
           imagePullPolicy: IfNotPresent
           env:
             - name: MONGO_INITDB_ROOT_USERNAME

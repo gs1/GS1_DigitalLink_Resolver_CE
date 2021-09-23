@@ -49,7 +49,7 @@ spec:
 
       containers:
         - name: resolver-digitallink-toolkit-server
-          image:  nicklansley/gs1_digitallink_resolver_ce_digitallink-toolkit-service:v2.4.0
+          image:  nicklansley/gs1_digitallink_resolver_ce_digitallink-toolkit-service:v2.5.0
           imagePullPolicy: IfNotPresent
 
           ports:

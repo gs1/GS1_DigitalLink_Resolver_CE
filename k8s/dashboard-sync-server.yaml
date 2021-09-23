@@ -1,9 +1,9 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: build-sync-server
+  name: dashboard-sync-server
 spec:
-  schedule: "* * * * *"
+  schedule: "* */24 * * *"
   successfulJobsHistoryLimit: 3
   concurrencyPolicy: Forbid
   jobTemplate:
@@ -12,8 +12,8 @@ spec:
       template:
         spec:
           containers:
-            - name: build-sync-server
-              image: nicklansley/gs1_digitallink_resolver_ce_build-sync-server:v2.5.0
+            - name: dashboard-sync-server
+              image:  nicklansley/gs1_digitallink_resolver_ce_dashboard-sync-service:v2.5.0
               imagePullPolicy: IfNotPresent
               env:
                 - name: MONGODBCONN
@@ -38,12 +38,4 @@ spec:
                     secretKeyRef:
                       name: sqldbconn
                       key: database
-                - name: SQLDB_PROCESS_BATCH_SIZE
-                  value: "1000"
-                - name: BUILD_HOSTNAME
-                  value: "build_syn_job"
-              # command:
-              # - /bin/sh
-              # - -c
-              # - date; echo test
           restartPolicy: Never

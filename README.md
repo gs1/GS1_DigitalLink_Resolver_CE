@@ -447,6 +447,23 @@ Most GCPs are actually shorter than this, particularly where a GS1 member needs 
 codes. For each character count 'n' that a given GCP code is shorter than 12 characters, that's 62-to-the-power-'n' more
 Universes that can have all their atoms affixed with GS1 Digital Link QR codes. That should cover most use cases.
 
+## Install supporting software
+
+We recommend the following software to use when getting to know GS1 Resolver and how it works:
+
+1. <a href="https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms?view=sql-server-ver15">
+   SQL Server Management Studio</a> from Microsoft for Windows so you can see inside the SQL Server database.
+2. <a href="https://www.mongodb.com/products/compass">MongoDB Compass</a> a client application from MongoDB Inc for
+   exploring Resolver's database. Use this connection string to get connected:<pre>mongodb://gs1resolver:
+   gs1resolver@localhost:
+   27017/?authSource=admin&readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false</pre>
+3. <a href="https://www.postman.com/downloads/">Postman</a> API client which will work directly
+   with <a href="https://documenter.getpostman.com/view/10078469/TVejgpjz">GS1 Resolver CE's API documentation</a>
+4. <a href="https://www.jetbrains.com/idea/">Intellij IDEA</a> (Community (free) and Ultimate (licensed) editions) from
+   Jetbrains or <a href="https://code.visualstudio.com/">Visual Studio Code</a> (free) supported by Microsoft - our
+   chosen development environments which we have deliberately included config files for (.idea and .vscode) within the
+   repo to help you get started quickly. Of course this repo will work with other fully featured IDEs!
+
 ## Fast start
 #### Follow these instructions to get GS1 Resolver up and running on your machine complete with some example data.
 
@@ -532,22 +549,6 @@ can upload Excel data too! This particular spreadsheet is the 'official GS1 Reso
 recognised by the Upload page which sets all the upload columns for you. However, any unencrypted Excel spreadsheet
 saved by Excel with extension .xlsx can be read by the upload page.
 
-## Install supporting software
-
-We recommend the following software to use when getting to know GS1 Resolver and how it works:
-
-1. <a href="https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms?view=sql-server-ver15">
-   SQL Server Management Studio</a> from Microsoft for Windows so you can see inside the SQL Server database.
-2. <a href="https://www.mongodb.com/products/compass">MongoDB Compass</a> a client application from MongoDB Inc for
-   exploring Resolver's database. Use this connection string to get connected:<pre>mongodb://gs1resolver:
-   gs1resolver@localhost:
-   27017/?authSource=admin&readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false</pre>
-3. <a href="https://www.postman.com/downloads/">Postman</a> API client which will work directly
-   with <a href="https://documenter.getpostman.com/view/10078469/TVejgpjz">GS1 Resolver CE's API documentation</a>
-4. <a href="https://www.jetbrains.com/idea/">Intellij IDEA</a> (Community (free) and Ultimate (licensed) editions) from
-   Jetbrains or <a href="https://code.visualstudio.com/">Visual Studio Code</a> (free) supported by Microsoft - our
-   chosen development environments which we have deliberately included config files for (.idea and .vscode) within the
-   repo to help you get started quickly. Of course this repo will work with other fully featured IDEs!
 
 ## Shutting down the service
 
@@ -577,6 +578,8 @@ these scripts have been tested with Docker Desktop for Windows 10 running in 'Ku
 
 The service is now ready for use with Kubernetes clusters. The container images are now maintained on Docker Hub and the
 supplied YAML files in this repository will get you up and running quickly.
+
+#### Update for v2.5: build-sync-server has been changed to run as a Kubernetes CronJob (see /k8s/build-sync-server.yaml) and is joined by the new dashboard-sync-service, also a CronJob.
 
 1. Make sure you are pointing at the correct K8s cluster context:<pre>docker context ls</pre>
 1. Run this command to get your cluster to install the images and build the complete K8s application:<pre>kubectl apply

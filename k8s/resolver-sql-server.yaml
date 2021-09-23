@@ -39,7 +39,7 @@ spec:
     spec:
       containers:
         - name: resolver-sql-server
-          image: nicklansley/gs1_digitallink_resolver_ce_sql-server:v2.4.0
+          image: nicklansley/gs1_digitallink_resolver_ce_sql-server:v2.5.0
           imagePullPolicy: IfNotPresent
           env:
             - name: SQLDBCONN_USER
