@@ -439,8 +439,7 @@ Yes! We see the entire GIAI being redirected (and because "fwqs": true, the link
 the query string part of the request)
 
 Like big numbers? The longest that a GS1 GCP can be is 12 numeric characters. 30 - 12 means that 18 characters remain
-for a unique serial value. Since serial value can consist of alphanumeric characters, each character can be (A-Z) 26
-+ (a-z) 26 + (0-9) 10 => 26 + 26 + 10 = 62. So that's 62-to-the-power-18 combinations. That's 1.833e+32, so we're likely
+for a unique serial value. Since serial value can consist of alphanumeric characters, each character can be (A-Z) 26 + (a-z) 26 + (0-9) 10 => 26 + 26 + 10 = 62. So that's 62-to-the-power-18 combinations. That's 1.833e+32, so we're likely
 talking about putting a GS1 Digital Link QR code on every atom in the Universe!
 And only one entry in Resolver! Nice.
 
