@@ -13,7 +13,7 @@
     "express": "^4.17.1",
     "mongodb": "^3.6.3",
     "mssql": "^6.2.3",
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^3.1.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.6"
