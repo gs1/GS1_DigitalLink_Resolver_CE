@@ -25,7 +25,7 @@
 		"node-fetch": "^2.6.1",
 		"pug": "^3.0.2",
 		"pug-lint": "^2.6.0",
-		"xss": "^1.0.8"
+		"xss": "^1.0.10"
 	},
 	"devDependencies": {
 		"nodemon": "^2.0.6"
