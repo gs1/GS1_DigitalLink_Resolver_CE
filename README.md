@@ -8,8 +8,7 @@ appropriate destinations.
 
 ## Overview
 
-The GS1 Digital Link Standard enables consistent representation of GS1 identification keys within web addresses to link
-to online information and services.
+The [GS1 Digital Link Standard](https://www.gs1.org/standards/gs1-digital-link) enables consistent representation of GS1 identification keys within web addresses to link to online information and services.
 
 In other words, GS1 Digital Link takes a barcode and turns it into a web address!
 
@@ -28,6 +27,7 @@ standard, and resolves - that is, 'smart redirects' - to an onward destination.
 For an introduction to GS1 Digital Link, please watch this 9-minute video on YouTube from Phil Archer, Web Solutions Director, GS1 Global Office:  
 <a href="https://youtu.be/H2idDJeH3o4">GS1 Digital Link Layer Cake</a>
 
+Please note GS1's [legal disclaimer](https://ref.gs1.org/gs1/standards-disclaimer/) concerning its standards.
 
 ## Versions
 
