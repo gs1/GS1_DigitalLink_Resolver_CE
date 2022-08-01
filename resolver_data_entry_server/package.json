@@ -22,7 +22,7 @@
 		"http-status-codes": "^1.4.0",
 		"morgan": "~1.9.1",
 		"mssql": "^6.2.1",
-		"node-fetch": "^2.6.1",
+		"node-fetch": "^3.2.10",
 		"pug": "^3.0.2",
 		"pug-lint": "^2.6.0",
 		"xss": "^1.0.8"
