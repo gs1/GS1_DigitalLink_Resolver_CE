@@ -1,6 +1,6 @@
 ## Welcome to the GS1 Digital Link Resolver
 
-### Community Edition v2.5
+### Community Edition v2.6
 
 Welcome! The purpose of this repository is to provide you with the ability to build a complete resolver service that
 will enable you to enter information about GTINs and other GS1 keys and resolve (that is, redirect) web clients to their
@@ -30,6 +30,13 @@ For an introduction to GS1 Digital Link, please watch this 9-minute video on You
 Please note GS1's [legal disclaimer](https://ref.gs1.org/gs1/standards-disclaimer/) concerning its standards.
 
 ## Versions
+
+
+### Version 2.6 Features
+
+1. Extends 'out of the box' setup to ARM x64 (e.g. Raspberry Pi 4) and Apple Silicon (latest Macs) processors by switching database to Microsoft SQL Server's 'SQL Azure Edge' database (see resolver_sql_server/Dockerfile)
+2. Accept taregt URL schemes extended to include new 'did:' distributed identifiers (verifiable credentials)
+3. Various code improvments and bug fixes
 
 ### Version 2.5 Features
 
@@ -213,6 +220,18 @@ No changes to data, so you can simply upgrade the code, and it will work with v2
 section on the new GIAI (asset) functionality is included further down this README.
 <hr />
 
+### Important Notes for existing users of previous version 2.5
+We've changed the 'out of the box' SQL Server instance from SQL Server 2017 to SQL Azure Edge so that the project can work 
+on ARM-64-based processors such as Raspberry Pi 4 and Apple Silicon (as well as Intel). 
+
+If you are happy using SQL Server 2017 still (Intel only), just move the comment hash-tag on these two lines in resolver_sql_server/Dockerfile:
+<pre>
+# FROM mcr.microsoft.com/mssql/server:2017-latest
+FROM mcr.microsoft.com/azure-sql-edge:latest
+</pre>
+
+<hr />
+
 ## Documentation
 
 Please refer to the document 'GS1 Resolver - Overview and Architecture.pdf' in the root of this repository. This README
@@ -292,7 +311,7 @@ resolver-document-volume</b></i>
 stores the Mongo document data so that all the data survives the service being shutdown or restarted. A further
 volume, <i><b>resolver-sql-server-dbbackup-volume</b></i> is used to store a backup of the SQL Server database.
 
-#### SQL Server Database backup and restore
+#### SQL Server Database backup and restore (SQL Server 2017 only)
 
 There are two *not-fully-tested-yet*  backup and restore scripts for the SQL Server. To backup the server:
 <pre>docker exec -it  dataentry-sql-server  /bin/bash /gs1resolver_data/setup/gs1resolver_dataentry_backupdb_script.sh</pre>
@@ -491,7 +510,7 @@ We recommend the following software to use when getting to know GS1 Resolver and
    application:<pre>docker-compose up -d</pre>(the -d means 'disconnect' - docker-compose will start up everything then
    hand control back to you).
 
-8. Now wait 10 seconds while the system settles down (the SQL Server service takes a few seconds to initialise when '
+8. (SQL Server 2017 only) Now wait 10 seconds while the system settles down (the SQL Server service takes a few seconds to initialise when '
    new') then, if you have SQL Server Management Studio installed, go to Step 9, else copy and paste this command which
    will cause you to enter the container and access its terminal prompt:<pre>docker exec -it resolver-sql-server bash</pre>
    Now run this command which will create the database and some example data:<pre>/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P its@SECR3T! -i /gs1resolver_sql_scripts/sqldb_create_script.sql </pre>
@@ -500,12 +519,15 @@ We recommend the following software to use when getting to know GS1 Resolver and
    by the SQL script before others - and some stored procedures depend on others not created yet as their creation
    occurs further down this SQL script. As long as the final line says 'Database Create Script Completed' all is well!
    Exit the container with the command:<pre>exit</pre>
-9. ALTERNATIVELY to Step 8, if you have Windows and SQL Server Management Studio
+9. ALTERNATIVELY to Step 8 (SQL Azure Edge and SQL Server 2017), if you have Windows and SQL Server Management Studio
    installed (<a href="https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms?view=sql-server-ver15">download SSMS from here</a>), use it to connect to 'localhost' server, with username 'sa' and password 'its@SECR3T!'.
     Then, click on the 'New Query' button, and copy & paste the contents of 'sqldb_create_script.sql' in the '
     resolver_sql_server' folder into the Query window. Click 'Execute' and the script will run. Then, right-click '
     Databases' in the Object Explorer window and click 'Refresh' and you can see the new database '
     gs1-resolver-ce-v2-1-db'.
+
+    <b>If you are on a Mac or Linux</b> you can use any SQL client to run the script. There is an extension for Visual Studio Code, and 
+    several development application such as Jetbrains IDEs have database client access built-in.
 10. Head to http://localhost/ui and select the Download page.
 11. In the authorization key box, type: "5555555555555" and click the Download button. Save the file to your local
     computer.
