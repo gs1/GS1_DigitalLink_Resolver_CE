@@ -37,7 +37,8 @@ Please note GS1's [legal disclaimer](https://ref.gs1.org/gs1/standards-disclaime
 1. Extends 'out of the box' setup to ARM x64 (e.g. Raspberry Pi 4) and Apple Silicon (latest Macs) processors by switching database to Microsoft SQL Server's 'SQL Azure Edge' database (see resolver_sql_server/Dockerfile)
 2. Accept taregt URL schemes extended to include new 'did:' distributed identifiers (verifiable credentials)
 3. Various code improvments and bug fixes
-
+4. MINOR update 15 March 2023: Since more end-users are using Resolver CE in a multi-container envrionment such as Docker Compose, Docker Swarm and Kubernetes, the build sync server has switched from starting 'index.js' to starting 'app.js' in Dockerfile. 
+'index.js' keeps the container running all the time with an interval timer, whereas 'app.js' causes the container to run once and stop after each processing event, relying on external cron time processing to restart. For Docker Compose, a restart time is built into the build sync server, and docker-compose.yml starts it when it stops.
 ### Version 2.5 Features
 
 1. New Application Identifier 417 (Party Global Location Number - PGLN) has been added to the service. PGLNs are
