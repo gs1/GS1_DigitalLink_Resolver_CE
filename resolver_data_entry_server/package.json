@@ -13,7 +13,7 @@
 		"biguint-format": "^1.0.2",
 		"body-parser": "^1.19.0",
 		"cookie-parser": "~1.4.4",
-		"debug": "~2.6.9",
+		"debug": "~3.1.0",
 		"express": "~4.16.1",
 		"express-rate-limit": "^5.2.6",
 		"helmet": "^4.1.1",
