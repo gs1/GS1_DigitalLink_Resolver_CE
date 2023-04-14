@@ -6,9 +6,9 @@ Set-Location $Downloads
 
 # Get Powershell
 $psURI = "https://github.com/PowerShell/PowerShell/releases/download/v7.3.3/"
-$psOutfile = "PowerShell-7.3.3-win-x64.msi"
-$uri = $psURI+$psOutfile
-$installFile = $Downloads+$psOutfile
+$exe = "PowerShell-7.3.3-win-x64.msi"
+$uri = $psURI+$exe
+$installFile = $Downloads+$exe
 # download Powershell
 Invoke-WebRequest -Uri $uri -OutFile $installFile
 # install Powershell
@@ -16,9 +16,9 @@ Invoke-Expression -Command $installFile
 
 # Get VS Code
 $psURI = "https://code.visualstudio.com/docs/?dv=win"
-$psOutfile = "VSCodeUserSetup-x64.exe"
-$uri = $psURI+$psOutfile
-$installFile = $Downloads+$psOutfile
+$exe = "VSCodeUserSetup-x64.exe"
+$uri = $psURI+$exe
+$installFile = $Downloads+$exe
 # download VS Code
 Invoke-WebRequest -Uri $uri -OutFile $installFile
 # install VS Code
@@ -26,9 +26,9 @@ Invoke-Expression -Command $installFile
 
 # 1. Get Docker Desktop
 $psURI = "https://www.docker.com/products/docker-desktop/"
-$psOutfile = "Docker Desktop Installer.exe"
-$uri = $psURI+$psOutfile
-$installFile = $Downloads+$psOutfile
+$exe = "Docker Desktop Installer.exe"
+$uri = $psURI+$exe
+$installFile = $Downloads+$exe
 # download
 Invoke-WebRequest -Uri $uri -OutFile $installFile
 # install:
@@ -62,14 +62,16 @@ docker-compose build
 # 5. Before you do, make sure you have no SQL Server service, MongoDB service or port 80 web server running on your computer as they will clash with Docker as it tries to start the service up."
 docker-compose up -d
 
-# 6. Now wait 10 seconds while the system settles down (the SQL Server service takes a few seconds to initialise when 'new') then copy and paste this command (ensuring it is on one terminal line), which will run a program inside the SQL Server container, creating the database and some example data.
-docker exec -it resolver-sql-server bash
-# to enter the container and get a terminal prompt
+# 6. Now wait 10 seconds while the system settles down (the SQL Server service takes a few seconds to initialise when 'new') 
+Get-Date; Start-Sleep -Seconds 10; Get-Date
 
-# then run this command:
-/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P its@SECR3T! -i /gs1resolver_sql_scripts/sqldb_create_script.sql
-/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P its@SECR3T! -i /resolver_sql_server/sqldb_create_script.sql
-#                                                                   \resolver_sql_server\sqldb_create_script.sql
+# then copy and paste this command (ensuring it is on one terminal line), which will run a program inside the SQL Server container, creating the database and some example data. To enter the container and get a terminal prompt,
+docker exec -it resolver-sql-server bash
+
+#then run this command:
+/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P its@SECR3T! -i /gs1resolver_sql_scripts/sqldb_create_script.sql 
+#### ERROR                                                       \resolver_sql_server\sqldb_create_script.sql
+
 # 7. Head to 
 http://localhost/ui 
 # and select the Download page.
