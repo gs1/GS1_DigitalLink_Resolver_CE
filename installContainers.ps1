@@ -1,3 +1,9 @@
+# The aim of installContainers.ps1 is to set up the test environment automatically on an empty windows box. 
+# Everyone should have his/her own standalone resolver environment. without too musch hassle.
+# Some independent testing might still not hurt.
+# 
+# Best Regards Sten Walde, Product specialist Standards & Datamodels, GS1 Sweden
+
 Get-ExecutionPolicy
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned # or Unrestricted
  
