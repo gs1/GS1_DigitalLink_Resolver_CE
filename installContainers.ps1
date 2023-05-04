@@ -22,7 +22,6 @@ Set-Location $Downloads
     Invoke-WebRequest -Uri $uri -OutFile $installFile
     # install Git
     Invoke-Expression -Command $installFile
-
  
 # Get Powershell 7
     $psURI = "https://github.com/PowerShell/PowerShell/releases/download/v7.3.3/"
