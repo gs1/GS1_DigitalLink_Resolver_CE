@@ -13,6 +13,17 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned # or Unrestricted
 $Downloads = $env:HOMEDRIVE + $env:HOMEPATH + "\Downloads\"
 Set-Location $Downloads
  
+# Get Git for Windows 
+    $psURI = "https://github.com/git-for-windows/git/releases/download/v2.40.1.windows.1/"
+    $exe = "Git-2.40.1-64-bit.exe"
+    $uri = $psURI+$exe
+    $installFile = $Downloads+$exe
+    # download Git
+    Invoke-WebRequest -Uri $uri -OutFile $installFile
+    # install Git
+    Invoke-Expression -Command $installFile
+
+ 
 # Get Powershell 7
     $psURI = "https://github.com/PowerShell/PowerShell/releases/download/v7.3.3/"
     $exe = "PowerShell-7.3.3-win-x64.msi"
