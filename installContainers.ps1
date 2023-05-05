@@ -67,7 +67,6 @@ Set-Location $Downloads
  
 # Get MongoDB Compass https://www.mongodb.com/products/compass
     # a client application from MongoDB Inc for exploring Resolver's database. 
-    # Use this connection string to get connected:
     $psURI = "https://downloads.mongodb.com/compass/mongodb-compass-1.36.4-win32-x64.exe"
     $exe = "mongodb-compass-1.36.4-win32-x64.exe"
     $uri = $psURI+$exe
@@ -77,9 +76,8 @@ Set-Location $Downloads
     # install MongoDB Compass
     Invoke-Expression -Command $installFile
  
-    mongodb://gs1resolver:
-    gs1resolver@localhost:
-    27017/?authSource=admin&readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false
+    # Use this connection string to get connected:
+    mongodb://gs1resolver:gs1resolver@localhost:27017/?authSource=admin&readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false
  
 # Get Postman https://www.postman.com/downloads/ 
     # API client which will work directly with GS1 Resolver CE's API documentation
