@@ -30,7 +30,7 @@ const validateKeyEntry = async (entry) => {
         dbStatusCode: global.entryResponseStatusCodeInDB.NOT_YET_VALIDATED,
     };
 
-    // Put your validation code here!
+    // Put your validation code here that takes the entry and validates it.
     // As there is no such code right now, this function will always return a 'OK' response.
     // See resolver_data_entry_server/bin/globalVariables.js for list of response codes
     validationResult.dbStatusCode = global.entryResponseStatusCodeInDB.OK;

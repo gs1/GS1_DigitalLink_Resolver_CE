@@ -307,15 +307,16 @@ const showDataFromXLSXFile = () => {
       alert('DANGER: JavaScript code detected in file - please remove it and try again');
       return;
     }
-    if (csvRowToStore.length === 0 || csvRowToStore !== global_dataLines[global_dataLines.length - 1]) {
-      const csvRowToStore = csvRow.substring(0, csvRow.length - 1);
+      if (csvRowToStore.length > 0 && csvRowToStore !== global_dataLines[global_dataLines.length - 1])
+      {
+        global_dataLines.push(csvRowToStore);
+      }
     }
-  }
 
-  // Now we have filled global_dataLines, we run the CSV processing function which expects
+   // Now we have filled global_dataLines, we run the CSV processing function which expects
   // to find its data there:
   showDataFromCSVFile(global_officialGS1Template);
-};
+}
 
 /**
  * This function detects JavaScript code (such as alert() or console commands) in an incoming string, return true if JavaScript id found, else false.
