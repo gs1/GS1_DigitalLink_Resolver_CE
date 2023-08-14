@@ -110,6 +110,20 @@ const isValidIANALanguage = (language) => {
 };
 
 /**
+ * This function detects JavaScript code (such as alert() or console commands) in an incoming string, return true if JavaScript id found, else false.
+ * WARNING: It is not possible to detect all JavaScript code, so this function is not 100% reliable.
+ */
+const detectJavaScriptCode = (dataLine) => {
+  const jsCode = ['javascript', 'alert', 'console', 'document', 'window', 'eval', 'function', 'form', 'onclick', 'onload', 'onsubmit', 'onerror', 'onbeforeunload', 'onload', 'onunload', 'onchange', 'onmouseover', 'onmouseout', 'onkeydown', 'onkeyup', 'onkeypress', 'onblur', 'onfocus', 'onresize', 'onreset', 'onselect', 'onchange', 'onabort', 'oncontextmenu', 'ondblclick', 'ondrag', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onerror', 'onfocus', 'oninput', 'oninvalid', 'onkeydown', 'onkeypress', 'onkeyup', 'onload', 'onmousedown', 'onmousemove', 'onmouseout', 'onmouseover', 'onmouseup', 'onmousewheel', 'onreset', 'onscroll', 'onselect', 'onsubmit', 'onwheel', 'onafterprint', 'onbeforeprint', 'onbeforeunload', 'onhashchange', 'onmessage', 'onoffline', 'ononline', 'onpagehide', 'onpageshow', 'onpopstate', 'onresize', 'onstorage', 'onunload', 'onblur', 'onchange', 'oncontextmenu', 'onfocus', 'oninput', 'oninvalid', 'onreset', 'onsearch', 'onselect', 'onsubmit'];
+  for (const jsCodeItem of jsCode) {
+    if (dataLine.trim().toLowerCase().includes(jsCodeItem)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+/**
  * Tests if the mediaType incoming to the API matches the 'legal' set of media MIME types
  * @param mediaType
  * @returns {boolean}
@@ -378,6 +392,7 @@ module.exports = {
   convertShortCodeToAINumeric,
   convertAINumericToShortCode,
   getLinkTypesFromGS1,
+  detectJavaScriptCode,
   logThis,
   convertPropsToAPIFormat,
   toCamelCase,

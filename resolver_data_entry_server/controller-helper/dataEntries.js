@@ -243,20 +243,18 @@ const checkResolverResponsePropertiesArePresent = (resolverResponse) => {
   // Check for the presence of mandatory data.
   try {
     return (
-      resolverResponse.linkType !== undefined &&
-      resolverResponse.ianaLanguage !== undefined &&
-      resolverResponse.context !== undefined &&
-      resolverResponse.mimeType !== undefined &&
-      resolverResponse.linkTitle !== undefined &&
-      resolverResponse.targetUrl !== undefined &&
-      resolverResponse.defaultLinkType !== undefined &&
-      resolverResponse.defaultIanaLanguage !== undefined &&
-      resolverResponse.defaultContext !== undefined &&
-      resolverResponse.defaultMimeType !== undefined &&
-      resolverResponse.fwqs !== undefined &&
-      resolverResponse.active !== undefined &&
-      resolverResponse.linkType.length > 6 &&
-      resolverResponse.linkTitle !== '' &&
+      resolverResponse.linkType && typeof resolverResponse.linkType == 'string' && resolverResponse.linkType.length > 6 &&
+      resolverResponse.ianaLanguage && typeof resolverResponse.linkType == 'string' &&
+      resolverResponse.context && typeof resolverResponse.linkType == 'string' &&
+      resolverResponse.mimeType && typeof resolverResponse.linkType == 'string' &&
+      resolverResponse.linkTitle && typeof resolverResponse.linkType == 'string' && resolverResponse.linkTitle !== '' &&
+      resolverResponse.targetUrl&& typeof resolverResponse.linkType == 'string' && !utils.detectJavaScriptCode(resolverResponse.targetUrl) &&
+      resolverResponse.defaultLinkType && typeof resolverResponse.linkType == 'string' &&
+      resolverResponse.defaultIanaLanguage && typeof resolverResponse.linkType == 'string' &&
+      resolverResponse.defaultContext && typeof resolverResponse.linkType == 'string' &&
+      resolverResponse.defaultMimeType && typeof resolverResponse.linkType == 'string' &&
+      resolverResponse.fwqs && typeof resolverResponse.linkType == 'boolean' &&
+      resolverResponse.active && typeof resolverResponse.linkType == 'boolean' &&
       utils.isValidIANALanguage(resolverResponse.ianaLanguage) &&
       utils.isValidMediaType(resolverResponse.mimeType) &&
       setLinkType(resolverResponse) &&

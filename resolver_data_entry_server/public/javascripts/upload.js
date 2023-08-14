@@ -302,9 +302,13 @@ const showDataFromXLSXFile = () => {
     // Add all but the final character from csvRow (which is a comma) to the global_dataLines array.
     // after checking that it is not identical to the previous row (as long as there are more than 0 rows
     // in global_dataLines):
-    const csvRowToStore = csvRow.substr(0, csvRow.length - 1);
+    const csvRowToStore = csvRow.substring(0, csvRow.length - 1);
+    if(detectJavaScriptCode(csvRowToStore)) {
+      alert('DANGER: JavaScript code detected in file - please remove it and try again');
+      return;
+    }
     if (csvRowToStore.length === 0 || csvRowToStore !== global_dataLines[global_dataLines.length - 1]) {
-      global_dataLines.push(csvRow.substr(0, csvRow.length - 1));
+      const csvRowToStore = csvRow.substring(0, csvRow.length - 1);
     }
   }
 
@@ -312,6 +316,22 @@ const showDataFromXLSXFile = () => {
   // to find its data there:
   showDataFromCSVFile(global_officialGS1Template);
 };
+
+/**
+ * This function detects JavaScript code (such as alert() or console commands) in an incoming string, return true if JavaScript id found, else false.
+ * WARNING: It is not possible to detect all JavaScript code, so this function is not 100% reliable.
+ */
+const detectJavaScriptCode = (dataLine) => {
+  const jsCode = ['javascript', 'alert', 'console', 'document', 'window', 'eval', 'function', 'form', 'onclick', 'onload', 'onsubmit', 'onerror', 'onbeforeunload', 'onload', 'onunload', 'onchange', 'onmouseover', 'onmouseout', 'onkeydown', 'onkeyup', 'onkeypress', 'onblur', 'onfocus', 'onresize', 'onreset', 'onselect', 'onchange', 'onabort', 'oncontextmenu', 'ondblclick', 'ondrag', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onerror', 'onfocus', 'oninput', 'oninvalid', 'onkeydown', 'onkeypress', 'onkeyup', 'onload', 'onmousedown', 'onmousemove', 'onmouseout', 'onmouseover', 'onmouseup', 'onmousewheel', 'onreset', 'onscroll', 'onselect', 'onsubmit', 'onwheel', 'onafterprint', 'onbeforeprint', 'onbeforeunload', 'onhashchange', 'onmessage', 'onoffline', 'ononline', 'onpagehide', 'onpageshow', 'onpopstate', 'onresize', 'onstorage', 'onunload', 'onblur', 'onchange', 'oncontextmenu', 'onfocus', 'oninput', 'oninvalid', 'onreset', 'onsearch', 'onselect', 'onsubmit'];
+  for (const jsCodeItem of jsCode) {
+    if (dataLine.trim().toLowerCase().includes(jsCodeItem)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+
 
 /**
  * Shows a table with example data which the user uses to select which one contains 'required' columns
@@ -325,6 +345,10 @@ const showDataFromCSVFile = (officialExcelSpreadsheetWasSourceFlag) => {
     // Remove any CR or LF characters (at most one of either/both may occur at the end of each line)
     // so no need for regex search:
     const dataLine = rawDataLine.replace('\n', '').replace('\r', '');
+    if(detectJavaScriptCode(dataLine)) {
+        alert('DANGER: JavaScript code detected in file - please remove it and try again');
+        return;
+    }
 
     // Create table columns
     // First, aim to split on "," where all columns are double-quoted.

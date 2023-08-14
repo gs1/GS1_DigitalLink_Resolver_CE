@@ -29,7 +29,34 @@ For an introduction to GS1 Digital Link, please watch this 9-minute video on You
 <a href="https://youtu.be/H2idDJeH3o4">GS1 Digital Link Layer Cake</a>
 
 
+## Security Audit results
+Recently, one of our GS1 MOs kindly conducted a security audit of the GS1 Digital Link Resolver Community Edition. The results
+are summarised here. Version 2.6 of the service includes updates where applicabe.
+1. Inadequate authentication functionality. The service uses a simple API key for authentication. This is not secure enough for a production environment. The service should be updated to use a more secure authentication mechanism such as OAuth 2.0.
+At GS1 Global Office we have long since updated our production service (the 'Links Registry') via the GS1 GO Developer Portal.
+The included functionality is a 'get you going' solution. We will look at including session tokens in forthcoming v3.0 of this project, but really, you should use your own authentication mechanism.
+2. In the links data, the identificationKey and identificationKeyType fields define uniqueness. Any user can override an existing entry with the same identificationKey and identificationKeyType. At GS1 Global Office we use validation calls to the GS1 License Registry so that MOs can only update their own licensed links.
+Even then, two more users from the same member organisation can override each other, just like they can with other sections of the GS1 Registry Platform. This is a feature, not a bug!
+3. HTML/JavaScript injection in upload web page and upload API. The upload page now detects JavaScript included in the file that might be executed by the browser and warns the user. It's new function detectJavaScriptCode() in upload.js and within the API at resolver_utils.js - included with a caveat that it is unlikely to be comprehensive - your security team should review and assess it
+We no longer use the upload page in production, but it is still included in this project for your convenience. It is not a substitute for a proper security review of the code.
+4. Hard-coded user-ids password in the source code. You will see hard-coded user-ids and passwords in the source code. These are for convenience only to get you going and should be changed in production.
+Nobody should be using SQL Server credentials 'sa' and 'its@SECR3T!' outside their own development environment! The example python clients include passphrases to show you what's possible with scripted interaction with the service.
+Look out for hard-coded username, passwords and/or passphrases in the following files:
+- GS1_DigitalLink_Resolver_CE/resolver_sql_server/sqldb_create_script.sql
+- GS1_DigitalLink_Resolver_CE/python_admin_clients/accounts.py
+- GS1_DigitalLink_Resolver_CE/resolver_data_entry_server/Dockerfile
+- GS1_DigitalLink_Resolver_CE/docker-compose.yml
+- GS1_DigitalLink_Resolver_CE/resolver_sql_server/ ... in all files.
+5.Missing checks on redirect data. The data entry APi now performs more comprehensive checks on the data being uploaded, ensuring that all provided properties are strings or booleans, and tha no JavaScript can be present in targetUrl.
+6. Detection of vulnerable third-party libraries. We have updated the packages so that we minimise any security vulnerabilities in the third-party libraries we use for Resolver.
+
 ## Versions
+
+### Version 2.6 Features
+1. Upload page now detects JavaScript included in the file that might be executed by the browser and warns the user. It's new function detectJavaScriptCode() in upload.js
+- 
+- it is not a substitute for a proper security review of the code.
+2. 
 
 ### Version 2.5 Features
 

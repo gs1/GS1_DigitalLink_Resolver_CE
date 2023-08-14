@@ -1,31 +1,38 @@
 /**
- * This file contains code for 'offline' batch validation of entries.
+ * This file contains code for optional 'offline' batch validation of entries.
+ * It's here so that you can perform your own extra custom validations in order
+ * to maintain Data Quality.
+ *
  * The requirements for validation will vary by Resolver, but its purpose
  * is to take a batch of entries fround in the database's [uri_entries_prevalid] table
  * and validate them against an algorithm and/or external data source.
- * Importantly, the API end-user has been disconnected from the APi having uploaded
- * their batch of entries (and been given a 'batchId'). The function validateBatchOfEntries()
- * then takes a batch of entries, validates them, and saves the results back to the [uri_entries_prevalid] table.
- * Note that these are async functions so you can use fetch to call an external API, or await a data source
- * to respond.
+ *
+ * Each uploaded entry is offered in turn to function validateKeyEntry(entry) below. Use this function
+ * to perform a validation on each entry. The variable 'entry' represents one complete entry.
+ *
+ * Importantly, the API end-user has been disconnected from the API having uploaded
+ * their batch of entries and been given a 'batchId'.
+ *
+ * Note that these are async functions, so you can use fetch to call an external API,
+ * or await a data source to respond.
  */
 
-//const fetch = require('node-fetch');  //Not used by default but is here if you need to call an external API as part of validation
 const dbDataEntries = require('./../db/query-controller/data-entries')
 
 /**
- * Use this function to performs a validation on each entry. The variable 'entry' represents one complete
+ * Use this function to perform a validation on each entry. The variable 'entry' represents one complete
  * entry,
  * @returns {Promise<{dbStatusCode: number}>}
  * @param entry
  */
 const validateKeyEntry = async (entry) => {
-    console.log(entry);
     const validationResult = {
         dbStatusCode: global.entryResponseStatusCodeInDB.NOT_YET_VALIDATED,
     };
 
-    //Put your validation code here!
+    // Put your validation code here!
+    // As there is no such code right now, this function will always return a 'OK' response.
+    // See resolver_data_entry_server/bin/globalVariables.js for list of response codes
     validationResult.dbStatusCode = global.entryResponseStatusCodeInDB.OK;
 
     return validationResult;
