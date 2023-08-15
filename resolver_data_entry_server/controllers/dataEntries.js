@@ -33,7 +33,7 @@ const {
 exports.getDataEntryDate = asyncHandler(async (req, res) => {
   const dateObj = new Date();
   res.send({
-    staus: true,
+    status: true,
     message: 'GS1 Resolver Data Entry API',
     SERVICEDATETIME: dateObj,
   });
@@ -251,9 +251,11 @@ exports.addDataURIEntry = asyncHandler(async (req, res, next) => {
     return next(new BadRequestParameter('Bad request parameter(s)'));
   }
 
-  // Create a new batch Id and validate the data entries parameters, return the status immediatialy.
+  // Create a new batch Id and validate the data entries parameters, return the status immediately.
+  console.log('DEBUG: addDataURIEntry() calling processBatchAndValidateEntries()');
   const batchIdAndEntriesObj = await processBatchAndValidateEntries(body);
   // We'll send the batchID and any quickly-found bad entries back in response end this connection.
+  console.log('DEBUG: addDataURIEntry() sending response - batchIdAndEntriesObj = ', batchIdAndEntriesObj);
   res.send(batchIdAndEntriesObj);
 
   // START - FROM THIS LINE, THE SERVER IS PROCESSING THIS CODE VIA THE EVENT LOOP QUEUE ////////////////////////////////////
@@ -261,7 +263,7 @@ exports.addDataURIEntry = asyncHandler(async (req, res, next) => {
   if (batchIdAndEntriesObj.badEntries.length < body.length) {
     // Now send the more serious checking off into an asynchronous batch save and check.
     // Everything we do now is happening asynchronously as we send tasks into the event loop.
-    processBatchToSaveDataEntries({
+    await processBatchToSaveDataEntries({
       issuerGLN,
       requestBody: body,
       batchId: batchIdAndEntriesObj.batchId,
@@ -334,6 +336,7 @@ async function upsertEntryResponses(entryUpsertResultResp, resolverEntry, savedU
  * @type {(function(*=, *=, *=): Promise<*>)|*}
  */
 const processBatchToSaveDataEntries = asyncHandler(async ({ issuerGLN, requestBody, batchId }) => {
+  console.log('DEBUG: processBatchToSaveDataEntries()');
   const savedUpsertArray = [];
   const dataEntriesResponseArr = await cleanAndParseDataEntryResponse(requestBody);
 
@@ -343,9 +346,11 @@ const processBatchToSaveDataEntries = asyncHandler(async ({ issuerGLN, requestBo
   // the resolver entry. This value will be used to link the responses to the request in
   // the SQL database.
   for await (const resolverEntry of dataEntriesResponseArr) {
+    console.log('DEBUG: resolverEntry', resolverEntry);
     if (resolverEntry.validationCode === global.entryResponseStatusCode.OK) {
       // get official definitions for GS1 Key Code and Value as this is what we must store in the SQL database
       const officialDef = await utils.getDigitalLinkStructure(`/${resolverEntry.identificationKeyType}/${resolverEntry.identificationKey}`);
+      console.log('DEBUG: officialDef', officialDef);
       if (officialDef.SUCCESS) {
         // We have an officially sanctioned entry from the Digital Link Toolkit so let's format and insert it into SQL database
         formatResolverEntryForSQL(resolverEntry, officialDef, issuerGLN, batchId);

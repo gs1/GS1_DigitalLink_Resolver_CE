@@ -90,6 +90,7 @@ const validateResolverEntry_QuickCheck = async (resolverEntry) => {
     return returnObj;
   }
 
+
   // Now see if the entry passes a test from the GS1 DigitalLink Toolkit:
   const officialDef = await utils.getDigitalLinkStructure(`/${resolverEntry.identificationKeyType}/${resolverEntry.identificationKey}`);
   if (!officialDef.SUCCESS) {
@@ -137,31 +138,26 @@ const validateResolverEntry_QuickCheck = async (resolverEntry) => {
 };
 
 /**
- * Checks that all the Resolver entry properties are present (and implicitly correctly spelled)
+ * Checks that all the Resolver entry properties are present and of the correct type.
  * @param resolverEntry
  * @returns {boolean}
  */
 const checkResolverEntryPropertiesArePresent = (resolverEntry) => {
-  try {
-    // Check for the presence of all correct properties
-    return (
-      resolverEntry.identificationKeyType !== undefined &&
-      resolverEntry.identificationKey !== undefined &&
-      resolverEntry.itemDescription !== undefined &&
-      resolverEntry.qualifierPath !== undefined &&
-      resolverEntry.active !== undefined &&
-      resolverEntry.responses !== undefined &&
-      Array.isArray(resolverEntry.responses) &&
-      resolverEntry.identificationKeyType !== '' &&
-      resolverEntry.identificationKey !== '' &&
-      resolverEntry.itemDescription !== '' &&
-      resolverEntry.qualifierPath !== '' &&
-      resolverEntry.responses !== ''
-    );
-  } catch (e) {
-    utils.logThis(`checkResolverEntryPropertiesArePresent: entry ${JSON.stringify(resolverEntry)} has error: ${e}`);
-    return false;
-  }
+  const goodIdentificationKeyType =  resolverEntry.identificationKeyType && typeof resolverEntry.identificationKeyType === 'string' && resolverEntry.identificationKeyType !== '';
+  const goodIdentificationKey =  resolverEntry.identificationKey && typeof resolverEntry.identificationKeyType === 'string' && resolverEntry.identificationKey !== '';
+  const goodEntryResolverEntry = resolverEntry.itemDescription && typeof resolverEntry.identificationKeyType === 'string' && resolverEntry.itemDescription !== '';
+  const goodQualifierPath = resolverEntry.qualifierPath && typeof resolverEntry.identificationKeyType === 'string' && resolverEntry.qualifierPath !== '';
+  const goodActive = resolverEntry.active !== undefined && typeof resolverEntry.active === 'boolean' && resolverEntry.responses !== '';
+  const goodResponses =  resolverEntry.responses && Array.isArray(resolverEntry.responses);
+
+  if (!goodIdentificationKeyType) console.log('checkResolverEntryPropertiesArePresent: fail for identificationKeyType', JSON.stringify(resolverEntry, null, 2));
+  if (!goodIdentificationKey) console.log('checkResolverEntryPropertiesArePresent: fail for identificationKey', JSON.stringify(resolverEntry, null, 2));
+  if (!goodEntryResolverEntry) console.log('checkResolverEntryPropertiesArePresent: fail for itemDescription', JSON.stringify(resolverEntry, null, 2));
+  if (!goodQualifierPath) console.log('checkResolverEntryPropertiesArePresent: fail for qualifierPath', JSON.stringify(resolverEntry, null, 2));
+  if (!goodActive) console.log('checkResolverEntryPropertiesArePresent: fail for active', JSON.stringify(resolverEntry, null, 2));
+  if (!goodResponses) console.log('checkResolverEntryPropertiesArePresent: fail for responses', JSON.stringify(resolverEntry, null, 2));
+
+    return goodIdentificationKeyType && goodIdentificationKey && goodEntryResolverEntry && goodQualifierPath && goodActive && goodResponses;
 };
 
 /**
@@ -241,29 +237,39 @@ const setMissingDefaultsForAbsentResolverResponseProperties = (resolverResponse)
  */
 const checkResolverResponsePropertiesArePresent = (resolverResponse) => {
   // Check for the presence of mandatory data.
-  try {
-    return (
-      resolverResponse.linkType && typeof resolverResponse.linkType == 'string' && resolverResponse.linkType.length > 6 &&
-      resolverResponse.ianaLanguage && typeof resolverResponse.linkType == 'string' &&
-      resolverResponse.context && typeof resolverResponse.linkType == 'string' &&
-      resolverResponse.mimeType && typeof resolverResponse.linkType == 'string' &&
-      resolverResponse.linkTitle && typeof resolverResponse.linkType == 'string' && resolverResponse.linkTitle !== '' &&
-      resolverResponse.targetUrl&& typeof resolverResponse.linkType == 'string' && !utils.detectJavaScriptCode(resolverResponse.targetUrl) &&
-      resolverResponse.defaultLinkType && typeof resolverResponse.linkType == 'string' &&
-      resolverResponse.defaultIanaLanguage && typeof resolverResponse.linkType == 'string' &&
-      resolverResponse.defaultContext && typeof resolverResponse.linkType == 'string' &&
-      resolverResponse.defaultMimeType && typeof resolverResponse.linkType == 'string' &&
-      resolverResponse.fwqs && typeof resolverResponse.linkType == 'boolean' &&
-      resolverResponse.active && typeof resolverResponse.linkType == 'boolean' &&
-      utils.isValidIANALanguage(resolverResponse.ianaLanguage) &&
-      utils.isValidMediaType(resolverResponse.mimeType) &&
-      setLinkType(resolverResponse) &&
-      lineIncludesInternetURIScheme(resolverResponse.targetUrl)
-    );
-  } catch (e) {
-    utils.logThis(`checkResolverResponsePropertiesArePresent: for response ${JSON.stringify(resolverResponse)} error ${e}`);
+    setLinkType(resolverResponse);
+    const goodLinkType = resolverResponse.linkType && typeof resolverResponse.linkType === 'string' && resolverResponse.linkType !== '';
+    const goodIanaLanguage = resolverResponse.ianaLanguage && typeof resolverResponse.ianaLanguage === 'string' && utils.isValidIANALanguage(resolverResponse.ianaLanguage);
+    const goodContext = resolverResponse.context && typeof resolverResponse.context === 'string';
+    const goodMimeType = resolverResponse.mimeType && typeof resolverResponse.mimeType === 'string' && utils.isValidMediaType(resolverResponse.mimeType);
+    const goodLinkTitle = resolverResponse.linkTitle && typeof resolverResponse.linkTitle === 'string' && resolverResponse.linkTitle !== '';
+    const goodTargetUrl = resolverResponse.targetUrl && typeof resolverResponse.targetUrl === 'string' && !utils.detectJavaScriptCode(resolverResponse.targetUrl) && lineIncludesInternetURIScheme(resolverResponse.targetUrl);
+    const goodDefaultLinkType = resolverResponse.defaultLinkType !== undefined && typeof resolverResponse.defaultLinkType === 'boolean';
+    const goodDefaultIanaLanguage = resolverResponse.defaultIanaLanguage !== undefined && typeof resolverResponse.defaultIanaLanguage === 'boolean';
+    const goodDefaultContext = resolverResponse.defaultContext !== undefined && typeof resolverResponse.defaultContext === 'boolean';
+    const goodDefaultMimeType = resolverResponse.defaultMimeType !== undefined && typeof resolverResponse.defaultMimeType === 'boolean';
+    const goodActive = resolverResponse.active !== undefined && typeof resolverResponse.active === 'boolean';
+    const goodFwqs = resolverResponse.fwqs !== undefined && typeof resolverResponse.fwqs === 'boolean';
+
+
+    if(!goodLinkType)  console.log('response: bad linktype');
+    if(!goodIanaLanguage)  console.log('response: bad iana language');
+    if(!goodContext)  console.log('response: bad context');
+    if(!goodMimeType)  console.log('response: bad mime type');
+    if(!goodLinkTitle)  console.log('response: bad link title');
+    if(!goodTargetUrl)  console.log('response: bad target url');
+    if(!goodDefaultLinkType)  console.log('response: bad default link type');
+    if(!goodDefaultIanaLanguage)  console.log('response: bad default iana language');
+    if(!goodDefaultContext)  console.log('response: bad default context');
+    if(!goodDefaultMimeType)  console.log('response: bad default mime type');
+    if(!goodActive)  console.log('response: bad active');
+    if(!goodFwqs)  console.log('response: bad fwqs');
+
+    if (goodLinkType && goodIanaLanguage && goodContext && goodMimeType && goodLinkTitle && goodTargetUrl && goodDefaultLinkType && goodDefaultIanaLanguage && goodDefaultContext && goodDefaultMimeType && goodActive && goodFwqs)
+      return true;
+
+    console.log('response: bad response', resolverResponse)
     return false;
-  }
 };
 
 const structureResolverRespProps = (obj) => {
@@ -290,8 +296,7 @@ const structureResolverRespProps = (obj) => {
 };
 
 /**
- * Sets the linkType to its CURIE version if found, and returns true
- * OR sets linktype to "" which is an error state, and returns false.
+ * Sets the linkType to its CURIE version if found, else "" which will be caught as an error later.
  * @param resolverResponse
  * @returns {boolean}
  */
@@ -310,6 +315,7 @@ const setLinkType = (resolverResponse) => {
 
         if (!isCURIE && !isURI && !isTitle) {
           // Force linktype to be blank which will trigger an error in calling code
+          console.log(`setLinkType error: linkType ${resolverResponse.linkType} is not a valid linkType`);
           resolverResponse.linkType = '';
         } else if (typeof isURI === 'object') {
           // set the linktype to its CURIE version
@@ -330,10 +336,8 @@ const setLinkType = (resolverResponse) => {
       }
     }
     // Used to check linkTypes
-    return resolverResponse.linkType !== '';
   } catch (e2) {
     utils.logThis(`setLinkType error: ${e2} with resolverResponse = ${JSON.stringify(resolverResponse)}`);
-    return false;
   }
 };
 

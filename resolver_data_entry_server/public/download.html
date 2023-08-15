@@ -3,14 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <title>GS1 Resolver - Download Your Data</title>
-    <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
-    <script src="javascripts/download.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 2%;
+        }
+
+        h2 {
+            font-size: 32px;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: #444;
+        }
+
+        input[type="password"] {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        img {
+            cursor: pointer;
+        }
+
+        button {
+            background-color: #337ab7;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        button {
+            font-size : 16px;
+        }
+
+        button:hover {
+            background-color: #286090;
+        }
+
+        a {
+            color: #337ab7;
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: #286090;
+            text-decoration: underline;
+        }
+    </style>
+    <script src="./javascripts/download.js"></script>
 </head>
 <body>
 <h1>GS1 Resolver - Download Your Data</h1>
 <div>Please paste your authentication key here:
-    <input type="password" id="authKey">&nbsp;&nbsp;
-    <img src="images/eye.gif" width="30px" height="20px" alt="hover over this eye symbol to see your authentication key" onmouseover="mouseOverPass();" onmouseout="mouseOutPass();" />
+    <label for="authKey">Authorisation Key</label><input type="password" id="authKey">&nbsp;&nbsp;
+    <img src="./images/eye.gif" width="30px" height="20px" alt="hover over this eye symbol to see your authentication key" onmouseover="mouseOverPass();" onmouseout="mouseOutPass();" />
 </div>
 <br/>
 <div>
@@ -21,6 +76,6 @@
         <a id="downloadLink" download="resolverdata.csv" href="">Download as Text (CSV) File</a>
     </div>
 </div>
-<p><a href="index.html">Back to the home page</a></p>
+<p><a href="./index.html">Back to the home page</a></p>
 </body>
 </html>

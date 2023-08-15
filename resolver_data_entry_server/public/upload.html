@@ -4,10 +4,89 @@
     <meta charset="UTF-8">
     <title>GS1 Resolver Data Entry File Uploader</title>
 
-    <link rel="stylesheet" type="text/css" href="stylesheets/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 2%;
+        }
 
-    <script lang="javascript" src="javascripts/xlsx.full.min.js"></script>
-    <script src="javascripts/upload.js"></script>
+        h2 {
+            font-size: 32px;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            color: #444;
+        }
+
+        p {
+            margin-bottom: 18px;
+        }
+
+        ul {
+            margin-bottom: 18px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 18px;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        input[type="password"], input[type="text"], select {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        img {
+            cursor: pointer;
+        }
+
+        button {
+            background-color: #337ab7;
+            color: white;
+            padding: 8px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        button:hover {
+            background-color: #286090;
+        }
+
+        a {
+            color: #337ab7;
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: #286090;
+            text-decoration: underline;
+        }
+    </style>
+
+    <script lang="javascript" src="./javascripts/xlsx.full.min.js"></script>
+    <script src="./javascripts/upload.js"></script>
     <script>
 
     </script>
@@ -15,8 +94,8 @@
 <body>
 <h2>GS1 Resolver Data Entry File Uploader</h2>
 <div>Please paste your authentication key here:
-    <input type="password" id="authKey">&nbsp;&nbsp;
-    <img src="images/eye.gif" width="30px" height="20px" alt="hover over this eye symbol to see your authentication key" onmouseover="mouseOverPass();" onmouseout="mouseOutPass();" />
+    <label for="authKey">Authorisation Key</label><input type="password" id="authKey">&nbsp;<label id="lblAuthKey">Authorisation Key</label>
+    <img src="./images/eye.gif" width="30px" height="20px" alt="hover over this eye symbol to see your authentication key" onmouseover="mouseOverPass();" onmouseout="mouseOutPass();" />
 </div>
 <div id="divFileUpload">Select a file to upload it: <input type="file" onchange="readFile(this)" ></div>
 <br/>
@@ -24,7 +103,7 @@
 <hr/>
 <div id="divChooseSpreadsheet" style="visibility: hidden">
     Please choose a spreadsheet from the uploaded Excel Workbook:
-    <select id="selectWorkSheet" onchange="showDataFromXLSXFile()">
+    <label for="selectWorkSheet">Choose Worksheet</label><select id="selectWorkSheet" onchange="showDataFromXLSXFile()">
         <option value="X">-- Choose WorkSheet --</option>
     </select>
 </div>
@@ -33,25 +112,27 @@
     Please use the dropdown select controls to describe each column (select IGNORE if column is not to be imported).
     <table width="500">
         <caption>Upload Options</caption>
-        <th scope="col">Upload Options</th>
-        <th scope="col">Selection</th>
+        <tr>
+            <th scope="col">Upload Options</th>
+            <th scope="col">Selection</th>
+        </tr>
         <tr>
             <td>If no column is assigned as LinkType, select a LinkType value to be used for all entries in this file:
             </td>
-            <td><select id="selectDefaultLinkType" onchange="setDefaultLinkType()"></select></td>
+            <td><label for="selectDefaultLinkType">Select Default Linktype</label><select id="selectDefaultLinkType" onchange="setDefaultLinkType()"></select></td>
         </tr>
         <tr>
             <td>If no column is assigned as a Link Title describing the Target URL, enter a text value to be used for
                 all entries in this file:
             </td>
-            <td><input type="text" id="defaultLinkText"></td>
+            <td><label for="defaultLinkText">Default Linktype</label><input type="text" id="defaultLinkText"></td>
         </tr>
         <tr>
             <td>If no column is assigned as a MIME (Document) Type describing the Target URL, choose a type for all
                 entries in this file:
             </td>
             <td>
-                <select id="selectMIMEType">
+                <label for="selectMIMEType">Choose MIME Type</label><select id="selectMIMEType">
                     <option selected value="text/html">Web page (text/html)</option>
                     <option value="application/json">Data source (application/json)</option>
                     <option value="image/jpeg">Image in JPG format (image/jpeg)</option>
@@ -64,7 +145,7 @@
             <td>If no column is assigned as a Identification Key Type then entries in this file will all be classed as:
             </td>
             <td>
-                <select id="selectIdentificationKeyType">
+                <label for="selectIdentificationKeyType">Choose Key Type</label><select id="selectIdentificationKeyType">
                     <option selected value="01">GTINs</option>
                     <option value="414">GLNs</option>
                     <option value="00">SSCCs</option>
@@ -88,6 +169,6 @@
     <p><button id="buttonUploadNow" onclick="uploadDataAndAwaitResults();">Upload Data Now</button></p>
     <div id="divUploadResults" style="width: 600px"></div>
 </div>
-<p><a href="index.html">Back to the home page</a></p>
+<p><a href="./index.html">Back to the home page</a></p>
 </body>
 </html>

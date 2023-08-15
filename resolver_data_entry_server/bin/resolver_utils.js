@@ -110,13 +110,14 @@ const isValidIANALanguage = (language) => {
 };
 
 /**
- * This function detects JavaScript code (such as alert() or console commands) in an incoming string, return true if JavaScript id found, else false.
+ * This function detects JavaScript code (such as alert() or console commands) in an incoming string, return true if JavaScript is found, else false.
  * WARNING: It is not possible to detect all JavaScript code, so this function is not 100% reliable.
  */
 const detectJavaScriptCode = (dataLine) => {
-  const jsCode = ['javascript', 'alert', 'console', 'document', 'window', 'eval', 'function', 'form', 'onclick', 'onload', 'onsubmit', 'onerror', 'onbeforeunload', 'onload', 'onunload', 'onchange', 'onmouseover', 'onmouseout', 'onkeydown', 'onkeyup', 'onkeypress', 'onblur', 'onfocus', 'onresize', 'onreset', 'onselect', 'onchange', 'onabort', 'oncontextmenu', 'ondblclick', 'ondrag', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onerror', 'onfocus', 'oninput', 'oninvalid', 'onkeydown', 'onkeypress', 'onkeyup', 'onload', 'onmousedown', 'onmousemove', 'onmouseout', 'onmouseover', 'onmouseup', 'onmousewheel', 'onreset', 'onscroll', 'onselect', 'onsubmit', 'onwheel', 'onafterprint', 'onbeforeprint', 'onbeforeunload', 'onhashchange', 'onmessage', 'onoffline', 'ononline', 'onpagehide', 'onpageshow', 'onpopstate', 'onresize', 'onstorage', 'onunload', 'onblur', 'onchange', 'oncontextmenu', 'onfocus', 'oninput', 'oninvalid', 'onreset', 'onsearch', 'onselect', 'onsubmit'];
+  const jsCode = ['javascript:', 'alert(', 'console.', 'document.', 'window.', 'eval(', 'onclick', 'onload', 'onsubmit', 'onerror', 'onbeforeunload', 'onload', 'onunload', 'onchange', 'onmouseover', 'onmouseout', 'onkeydown', 'onkeyup', 'onkeypress', 'onblur', 'onfocus', 'onresize', 'onreset', 'onselect', 'onchange', 'onabort', 'oncontextmenu', 'ondblclick', 'ondrag', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onerror', 'onfocus', 'oninput', 'oninvalid', 'onkeydown', 'onkeypress', 'onkeyup', 'onload', 'onmousedown', 'onmousemove', 'onmouseout', 'onmouseover', 'onmouseup', 'onmousewheel', 'onreset', 'onscroll', 'onselect', 'onsubmit', 'onwheel', 'onafterprint', 'onbeforeprint', 'onbeforeunload', 'onhashchange', 'onmessage', 'onoffline', 'ononline', 'onpagehide', 'onpageshow', 'onpopstate', 'onresize', 'onstorage', 'onunload', 'onblur', 'onchange', 'oncontextmenu', 'onfocus', 'oninput', 'oninvalid', 'onreset', 'onsearch', 'onselect', 'onsubmit'];
   for (const jsCodeItem of jsCode) {
     if (dataLine.trim().toLowerCase().includes(jsCodeItem)) {
+      console.log(`ALERT: JavaScript code detected in ${dataLine}`);
       return true;
     }
   }

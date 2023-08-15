@@ -1,6 +1,25 @@
-## Welcome to the GS1 Digital Link Resolver
+## Welcome to the GS1 Digital Link Resolver Community Edition v2.6
 
-### Community Edition v2.5
+---
+### ADVANCE NOTICE Community Edition v3.0 is on its way
+* Please note that new v3.0 of GS1 Resolver is on its way with some breaking changes if upgrading from v2.x.
+* This version 2.6 is the last version of the Community Edition v2.x series.
+
+Version 3.0 Features:
+1. **Upgraded and encrypted accounts / authentication system**. It's clear that the some members of the user community still wish
+to use GS1 Resolver's onboard (and very simple!) accounts system. It was designed to get people going before they embedded their
+own accounts/authentication system, but they like the simplicity, so we've designed a new accounts system with upgraded security, 
+encryption of data at rest, and session tokens. However, we strongly recommend that you use your own accounts/authentication system. 
+The new accounts system is designed to be a simple example of how to do it, and is not intended for production use. 
+It is not a substitute for a proper security review of the code.
+2. **IANA language becomes 'language'** and can support both language and territory within the same language code e.g. 'en-GB'.
+      This is a breaking change with v2.x because the language code is no longer restricted to two characters in the SQL database.
+3. **'active' flag property becomes 'public'** reflecting its actual use by the resolver service. 'public' links are those that are
+   visible to the public, and 'public=false' links are those that are only visible to the owner of the link. This is a breaking change.
+
+---
+
+## Community Edition v2.6
 
 Welcome! The purpose of this repository is to provide you with the ability to build a complete resolver service that
 will enable you to enter information about GTINs and other GS1 keys and resolve (that is, redirect) web clients to their
@@ -31,42 +50,64 @@ For an introduction to GS1 Digital Link, please watch this 9-minute video on You
 
 ## Security Audit results
 Recently, one of our GS1 MOs kindly conducted a security audit of the GS1 Digital Link Resolver Community Edition. The results
-are summarised here. Version 2.6 of the service includes updates where applicabe.
-1. Inadequate authentication functionality. The service uses a simple API key for authentication. This is not secure enough for a production environment. The service should be updated to use a more secure authentication mechanism such as OAuth 2.0.
+are summarised here. Version 2.6 of the service includes updates where applicable.
+ 
+1. **Inadequate authentication functionality**. The service uses a simple API key for authentication. This is not secure enough for a 
+production environment. The service should be updated to use a more secure authentication mechanism such as OAuth 2.0.
 At GS1 Global Office we have long since updated our production service (the 'Links Registry') via the GS1 GO Developer Portal.
-The included functionality is a 'get you going' solution. We will look at including session tokens in forthcoming v3.0 of this project, but really, you should use your own authentication mechanism.
-2. In the links data, the identificationKey and identificationKeyType fields define uniqueness. Any user can override an existing entry with the same identificationKey and identificationKeyType. At GS1 Global Office we use validation calls to the GS1 License Registry so that MOs can only update their own licensed links.
-Even then, two more users from the same member organisation can override each other, just like they can with other sections of the GS1 Registry Platform. This is a feature, not a bug!
-3. HTML/JavaScript injection in upload web page and upload API. The upload page now detects JavaScript included in the file that might be executed by the browser and warns the user. It's new function detectJavaScriptCode() in upload.js and within the API at resolver_utils.js - included with a caveat that it is unlikely to be comprehensive - your security team should review and assess it
-We no longer use the upload page in production, but it is still included in this project for your convenience. It is not a substitute for a proper security review of the code.
-4. Hard-coded user-ids password in the source code. You will see hard-coded user-ids and passwords in the source code. These are for convenience only to get you going and should be changed in production.
-Nobody should be using SQL Server credentials 'sa' and 'its@SECR3T!' outside their own development environment! The example python clients include passphrases to show you what's possible with scripted interaction with the service.
-Look out for hard-coded username, passwords and/or passphrases in the following files:
+The included date entry functionality in this project is a 'get you going' solution, and in any case the data entry service 
+should be ideally behind a firewall and only available to your own applications. We will look at including session tokens 
+in forthcoming v3.0 of this project, but really, you should use your own authentication mechanism.
+ 
+2. **Users can override each others' data**. In the links database, the identificationKey and identificationKeyType fields define uniqueness. 
+Any user can override an existing entry with the same identificationKey and identificationKeyType. This is one reason why we supply an empty validate()
+function in resolver_data_entry_server/validate.js where you can provide rules and consult with other systems to decide what any particular user can do.
+At GS1 Global Office we use validation calls to the GS1 License Registry so that MOs can only update their own licensed links.
+Even then, two more users from the same member organisation can override each other, just like they can with other sections of the GS1 Registry Platform.
+This is a feature, not a bug, thanks to the flexibility of the data design.
+
+3. **HTML/JavaScript injection in upload web page and upload API**. The upload page now detects JavaScript included in the file that might be 
+executed by the browser and warns the user. It's a new function detectJavaScriptCode() in **resolver_data_entry_server/public/javascripts/upload.js** 
+and within the API at **resolver_data_entry_server/bin/resolver_utils.js** - 
+included with a caveat that it is unlikely to be comprehensive and may occasionally cause 'false positives'. Your security team should review and assess it
+We no longer use the upload page in production, but it is still included in this project for your convenience. 
+It is not a substitute for a proper security review of the code.
+ 
+4. **Hard-coded user-ids password in the source code**. You will see hard-coded user-ids and passwords in the source code. These are for convenience 
+only to get you going and should be changed in production. Nobody should be using SQL Server credentials 'sa' and 'its@SECR3T!' outside their own 
+development environment! The example python clients include passphrases to show you what's possible with scripted interaction with the service.
+Look out for hard-coded usernames, passwords and/or passphrases in the following files:
 - GS1_DigitalLink_Resolver_CE/resolver_sql_server/sqldb_create_script.sql
 - GS1_DigitalLink_Resolver_CE/python_admin_clients/accounts.py
 - GS1_DigitalLink_Resolver_CE/resolver_data_entry_server/Dockerfile
 - GS1_DigitalLink_Resolver_CE/docker-compose.yml
 - GS1_DigitalLink_Resolver_CE/resolver_sql_server/ ... in all files.
-5.Missing checks on redirect data. The data entry APi now performs more comprehensive checks on the data being uploaded, ensuring that all provided properties are strings or booleans, and tha no JavaScript can be present in targetUrl.
-6. Detection of vulnerable third-party libraries. We have updated the packages so that we minimise any security vulnerabilities in the third-party libraries we use for Resolver.
+
+6. **Missing checks on redirect data**. The data entry APi now performs more comprehensive checks on the data being uploaded, 
+ensuring that all provided properties are strings or booleans, and that no JavaScript can be present in targetUrl.
+
+7. **Detection of vulnerable third-party libraries**. We have updated the packages so that we minimise any security vulnerabilities 
+in the third-party libraries we use for Resolver. However, you should always check for the latest versions of these libraries. Useful
+services such as 'Snyk' can help you with this. See https://snyk.io/ for more information.
 
 ## Versions
 
 ### Version 2.6 Features
-1. Upload page now detects JavaScript included in the file that might be executed by the browser and warns the user. It's new function detectJavaScriptCode() in upload.js
-- 
-- it is not a substitute for a proper security review of the code.
-2. 
+
+1. Various improvements resulting from feedback from the user community (thank you!)
+2. Fixes resulting from the security audit (see above)
+3. Improvements to UI (although we no longer use the UI in production, it is still included in this project for your convenience)
+4. The codebase is backwards-compatible with existing v2.x data in SQL and MongoDB
 
 ### Version 2.5 Features
 
-1. New Application Identifier 417 (Party Global Location Number - PGLN) has been added to the service. PGLNs are
-slightly different to standard GLNs because they identify an Organisation rather than just a location. Some smaller GS1
-members don't have locations as they trade in online marketplaces, but they would like a Party GLN which gives buyers
-links to customer service and FAQ information which is neither product nor Location related.
-2. Inclusion of Link Set standard - this creates a neat JSON-based variant of the links data included in the Link:
+1. **New Application Identifier 417 (Party Global Location Number - PGLN)** has been added to the service. PGLNs are
+   slightly different to standard GLNs because they identify an Organisation rather than just a location. Some smaller GS1
+   members don't have locations as they trade in online marketplaces, but they would like a Party GLN which gives buyers
+   links to customer service and FAQ information which is neither product nor Location related.
+2. **Inclusion of Link Set standard** - this creates a neat JSON-based variant of the links data included in the Link:
    header so it is easier to consume by apps.
-3. GIAI (Global Individual Asset Identifier) entries are different to GTINs because the serial number is in the GIAI
+3. **GIAI (Global Individual Asset Identifier) entries** are different to GTINs because the serial number is in the GIAI
    identifier itself, rather than in a qualifier. Think of GIAIs (assets) as all the 'things' an organisation owns. If
    the organisation is a hospital, for example, everything in that hospital is an asset, so has a GIAI asset number that
    uniquely identifies it. How many assets are in a hospital? Thousands? Millions?? Today, every single one of them
@@ -77,28 +118,28 @@ links to customer service and FAQ information which is neither product nor Locat
    serial number is part of the identifier - GRAIs (returnable assets such as a lending library) and SSCCs (Serial
    Shipping Container Codes). If we can, we'll include these two next week, otherwise we will perform a further minor
    update in a month's time.
-4. New Dashboard service - find out stats about your data in Resolver! This new functionality includes a new Dashboard
+4. **New Dashboard service** - find out stats about your data in Resolver! This new functionality includes a new Dashboard
    container which performs hourly updates to its statistical data store so as not to put pressure on the database when
    it is live.
-5. Security audit updates to packages so that we minimise any security vulnerabilities in the third-party libraries we
+5. **Security audit updates to packages** so that we minimise any security vulnerabilities in the third-party libraries we
    use for Resolver.
-6. Various small bug fixes and performance improvements, including upgrade to Node 16 on Alpine Linux 3.14
+6. **Various small bug fixes and performance improvements**, including upgrade to Node 16 on Alpine Linux 3.14
 
 ### Version 2.4 Features
 
-1. Various bug fixes / code changes from trialists' feedback
-2. Performance improvements to existing code
-3. Express routes applied for GS1 Identifier Key Types: GTIN, GLN, GLNX, SSCC, GRAI, GIAI, GSRN, GDTI, GINC, GSIN, GCN,
+1. **Various bug fixes** / code changes from trialists' feedback
+2. **Performance improvements** to existing code
+3. **Express routes** applied for GS1 Identifier Key Types: GTIN, GLN, GLNX, SSCC, GRAI, GIAI, GSRN, GDTI, GINC, GSIN, GCN,
    CPID, GMN
-4. Changed all instances of defaultLink* to defaultLinkMulti
-5. Compressed URIs implemented
-6. Updated rules that generate a 400 Bad Request
-7. Updated Node from v15.1 on Alpine Linux 3.12 to v15.11 on Alpine Linux 3.13 to fix increasingly old version of npm as
+4. Changed all instances of defaultLink* to **defaultLinkMulti**
+5. **Compressed URIs** implemented
+6. Updated rules that generate a **400 Bad Request**
+7. **Updated Node from v15.1 on Alpine Linux 3.12 to v15.11 on Alpine Linux 3.13** to fix increasingly old version of npm as
    well as taking advantages of improved performance and bug fixes in Node V8 runtime.
 
 ### Version 2.3 Features
 
-1. New JSON output format conforming to the IETF Linkset standard.
+1. **New JSON output format** conforming to the IETF Linkset standard.
 2. New extended format for Mongo documents that reduces the processing overhead of the resolving web server, thus
    improving performance.
 3. New HTTP 303 'See Other' return code enabling clients to get more general info about an entry, if the specific lot or
