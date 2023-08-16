@@ -357,6 +357,7 @@ const lineIncludesInternetURIScheme = (dataLine) =>
   dataLine.includes('rtsp://') || // media streaming protocol
   dataLine.includes('sip:') || // internet telephone number
   dataLine.includes('tel:') || // standard telephone number
+  dataLine.includes('did:') || // distributed identifier (verifiable credential)
   dataLine.includes('mailto:'); // create an email to send
 // To set the response parameters of data entry request, which will prepare for add data in DB with valid entries
 const cleanAndParseDataEntryResponse = async (responsesEntries) => {
