@@ -98,6 +98,8 @@ services such as 'Snyk' can help you with this. See https://snyk.io/ for more in
 2. Fixes resulting from the security audit (see above)
 3. Improvements to UI (although we no longer use the UI in production, it is still included in this project for your convenience)
 4. The codebase is backwards-compatible with existing v2.x data in SQL and MongoDB
+5. New file installContainers.ps to help you set up the test environment automatically on an empty Windows box. This script was
+kindly authored by Sten Walde who is Product specialist Standards & Datamodels at GS1 Sweden. Thank you Sten!
 
 ### Version 2.5 Features
 
