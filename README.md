@@ -563,13 +563,12 @@ We recommend the following software to use when getting to know GS1 Resolver and
 
 8. Now wait 10 seconds while the system settles down (the SQL Server service takes a few seconds to initialise when '
    new') then, if you have SQL Server Management Studio installed, go to Step 9, else copy and paste this command which
-   will cause you to enter the container and access its terminal prompt:<pre>docker exec -it resolver-sql-server bash</pre>
-   Now run this command which will create the database and some example data:<pre>/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P its@SECR3T! -i /gs1resolver_sql_scripts/sqldb_create_script.sql </pre>
+   will copy the initialization SQL script into the database container:<pre>docker compose cp ./resolver_sql_server/sqldb_create_script.sql sql-server:sqldb_create_script.sql</pre>
+   Now run this command which will create the database and some example data:<pre>docker compose exec sql-server /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P its@SECR3T! -i /sqldb_create_script.sql</pre>
    You will see a messages such as '(1 rows affected)' and a sentences that starts 'The module 'END_OF_DAY' depends on
    the missing object...'. These are all fine - the latter messages are shown because some stored procedures are created
    by the SQL script before others - and some stored procedures depend on others not created yet as their creation
    occurs further down this SQL script. As long as the final line says 'Database Create Script Completed' all is well!
-   Exit the container with the command:<pre>exit</pre>
 9. ALTERNATIVELY to Step 8, if you have Windows and SQL Server Management Studio
    installed (<a href="https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms?view=sql-server-ver15">download SSMS from here</a>), use it to connect to 'localhost' server, with username 'sa' and password 'its@SECR3T!'.
     Then, click on the 'New Query' button, and copy & paste the contents of 'sqldb_create_script.sql' in the '
