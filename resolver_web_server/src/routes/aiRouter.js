@@ -17,6 +17,10 @@ aiRouterApp.use(function (req, res, next) {
 aiRouterApp.use('/01', processGTINDigitalLinkRouter);
 aiRouterApp.use('/gtin', processGTINDigitalLinkRouter);
 
+// National Livestock Identification System ID (NLISID)
+aiRouterApp.use('/03', processDigitalLinkRouter);
+aiRouterApp.use('/nlisid', processDigitalLinkRouter);
+
 // Global Location Number (GLN)
 aiRouterApp.use('/414', processDigitalLinkRouter);
 aiRouterApp.use('/gln', processDigitalLinkRouter);

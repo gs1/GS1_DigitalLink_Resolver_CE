@@ -37,6 +37,16 @@ class GS1DigitalLinkToolkit {
         regex: '(\\d{14})',
       },
       {
+        title: 'National Livestock Identification System ID (NLISID)',
+        label: 'NLISID',
+        shortcode: 'nlisid',
+        ai: '03',
+        format: 'X..16',
+        type: 'I',
+        fixedLength: true,
+        regex: '^[A-Za-z0-9]{16}$',
+      },
+      {
         title: 'Batch or lot number',
         label: 'BATCH/LOT',
         shortcode: 'lot',
