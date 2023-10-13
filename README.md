@@ -723,9 +723,10 @@ Office is that
 
 There is the Data Entry API of Postman: https://documenter.getpostman.com/view/10078469/TVejgpjz.<br/>
 Please click link above to have our colection and api available to perform the following steps.
+![Alt text](GS1_DigitalLink_Resolver_CE.iml)
 
 1. Run Postman in your desktop or web, add config environment global variable {{auth_key}} with current value is (5555555555555) and {{base_url}} with current value is (http://localhost).
-2. Now, you need to create a csv file contain the data we need to insert into the database. Easy to create csv to test at https://www.mockaroo.com/
+2. Now, you must create a CSV file containing the data we need to insert into the database. Here is a simple example CSV file you can try and edit.
 3. Then, You change body request api Create or Update Resolver Entries. For example:
 
    <pre>
@@ -773,7 +774,7 @@ The json value {{example}} have similar the name of header column table in the c
 
 4. You click runner in footer drag and drop the collection, select csv file click start run to. For example:
 
-![Alt text](image.png)
+![Alt text](PostmanRunner.png)
 
 Then you will see the database change with the database you insert with the postman runner.
 
