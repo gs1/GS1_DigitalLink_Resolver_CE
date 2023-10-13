@@ -777,6 +777,7 @@ Rajesh Kumar Rana, Co-Developer, GS1 Digital Link Resolver Project<br />
 The json value {{example}} have similar the name of header column table of the csv file data.
 
 3.  Finally, You click runner drag and drop the collection, select csv file click start run to. For example:
-    ![Alt text](image.png)
+
+![Alt text](image.png)
 
 Then you will see the database change with the database you insert with the postman runner.
