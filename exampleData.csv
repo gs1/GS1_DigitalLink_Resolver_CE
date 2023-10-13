@@ -1,0 +1,4 @@
+identificationKeyType,identificationKey,itemDescription,linkType1,linkType2,targetUrl1,targetUrl2,linkTitle1,linkTitle2
+nlisid,3ABCD123XBDC0447,AgTrace Meats Beef Scotch Fillet Steak,gs1:verificationService,gs1:certificationInfo,https://api.vckit.showthething.com/agent/verifyCredential,https://agtrace-passports.s3.ap-southeast-2.amazonaws.com/COO-passport.json,Verifier service,Product passport
+nlisid,3ABCD123XBDC0447,AgTrace Meats Beef Scotch Fillet Steak,gs1:verificationService,gs1:certificationInfo,https://api.vckit.showthething.com/agent/verifyCredential,https://agtrace-passports.s3.ap-southeast-2.amazonaws.com/COO-passport.json,Verifier service,Product passport
+nlisid,3ABCD123XBDC0447,AgTrace Meats Beef Scotch Fillet Steak,gs1:verificationService,gs1:certificationInfo,https://api.vckit.showthething.com/agent/verifyCredential,https://agtrace-passports.s3.ap-southeast-2.amazonaws.com/COO-passport.json,Verifier service,Product passport

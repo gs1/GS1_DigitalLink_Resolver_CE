@@ -721,12 +721,11 @@ Office is that
 
 ## Seeding the database with the Postman runner
 
-There is the Data Entry API of Postman: https://documenter.getpostman.com/view/10078469/TVejgpjz.<br/>
+There is Collection of Postman: (GS1.postman_collection.json).<br/>
 Please click link above to have our colection and api available to perform the following steps.
-![Alt text](GS1_DigitalLink_Resolver_CE.iml)
 
 1. Run Postman in your desktop or web, add config environment global variable {{auth_key}} with current value is (5555555555555) and {{base_url}} with current value is (http://localhost).
-2. Now, you must create a CSV file containing the data we need to insert into the database. Here is a simple example CSV file you can try and edit.
+2. Now, you must create a CSV file containing the data we need to insert into the database. Here is (exampleData.csv) a simple example CSV file you can try and edit.
 3. Then, You change body request api Create or Update Resolver Entries. For example:
 
    <pre>

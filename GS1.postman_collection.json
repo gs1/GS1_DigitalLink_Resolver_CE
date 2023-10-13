@@ -1,0 +1,137 @@
+{
+	"info": {
+		"_postman_id": "3f1c4b6b-c8ed-4d98-8be0-0aa06e2d916d",
+		"name": "GS1 Resolver Data Entry API Community Edition",
+		"description": "The GS1 DigitalLink Data Entry API allows the creation, update and deletion ofentries into GS1 Resolver.\n",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "16802726"
+	},
+	"item": [
+		{
+			"name": "Create or Update Resolver Entries",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{auth_key}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n   {\n      \"identificationKeyType\": \"{{identificationKeyType}}\",\n      \"identificationKey\": \"{{identificationKey}}\",\n      \"itemDescription\": \"{{itemDescription}}\",\n      \"qualifierPath\": \"/\",\n      \"active\": true,\n      \"responses\": [\n            {\n               \"linkType\": \"{{linkType1}}\",\n               \"ianaLanguage\": \"en\",\n               \"context\": \"us\",\n               \"mimeType\": \"text/plain\",\n               \"linkTitle\": \"{{linkTitle1}}\",\n               \"targetUrl\": \"{{targetUrl1}}\",\n               \"defaultLinkType\": false,\n               \"defaultIanaLanguage\": true,\n               \"defaultContext\": false,\n               \"defaultMimeType\": false,\n               \"fwqs\": false,\n               \"active\": true\n            },\n            {\n               \"linkType\": \"{{linkType2}}\",\n               \"ianaLanguage\": \"en\",\n               \"context\": \"us\",\n               \"mimeType\": \"application/json\",\n               \"linkTitle\": \"{{linkTitle2}}\",\n               \"targetUrl\": \"{{targetUrl2}}\",\n               \"defaultLinkType\": false,\n               \"defaultIanaLanguage\": true,\n               \"defaultContext\": true,\n               \"defaultMimeType\": true,\n               \"fwqs\": false,\n               \"active\": true\n            }\n      ]\n   }\n]\n"
+				},
+				"url": {
+					"raw": "{{base_url}}/resolver",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"resolver"
+					]
+				},
+				"description": "Resolver entries are complex JSON documents, each consisting of a single ResolverRequest and one or more ResolverResponse entries as an array linked to the ResolverRequest's 'responses' property. An array of up to 1,000 documents can be sent in a single request using this API. When the data is uploaded, this API responds immediately with a batchId, plus an array of 'badEntries' consisting of entries that failed the API's realtime stage 1 validation (which simply checks the syntax of each entry - for example, that a GTIN entry is actually a proper GTIN value with correct length and check digit). The batchId is then used to poll the 'Get Batch results using supplied Batch Id' API until results of the second stage validation (using the License Registry API results) are published."
+			},
+			"response": [
+				{
+					"name": "Create or Update Resolver Entries",
+					"originalRequest": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[\n    {\n        \"identificationKeyType\": \"gtin\",\n        \"identificationKey\": \"00745883713370\",\n        \"itemDescription\": \"M00420020590\",\n        \"dateInserted\": \"2020-06-25T09:58:28.330Z\",\n        \"dateLastUpdated\": \"2020-06-25T09:58:28.330Z\",\n        \"qualifierPath\": \"/\",\n        \"active\": true,\n        \"responses\": [\n            {\n                \"linkType\": \"gs1:pip\",\n                \"ianaLanguage\": \"en\",\n                \"context\": \"us\",\n                \"mimeType\": \"text/html\",\n                \"linkTitle\": \"Product Info\",\n                \"targetUrl\": \"http://lansley.com/test.html\",\n                \"defaultLinkType\": true,\n                \"defaultIanaLanguage\": true,\n                \"defaultContext\": true,\n                \"defaultMimeType\": true,\n                \"fwqs\": false,\n                \"active\": true\n            }\n        ]\n    }\n]"
+						},
+						"url": {
+							"raw": "{{base_url}}/resolver",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"resolver"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "X-Powered-By",
+							"value": "Express"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Content-Length",
+							"value": "38"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"26-PmojEDfe/aQIeW3tO0OmWu1j950\""
+						},
+						{
+							"key": "Date",
+							"value": "Thu, 25 Jun 2020 16:09:46 GMT"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"batchId\": 1253762674,\n    \"badEntries\": []\n}"
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{auth_key}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
