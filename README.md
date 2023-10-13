@@ -721,7 +721,7 @@ Office is that
 
 ## Seeding the database with the postman runner
 
-There is the Data Entry API of post man: https://documenter.getpostman.com/view/10078469/TVejgpjz.
+There is the Data Entry API of post man: https://documenter.getpostman.com/view/10078469/TVejgpjz.<br/>
 Please click link above to have our colection and api available to perform the following steps.
 
 1. You need to create a csv file contain the data we need to insert into the database.
