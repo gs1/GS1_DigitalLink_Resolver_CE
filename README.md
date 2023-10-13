@@ -718,20 +718,16 @@ Office is that
    the Mongo data volume to a different node, causing an interruption in the service.
 
 <hr />
-We hope you enjoy GS1 Resolver Community Edition!
-
-Please be part of our Developers' forum at https://groups.google.com/g/gs1-digital-link-developers
-where you can get the latest updates sent to your mailbox.
-
-Best regards<br />
-Phil Archer, Director, Web Solutions, GS1<br />
-Nick Lansley, Lead Developer, GS1 Digital Link Resolver Project<br />
-Rajesh Kumar Rana, Co-Developer, GS1 Digital Link Resolver Project<br />
 
 ## Seeding the database with the postman runner
 
-1.  Firsly, We need to create a csv file contain the data we need to insert into the database.
-2.  Secondly, We run the postman and config body request for post request. For example:
+There is the Data Entry API of post man: https://documenter.getpostman.com/view/10078469/TVejgpjz.
+Please click link above to have our colection and api available to perform the following steps.
+
+1. You need to create a csv file contain the data we need to insert into the database.
+2. You add config environment global variable {{auth_key}} with current value is (5555555555555) and {{base_url}}
+   with current value is (http://localhost).
+3. You change body request api Create or Update Resolver Entries. For example:
 
    <pre>
    [
@@ -774,10 +770,22 @@ Rajesh Kumar Rana, Co-Developer, GS1 Digital Link Resolver Project<br />
       }
    ]</pre>
 
-The json value {{example}} have similar the name of header column table of the csv file data.
+The json value {{example}} have similar the name of header column table in the csv file data.
 
-3.  Finally, You click runner drag and drop the collection, select csv file click start run to. For example:
+4. You click runner in footer drag and drop the collection, select csv file click start run to. For example:
 
 ![Alt text](image.png)
 
 Then you will see the database change with the database you insert with the postman runner.
+
+<hr/>
+
+We hope you enjoy GS1 Resolver Community Edition!
+
+Please be part of our Developers' forum at https://groups.google.com/g/gs1-digital-link-developers
+where you can get the latest updates sent to your mailbox.
+
+Best regards<br />
+Phil Archer, Director, Web Solutions, GS1<br />
+Nick Lansley, Lead Developer, GS1 Digital Link Resolver Project<br />
+Rajesh Kumar Rana, Co-Developer, GS1 Digital Link Resolver Project<br />
