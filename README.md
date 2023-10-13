@@ -1,19 +1,22 @@
 ## Welcome to the GS1 Digital Link Resolver Community Edition v2.6
 
 ---
+
 ### ADVANCE NOTICE Community Edition v3.0 is on its way
-* Please note that new v3.0 of GS1 Resolver is on its way with some breaking changes if upgrading from v2.x.
-* This version 2.6 is the last version of the Community Edition v2.x series.
+
+- Please note that new v3.0 of GS1 Resolver is on its way with some breaking changes if upgrading from v2.x.
+- This version 2.6 is the last version of the Community Edition v2.x series.
 
 Version 3.0 Features:
+
 1. **Upgraded and encrypted accounts / authentication system**. It's clear that the some members of the user community still wish
-to use GS1 Resolver's onboard (and very simple!) accounts system. It was designed to get people going before they embedded their
-own accounts/authentication system, but they like the simplicity, so we've designed a new accounts system with upgraded security, 
-encryption of data at rest, and session tokens. However, we strongly recommend that you use your own accounts/authentication system. 
-The new accounts system is designed to be a simple example of how to do it, and is not intended for production use. 
-It is not a substitute for a proper security review of the code.
+   to use GS1 Resolver's onboard (and very simple!) accounts system. It was designed to get people going before they embedded their
+   own accounts/authentication system, but they like the simplicity, so we've designed a new accounts system with upgraded security,
+   encryption of data at rest, and session tokens. However, we strongly recommend that you use your own accounts/authentication system.
+   The new accounts system is designed to be a simple example of how to do it, and is not intended for production use.
+   It is not a substitute for a proper security review of the code.
 2. **IANA language becomes 'language'** and can support both language and territory within the same language code e.g. 'en-GB'.
-      This is a breaking change with v2.x because the language code is no longer restricted to two characters in the SQL database.
+   This is a breaking change with v2.x because the language code is no longer restricted to two characters in the SQL database.
 3. **'active' flag property becomes 'public'** reflecting its actual use by the resolver service. 'public' links are those that are
    visible to the public, and 'public=false' links are those that are only visible to the owner of the link. This is a breaking change.
 
@@ -47,48 +50,49 @@ standard, and resolves - that is, 'smart redirects' - to an onward destination.
 For an introduction to GS1 Digital Link, please watch this 9-minute video on YouTube from Phil Archer, Web Solutions Director, GS1 Global Office:  
 <a href="https://youtu.be/H2idDJeH3o4">GS1 Digital Link Layer Cake</a>
 
-
 ## Security Audit results
+
 Recently, one of our GS1 MOs kindly conducted a security audit of the GS1 Digital Link Resolver Community Edition. The results
 are summarised here. Version 2.6 of the service includes updates where applicable.
- 
-1. **Inadequate authentication functionality**. The service uses a simple API key for authentication. This is not secure enough for a 
-production environment. The service should be updated to use a more secure authentication mechanism such as OAuth 2.0.
-At GS1 Global Office we have long since updated our production service (the 'Links Registry') via the GS1 GO Developer Portal.
-The included date entry functionality in this project is a 'get you going' solution, and in any case the data entry service 
-should be ideally behind a firewall and only available to your own applications. We will look at including session tokens 
-in forthcoming v3.0 of this project, but really, you should use your own authentication mechanism.
- 
-2. **Users can override each others' data**. In the links database, the identificationKey and identificationKeyType fields define uniqueness. 
-Any user can override an existing entry with the same identificationKey and identificationKeyType. This is one reason why we supply an empty validate()
-function in resolver_data_entry_server/validate.js where you can provide rules and consult with other systems to decide what any particular user can do.
-At GS1 Global Office we use validation calls to the GS1 License Registry so that MOs can only update their own licensed links.
-Even then, two more users from the same member organisation can override each other, just like they can with other sections of the GS1 Registry Platform.
-This is a feature, not a bug, thanks to the flexibility of the data design.
 
-3. **HTML/JavaScript injection in upload web page and upload API**. The upload page now detects JavaScript included in the file that might be 
-executed by the browser and warns the user. It's a new function detectJavaScriptCode() in **resolver_data_entry_server/public/javascripts/upload.js** 
-and within the API at **resolver_data_entry_server/bin/resolver_utils.js** - 
-included with a caveat that it is unlikely to be comprehensive and may occasionally cause 'false positives'. Your security team should review and assess it
-We no longer use the upload page in production, but it is still included in this project for your convenience. 
-It is not a substitute for a proper security review of the code.
- 
-4. **Hard-coded user-ids password in the source code**. You will see hard-coded user-ids and passwords in the source code. These are for convenience 
-only to get you going and should be changed in production. Nobody should be using SQL Server credentials 'sa' and 'its@SECR3T!' outside their own 
-development environment! The example python clients include passphrases to show you what's possible with scripted interaction with the service.
-Look out for hard-coded usernames, passwords and/or passphrases in the following files:
+1. **Inadequate authentication functionality**. The service uses a simple API key for authentication. This is not secure enough for a
+   production environment. The service should be updated to use a more secure authentication mechanism such as OAuth 2.0.
+   At GS1 Global Office we have long since updated our production service (the 'Links Registry') via the GS1 GO Developer Portal.
+   The included date entry functionality in this project is a 'get you going' solution, and in any case the data entry service
+   should be ideally behind a firewall and only available to your own applications. We will look at including session tokens
+   in forthcoming v3.0 of this project, but really, you should use your own authentication mechanism.
+
+2. **Users can override each others' data**. In the links database, the identificationKey and identificationKeyType fields define uniqueness.
+   Any user can override an existing entry with the same identificationKey and identificationKeyType. This is one reason why we supply an empty validate()
+   function in resolver_data_entry_server/validate.js where you can provide rules and consult with other systems to decide what any particular user can do.
+   At GS1 Global Office we use validation calls to the GS1 License Registry so that MOs can only update their own licensed links.
+   Even then, two more users from the same member organisation can override each other, just like they can with other sections of the GS1 Registry Platform.
+   This is a feature, not a bug, thanks to the flexibility of the data design.
+
+3. **HTML/JavaScript injection in upload web page and upload API**. The upload page now detects JavaScript included in the file that might be
+   executed by the browser and warns the user. It's a new function detectJavaScriptCode() in **resolver_data_entry_server/public/javascripts/upload.js**
+   and within the API at **resolver_data_entry_server/bin/resolver_utils.js** -
+   included with a caveat that it is unlikely to be comprehensive and may occasionally cause 'false positives'. Your security team should review and assess it
+   We no longer use the upload page in production, but it is still included in this project for your convenience.
+   It is not a substitute for a proper security review of the code.
+
+4. **Hard-coded user-ids password in the source code**. You will see hard-coded user-ids and passwords in the source code. These are for convenience
+   only to get you going and should be changed in production. Nobody should be using SQL Server credentials 'sa' and 'its@SECR3T!' outside their own
+   development environment! The example python clients include passphrases to show you what's possible with scripted interaction with the service.
+   Look out for hard-coded usernames, passwords and/or passphrases in the following files:
+
 - GS1_DigitalLink_Resolver_CE/resolver_sql_server/sqldb_create_script.sql
 - GS1_DigitalLink_Resolver_CE/python_admin_clients/accounts.py
 - GS1_DigitalLink_Resolver_CE/resolver_data_entry_server/Dockerfile
 - GS1_DigitalLink_Resolver_CE/docker-compose.yml
 - GS1_DigitalLink_Resolver_CE/resolver_sql_server/ ... in all files.
 
-6. **Missing checks on redirect data**. The data entry APi now performs more comprehensive checks on the data being uploaded, 
-ensuring that all provided properties are strings or booleans, and that no JavaScript can be present in targetUrl.
+6. **Missing checks on redirect data**. The data entry APi now performs more comprehensive checks on the data being uploaded,
+   ensuring that all provided properties are strings or booleans, and that no JavaScript can be present in targetUrl.
 
-7. **Detection of vulnerable third-party libraries**. We have updated the packages so that we minimise any security vulnerabilities 
-in the third-party libraries we use for Resolver. However, you should always check for the latest versions of these libraries. Useful
-services such as 'Snyk' can help you with this. See https://snyk.io/ for more information.
+7. **Detection of vulnerable third-party libraries**. We have updated the packages so that we minimise any security vulnerabilities
+   in the third-party libraries we use for Resolver. However, you should always check for the latest versions of these libraries. Useful
+   services such as 'Snyk' can help you with this. See https://snyk.io/ for more information.
 
 ## Versions
 
@@ -99,7 +103,7 @@ services such as 'Snyk' can help you with this. See https://snyk.io/ for more in
 3. Improvements to UI (although we no longer use the UI in production, it is still included in this project for your convenience)
 4. The codebase is backwards-compatible with existing v2.x data in SQL and MongoDB
 5. New file installContainers.ps to help you set up the test environment automatically on an empty Windows box. This script was
-kindly authored by Sten Walde who is Product specialist Standards & Datamodels at GS1 Sweden. Thank you Sten!
+   kindly authored by Sten Walde who is Product specialist Standards & Datamodels at GS1 Sweden. Thank you Sten!
 
 ### Version 2.5 Features
 
@@ -133,7 +137,7 @@ kindly authored by Sten Walde who is Product specialist Standards & Datamodels a
 2. **Performance improvements** to existing code
 3. **Express routes** applied for GS1 Identifier Key Types: GTIN, GLN, GLNX, SSCC, GRAI, GIAI, GSRN, GDTI, GINC, GSIN, GCN,
    CPID, GMN
-4. Changed all instances of defaultLink* to **defaultLinkMulti**
+4. Changed all instances of defaultLink\* to **defaultLinkMulti**
 5. **Compressed URIs** implemented
 6. Updated rules that generate a **400 Bad Request**
 7. **Updated Node from v15.1 on Alpine Linux 3.12 to v15.11 on Alpine Linux 3.13** to fix increasingly old version of npm as
@@ -158,27 +162,28 @@ kindly authored by Sten Walde who is Product specialist Standards & Datamodels a
    Files To Upload'
 2. Simplified linktype=all JSON document
 3. New linktype=linkset JSON document
-3. Massively reduced container image sizes. Using the latest version of Node and NPM with its updated packages, we can
+4. Massively reduced container image sizes. Using the latest version of Node and NPM with its updated packages, we can
    now run most of the service in the tiny Alpine Linux containers.
-4. Better access to SQL via pooling - this makes better use of cloud-based databases such as SQL Azure (as well as
+5. Better access to SQL via pooling - this makes better use of cloud-based databases such as SQL Azure (as well as
    dedicated databases)
-5. Lots of optimisations, enhancements and security improvements.
-6. Optimised for working in Kubernetes clusters - tested on DigitalOcean and Microsoft Azure Kubernetes offerings.
+6. Lots of optimisations, enhancements and security improvements.
+7. Optimised for working in Kubernetes clusters - tested on DigitalOcean and Microsoft Azure Kubernetes offerings.
 
 ### Important Notes for existing users of previous versions 1.0 and 1.1
 
 This is a brand new resolving architecture, not backwards compatible with version 1.0 or 1.1 as it is updated to reflect
 big changes to the design and architecture of the service. These changes were to provide:
 
-* More complete compliance with the GS1 Digital Link standard
-* Performance and security improvements
-* Rewrite of the id_web_server from PHP 7.3 to Node.JS v13.7
-* Removal of separate Digital Link Toolkit server - now integrated into id_web_server
-* Removal of experimental unixtime service (unixtime downloads will be revisited at later time)
+- More complete compliance with the GS1 Digital Link standard
+- Performance and security improvements
+- Rewrite of the id_web_server from PHP 7.3 to Node.JS v13.7
+- Removal of separate Digital Link Toolkit server - now integrated into id_web_server
+- Removal of experimental unixtime service (unixtime downloads will be revisited at later time)
 
 If you are using earlier versions of Resolver, contact Nick Lansley (nick.lansley@gs1.org or nick@lansley.com) for advice on copying the data
 from the old SQL format to the new much simpler SQL format. You should stop using the older v1.x service and transition
 to this version as soon as possible.
+
 <hr />
 
 ## Upgrading
@@ -187,8 +192,8 @@ to this version as soon as possible.
 
 The main upgrade of the service is to resolver_data_entry_server which has been upgraded to support batch uploading of
 data and a validation process which you can optionally harness to check uploaded entries before they are published. This
-has resulted in a data structure change that includes '_prevalid' suffix named SQL tables into which data is uploaded. A
-validation process is then kicked off which, if successful for each entry, copies the data into the non _prevalid suffix
+has resulted in a data structure change that includes '\_prevalid' suffix named SQL tables into which data is uploaded. A
+validation process is then kicked off which, if successful for each entry, copies the data into the non \_prevalid suffix
 SQL tables.
 
 To install this new update, make sure all your data is backed up(!), then use the 'docker-compose build' and '
@@ -196,7 +201,7 @@ docker-compose run -d' commands over the top of your existing installation, then
 in Fast Start step 7 below. This will create a SQL database called "gs1-resolver-ce-v2-1-db" alongside your existing SQL
 database "gs1-resolver-ce-v2-db" with the updated structure. The containers point to the new SQL database but the Mongo
 database is unchanged and will continue serving existing data. You will have an extra step of copying data between the
-databases but, apart from the _prevalid tables, you will find the structure familiar. Note that a few column names have
+databases but, apart from the \_prevalid tables, you will find the structure familiar. Note that a few column names have
 been changed to conform better to GS1 naming conventions for data properties, but the data in the columns is unchanged
 in format.
 
@@ -206,6 +211,7 @@ of multiple servers has become unnecessary thanks to the latest Node v14 V8 engi
 Finally, by popular request, docker-compose exposes the web service on port 80, no longer port 8080. It also exposes SQL
 Server and MongoDB on their default ports, so use your favourite SQL Server client and Mongo DB to connect to localhost
 with credentials supplied in the SQL and Mongo Dockerfiles.
+
 <hr />
 
 ### Important Notes for existing users of previous version 2.1
@@ -215,7 +221,9 @@ that expects the previous format. The unixtime batch format also uses the new fo
 
 We have upgraded the security of the service in many ways. An important new environment variable in the Dockerfile of
 resolver_data_entry_server is:
+
 <pre>ENV CSP_NONCE_SOURCE_URL="localhost"</pre>
+
 Wherever you run Resolver, you must change its domain name in this variable to match it's 'live' domain name, or else
 the Data Entry UI JavaScript will be blocked from executing.
 
@@ -228,7 +236,8 @@ it. This is simple to do - using either the API or direct server access, empty t
 [gs1-resolver-ce-v2-1-db].[dbo].[server_sync_register]
 
 For example, using the free SQL Server Management Studio, head into the database and use this command:
-<pre>truncate table [gs1-resolver-ce-v2-1-db].[dbo].[server_sync_register]</pre>   
+
+<pre>truncate table [gs1-resolver-ce-v2-1-db].[dbo].[server_sync_register]</pre>
 
 - OR - Using the API with your Admin auth key, use the endpoint to list the servers:
 
@@ -243,7 +252,9 @@ For example, using the free SQL Server Management Studio, head into the database
 ]
 
 </pre>
+
 ...then delete each server using its resolverSyncServerId value:
+
 <pre>curl --location --request DELETE 'https://resolver-domain-name/admin/heardbuildsyncserver/qlh00O7z3JGk'</pre>
 
 - OR - If you are running Resolver in Docker on your local machine, then you can use the docker volume command to remove
@@ -251,21 +262,29 @@ For example, using the free SQL Server Management Studio, head into the database
   down</pre> then use this command:
 
 <pre>docker volume ls</pre>
+
 ..and look for a volume that should be called 'gs1_digitallink_resolver_ce_resolver-document-volume'. You can then
 delete it like this:
+
 <pre>docker volume rm gs1_digitallink_resolver_ce_resolver-document-volume</pre>
+
 Finally, build and restart the new service:
+
 <pre>
 docker-compose build
 docker-compose run -d
 </pre>
+
 Mongo will initialise a fresh new empty database which the Build application will detect and perform a full rebuild.
+
 <hr />
 
 ### Important Notes for existing users of previous version 2.2
 
 Just as for users upgrading to version 2.2, you will need to empty the table:
+
 <pre>[gs1-resolver-ce-v2-1-db].[dbo].[server_sync_register]</pre>
+
 Please follow the instructions for doing this in 'Important Notes for existing users of previous version 2.1' section '
 Emptying SQL table [server_sync_register]' to initiate MongoDB rebuild of its data.
 
@@ -273,14 +292,15 @@ Emptying SQL table [server_sync_register]' to initiate MongoDB rebuild of its da
 
 No changes to data, so you can simply upgrade the code, and it will work with v2.3 data structures in SQL and Mongo.
 
-If you started authoring client apps that use Resolver's linkset defaultLinkType* array, you will need to refer to this
+If you started authoring client apps that use Resolver's linkset defaultLinkType\* array, you will need to refer to this
 array with its new name defaultLinkTypeMulti. This change came about because of some syntax challenges using the
-asterisk symbol, which could be converted to HTML code <b>&#42;</b> or HTML entity <b>&ast;</b>.
+asterisk symbol, which could be converted to HTML code <b>\*</b> or HTML entity <b>\*</b>.
 
 ### Important Notes for existing users of previous version 2.4
 
 No changes to data, so you can simply upgrade the code, and it will work with v2.4 data structures in SQL and Mongo. A
 section on the new GIAI (asset) functionality is included further down this README.
+
 <hr />
 
 ## Documentation
@@ -296,16 +316,17 @@ databases and services for data entry and resolving.
 We chose a Docker-based <i>containerisation</i> or <i>micro-services</i> architecture model for GS1 Digital Link
 Resolver for these reasons:
 
-* The need for end-users to build and host a reliable application free from issues with different versions of database
+- The need for end-users to build and host a reliable application free from issues with different versions of database
   drivers and programming languages.
-* Should a container fail (equivalent of a computer crash) the Docker Engine can instantly start a fresh copy of the
+- Should a container fail (equivalent of a computer crash) the Docker Engine can instantly start a fresh copy of the
   container, thus maintaining service.
-* It is simple to scale-up the service by running multiple instances of containers with load-balancing.
-* Most cloud computing providers have the ability to host containers easily within their service platforms.
+- It is simple to scale-up the service by running multiple instances of containers with load-balancing.
+- Most cloud computing providers have the ability to host containers easily within their service platforms.
 
 It is for these reasons that this type of architecture has become so popular.
 
 This repository consists of seven applications which work together to provide the resolving service:
+
 <table border="1">
 <tr><th>Folder Name</th><th>Project</th></tr>
 <tr><td>resolver_data_entry_server</td><td>The Data Entry service <b>dataentry-web-server</b> consisting of an API that provides controlled access to Create, Read, Update and Delete (CRUD) operations on resolver records, along with 
@@ -322,7 +343,6 @@ This project uses a SQL Server database to store information</td></tr>
 <hr />
 
 ![GS1 Resolver Community Edition v2.0 Architecture](Resolver%20v2.5%20CE.png)
-
 
 #### Web Servers
 
@@ -350,9 +370,9 @@ running quickly to experiment and test the service. However, you are strongly ad
 especially for SQL server, and change the data connection strings as stored below. MongoDB can be left local as long as
 the volume it stores data on can be made 'permanent'.
 
-* <b>resolver_data_entry_server</b> stores the required SQL connection resolver_data_entry_server/Dockerfile
-* <b>build_sync_server</b> stores both SQL and MONGO connection strings in build_sync_server/Dockerfile
-* <b>the five resolverN-web-server</b> stores their MONGO (only) string in resolver_web_server/Dockerfile
+- <b>resolver_data_entry_server</b> stores the required SQL connection resolver_data_entry_server/Dockerfile
+- <b>build_sync_server</b> stores both SQL and MONGO connection strings in build_sync_server/Dockerfile
+- <b>the five resolverN-web-server</b> stores their MONGO (only) string in resolver_web_server/Dockerfile
 
 #### Disk volumes
 
@@ -364,9 +384,12 @@ volume, <i><b>resolver-sql-server-dbbackup-volume</b></i> is used to store a bac
 
 #### SQL Server Database backup and restore
 
-There are two *not-fully-tested-yet*  backup and restore scripts for the SQL Server. To backup the server:
+There are two _not-fully-tested-yet_ backup and restore scripts for the SQL Server. To backup the server:
+
 <pre>docker exec -it  dataentry-sql-server  /bin/bash /gs1resolver_data/setup/gs1resolver_dataentry_backupdb_script.sh</pre>
+
 .. and to restore it (there are issues with restore which are being worked on!)
+
 <pre>docker exec -it  dataentry-sql-server  /bin/bash /gs1resolver_data/setup/gs1resolver_dataentry_restoredb_script.sh</pre>
 
 ### How Resolver decides which response to choose
@@ -405,7 +428,7 @@ chosen. Well, what else can it do?!)
 5. Linktype and Language
 6. Linktype and default Language
 7. Linktype
-8. *FAIL* (404 even though we have an entry as there is nothing we can do. Logically this can only happen if there
+8. _FAIL_ (404 even though we have an entry as there is nothing we can do. Logically this can only happen if there
    aren't any responses in the response array).
 
 ## New GIAI (asset) functionality
@@ -421,10 +444,11 @@ At GS1 our standards include the asset as a 'GIAI' - Global Individual Asset Ide
 Global Office website here</a>.
 
 This asset list can be as large as millions of individual items in one organisation, and until now, every one would need
-to be uploaded to Resolver.  
+to be uploaded to Resolver.
 
 Take a look at this entry (which is included as example data in the SQL create script 'sqldb_create_script.sql' stored
 in the 'resolver_sql_server' folder):
+
 <pre>
 {
       "identificationKeyType": "8004",
@@ -473,8 +497,11 @@ That's because 95060001 is simply the prefix - we call it the Global Company Pre
 Take a look at the targetURLs in the responses.
 
 "linkType": "gs1:faqs" has:
+
 <pre>"targetUrl": "https://dalgiardino.com/medicinal-compound/index.html?assetnumber={1}"</pre>
+
 The other for "linkType": "gs1:pip":
+
 <pre>"targetUrl": "https://dalgiardino.com/medicinal-compound/index.html?assetnumber={0}"</pre>
 
 Inside the targetUrl is a specially reserved template variable - either {0} or {1}
@@ -485,10 +512,11 @@ alphanumeric serial number.
 
 So now Resolver finds the most appropriate response and retrieves the targetURL. If the targetURL includes a:
 
-* {0} - this variable is replaced by only the serial part of the GIAI.
-* {1} - this variable is replaced by the entire GIAI value.
+- {0} - this variable is replaced by only the serial part of the GIAI.
+- {1} - this variable is replaced by the entire GIAI value.
 
 Let's have a go:
+
 <pre>
 %> curl -I http://localhost/8004/95060001HELLOWORLD
 HTTP/1.1 307 Temporary Redirect
@@ -499,12 +527,14 @@ Location: https://dalgiardino.com/medicinal-compound/index.html?assetnumber=HELL
 That response was chosen because we passed no linktype in the request, so Resolver chose the default: gs1:pip.
 
 So now let's make Resolver choose the other response, gs1:faqs
+
 <pre>
 %> curl -I http://localhost/8004/95060001HELLOWORLD?linktype=gs1:faqs
 HTTP/1.1 307 Temporary Redirect
 ...
 Location: https://dalgiardino.com/medicinal-compound/index.html?assetnumber=95060001HELLOWORLD&linktype=gs1:faqs
 </pre>
+
 Yes! We see the entire GIAI being redirected (and because "fwqs": true, the linktype itself gets forwarded as it was in
 the query string part of the request)
 
@@ -535,6 +565,7 @@ We recommend the following software to use when getting to know GS1 Resolver and
    repo to help you get started quickly. Of course this repo will work with other fully featured IDEs!
 
 ## Fast start
+
 #### Follow these instructions to get GS1 Resolver up and running on your machine complete with some example data.
 
 1. Install the Docker system on your computer. Head to https://www.docker.com/products/docker-desktop for install
@@ -552,16 +583,15 @@ We recommend the following software to use when getting to know GS1 Resolver and
    will cause Docker to build the complete end-to-end GS1 Resolver service. This will take only a short time given a
    fast internet connection, most of it taken up with downloading the SQL Server instance.
 
-
-6. You are nearly ready to start the application. Before you do, make sure you have no SQL Server service (port 1433),
+1. You are nearly ready to start the application. Before you do, make sure you have no SQL Server service (port 1433),
    MongoDB service (port 27017) or web server (port 80) running on your computer as they will clash with Docker as it
    tries to start the containers.
 
-7. Let's do this! Run docker-compose with the 'up' command to get Docker to spin up the complete end-to-end
+1. Let's do this! Run docker-compose with the 'up' command to get Docker to spin up the complete end-to-end
    application:<pre>docker-compose up -d</pre>(the -d means 'disconnect' - docker-compose will start up everything then
    hand control back to you).
 
-8. Now wait 10 seconds while the system settles down (the SQL Server service takes a few seconds to initialise when '
+1. Now wait 10 seconds while the system settles down (the SQL Server service takes a few seconds to initialise when '
    new') then, if you have SQL Server Management Studio installed, go to Step 9, else copy and paste this command which
    will cause you to enter the container and access its terminal prompt:<pre>docker exec -it resolver-sql-server bash</pre>
    Now run this command which will create the database and some example data:<pre>/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P its@SECR3T! -i /gs1resolver_sql_scripts/sqldb_create_script.sql </pre>
@@ -570,23 +600,23 @@ We recommend the following software to use when getting to know GS1 Resolver and
    by the SQL script before others - and some stored procedures depend on others not created yet as their creation
    occurs further down this SQL script. As long as the final line says 'Database Create Script Completed' all is well!
    Exit the container with the command:<pre>exit</pre>
-9. ALTERNATIVELY to Step 8, if you have Windows and SQL Server Management Studio
+1. ALTERNATIVELY to Step 8, if you have Windows and SQL Server Management Studio
    installed (<a href="https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms?view=sql-server-ver15">download SSMS from here</a>), use it to connect to 'localhost' server, with username 'sa' and password 'its@SECR3T!'.
-    Then, click on the 'New Query' button, and copy & paste the contents of 'sqldb_create_script.sql' in the '
-    resolver_sql_server' folder into the Query window. Click 'Execute' and the script will run. Then, right-click '
-    Databases' in the Object Explorer window and click 'Refresh' and you can see the new database '
-    gs1-resolver-ce-v2-1-db'.
-10. Head to http://localhost/ui and select the Download page.
-11. In the authorization key box, type: "5555555555555" and click the Download button. Save the file to your local
-    computer.
-12. Click the link to go back to the home page, then choose the Upload page.
-13. Type in your authorization key (5555555555555), then choose the file you just downloaded. The Upload page detects '
-    Download' -format file and will set all the columns correctly for you. Have look at the example data in each column
-    and what it means (read the final section of the PDF document for more details about these columns).
-14. Click 'Check file' followed by 'Upload file'.
-15. By now the local Mongo database should be built (a build event occurs every one minute) so try out this request in a
-    terminal window: <pre> curl -I http://localhost/gtin/09506000134376?serialnumber=12345 </pre> which should result in
-    this appearing in your terminal window:
+   Then, click on the 'New Query' button, and copy & paste the contents of 'sqldb_create_script.sql' in the '
+   resolver_sql_server' folder into the Query window. Click 'Execute' and the script will run. Then, right-click '
+   Databases' in the Object Explorer window and click 'Refresh' and you can see the new database '
+   gs1-resolver-ce-v2-1-db'.
+1. Head to http://localhost/ui and select the Download page.
+1. In the authorization key box, type: "5555555555555" and click the Download button. Save the file to your local
+   computer.
+1. Click the link to go back to the home page, then choose the Upload page.
+1. Type in your authorization key (5555555555555), then choose the file you just downloaded. The Upload page detects '
+   Download' -format file and will set all the columns correctly for you. Have look at the example data in each column
+   and what it means (read the final section of the PDF document for more details about these columns).
+1. Click 'Check file' followed by 'Upload file'.
+1. By now the local Mongo database should be built (a build event occurs every one minute) so try out this request in a
+   terminal window: <pre> curl -I http://localhost/gtin/09506000134376?serialnumber=12345 </pre> which should result in
+   this appearing in your terminal window:
 
 <pre>
 HTTP/1.1 307 Temporary Redirect
@@ -603,7 +633,7 @@ Link: &#60;https://dalgiardino.com/medicinal-compound/pil.html>; rel="gs1:epil";
 rel="gs1:pip"; type="text/html"; hreflang="en"; title="Product Information Page", &#60;https://dalgiardino.com/medicinal-compound/index.html.ja>; rel="gs1:pip"; type="text/htm
 l"; hreflang="ja"; title="Product Information Page", &#60;https://id.gs1.org/01/09506000134376>; rel="owl:sameAs"
 Location: https://dalgiardino.com/medicinal-compound/?serialnumber=12345
-</pre> 
+</pre>
 
 This demonstrates that Resolver has found an entry for GTIN 09506000134376 and is redirecting you to the website shown
 in the 'Location' header. You can also see this in action if you use the same web address. In your web browser, you
@@ -618,7 +648,6 @@ In the folder "Example Files to Upload" you will also find an Excel spreadsheet 
 can upload Excel data too! This particular spreadsheet is the 'official GS1 Resolver upload spreadsheet' which is
 recognised by the Upload page which sets all the upload columns for you. However, any unencrypted Excel spreadsheet
 saved by Excel with extension .xlsx can be read by the upload page.
-
 
 ## Shutting down the service
 
@@ -641,9 +670,10 @@ confirm, then to delete all the volumes type:<pre>docker volume prune </pre>
 
 ## Fast Start: Kubernetes (Beta)
 
-##### DISCLAIMER: These Kubernetes YAML scripts are currently under test and experimentation to get the best results. 
-Be careful if you run these scripts on a cloud service as it could cause them to create costly resources. 
-You need to be skilled and experienced with Kubernetes to continue! You can also run Kubernetes on your own computer - 
+##### DISCLAIMER: These Kubernetes YAML scripts are currently under test and experimentation to get the best results.
+
+Be careful if you run these scripts on a cloud service as it could cause them to create costly resources.
+You need to be skilled and experienced with Kubernetes to continue! You can also run Kubernetes on your own computer -
 these scripts have been tested with Docker Desktop for Windows 10 running in 'Kubernetes' mode.
 
 The service is now ready for use with Kubernetes clusters. The container images are now maintained on Docker Hub and the
@@ -697,3 +727,56 @@ Best regards<br />
 Phil Archer, Director, Web Solutions, GS1<br />
 Nick Lansley, Lead Developer, GS1 Digital Link Resolver Project<br />
 Rajesh Kumar Rana, Co-Developer, GS1 Digital Link Resolver Project<br />
+
+## Seeding the database with the postman runner
+
+1.  Firsly, We need to create a csv file contain the data we need to insert into the database.
+2.  Secondly, We run the postman and config body request for post request. For example:
+
+   <pre>
+   [
+      {
+         "identificationKeyType": "{{identificationKeyType}}",
+         "identificationKey": "{{identificationKey}}",
+         "itemDescription": "{{itemDescription}}",
+         "qualifierPath": "/",
+         "active": true,
+         "responses": [
+               {
+                  "linkType": "{{linkType1}}",
+                  "ianaLanguage": "en",
+                  "context": "us",
+                  "mimeType": "text/plain",
+                  "linkTitle": "{{linkTitle1}}",
+                  "targetUrl": "{{targetUrl1}}",
+                  "defaultLinkType": false,
+                  "defaultIanaLanguage": true,
+                  "defaultContext": false,
+                  "defaultMimeType": false,
+                  "fwqs": false,
+                  "active": true
+               },
+               {
+                  "linkType": "{{linkType2}}",
+                  "ianaLanguage": "en",
+                  "context": "us",
+                  "mimeType": "application/json",
+                  "linkTitle": "{{linkTitle2}}",
+                  "targetUrl": "{{targetUrl2}}",
+                  "defaultLinkType": false,
+                  "defaultIanaLanguage": true,
+                  "defaultContext": true,
+                  "defaultMimeType": true,
+                  "fwqs": false,
+                  "active": true
+               }
+         ]
+      }
+   ]</pre>
+
+The json value {{example}} have similar the name of header column table of the csv file data.
+
+3.  Finally, You click runner drag and drop the collection, select csv file click start run to. For example:
+    ![Alt text](image.png)
+
+Then you will see the database change with the database you insert with the postman runner.
