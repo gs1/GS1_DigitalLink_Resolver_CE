@@ -721,9 +721,9 @@ Office is that
 
 ## Seeding the database with the Postman runner
 
-There is Collection of Postman: (<a href="https://github.com/gs-gs/GS1_DigitalLink_Resolver_CE/blob/feat/seeding-the-database/GS1.postman_collection.json">GS1 collection</a>).<br/>
+There is Collection of Postman: (<a href="https://github.com/gs-gs/GS1_DigitalLink_Resolver_CE/blob/feat/seeding-the-database/GS1.postman_collection.json">GS1 collection json</a>).<br/>
 
-1. Run Postman in your desktop or web, you need to import collection add config environment global variable {{auth_key}} with current value is (5555555555555) and {{base_url}} with current value is (http://localhost).
+1. Run Postman in your desktop or web, you need to import collection to use and add config environment global variable {{auth_key}} with current value is (5555555555555) and {{base_url}} with current value is (http://localhost).
 2. Now, you must create a CSV file containing the data we need to insert into the database. Here is <a href="https://github.com/gs-gs/GS1_DigitalLink_Resolver_CE/blob/feat/seeding-the-database/exampleData.csv">example CSV</a> a simple example CSV file you can try and edit.
 3. Then, You change body request api Create or Update Resolver Entries. For example:
 
