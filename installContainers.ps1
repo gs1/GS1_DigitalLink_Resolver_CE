@@ -14,8 +14,10 @@ $Downloads = $env:HOMEDRIVE + $env:HOMEPATH + "\Downloads\"
 Set-Location $Downloads
  
 # Get Git for Windows 
-    $psURI = "https://github.com/git-for-windows/git/releases/download/v2.40.1.windows.1/"
-    $exe = "Git-2.40.1-64-bit.exe"
+    $psURI = #"https://github.com/git-for-windows/git/releases/download/v2.40.1.windows.1/"
+              "https://github.com/git-for-windows/git/releases/download/v2.42.0.windows.2/"
+    $exe = #"Git-2.40.1-64-bit.exe"
+            "Git-2.42.0.2-64-bit.exe"
     $uri = $psURI+$exe
     $installFile = $Downloads+$exe
     # download Git
@@ -57,7 +59,7 @@ Set-Location $Downloads
 # Get Intellij IDEA https://www.jetbrains.com/idea/
     # (Community (free) and Ultimate (licensed) editions) from Jetbrains or Visual Studio Code (free) supported by Microsoft - our chosen development environments which we have deliberately included config files for (.idea and .vscode) within the repo to help you get started quickly. Of course this repo will work with other fully featured IDEs! https://www.jetbrains.com/idea/download/
     $psURI = "https://www.jetbrains.com/idea/download/download-thanks.html?platform=windows&code=IIC"
-    $exe = "ideaIC-2023.1.1.exe"
+    $exe = "ideaIC-2023.2.3.exe"
     $uri = $psURI+$exe
     $installFile = $Downloads+$exe
     # download Intellij IDEA
@@ -93,11 +95,12 @@ Set-Location $Downloads
 #############################################
 # Fast start
  
-# 1. Get Docker Desktop
+# 1. Get Docker Desktop      ########## does not work anymore ######### new URI 
     $psURI = "https://www.docker.com/products/docker-desktop/"
+    #
     $exe = "Docker Desktop Installer.exe"
-    $uri = $psURI+$exe
-    $installFile = $Downloads+$exe
+    $uri ='"' + $psURI + $exe + '"'
+    $installFile = '"' + $Downloads+$exe + '"'
     # download
     Invoke-WebRequest -Uri $uri -OutFile $installFile
     # install:
@@ -106,14 +109,14 @@ Set-Location $Downloads
 # 2. Clone Git Repo
     $repoPath = "https://github.com/gs1/"
     $repoName = "GS1_DigitalLink_Resolver_CE"
-    $repoUri = $repoPath+$repoNam+".git"
+    $repoUri = $repoPath + $repoName + ".git"
     $repoRoot = $env:HOMEDRIVE + $env:HOMEPATH + "\source\"
  
 # change directory to the one at the 'root' of this repository,
     if(Test-Path -Path $repoRoot){ 
         Write-Output "$repoRoot exists"  
     }else {
-        New-Item -Path $repoRoot
+        New-Item -Path $repoRoot -ItemType Directory
     }
     Set-Location $repoRoot
 
@@ -121,19 +124,22 @@ Set-Location $Downloads
     git clone $repoUri $repoName
     Set-Location $repoName
 
-# 3. Open a terminal prompt (Mac and Linux) or PowerShell (Windows 10) and change directory to the one at the 'root' of your local cloned copy of this repository, so you can see the file docker-compose.yml in the current folder. 
+# 3. Open a terminal prompt (Mac and Linux) or PowerShell (Windows 10) and change directory to the one at the 'root' 
+# of your local cloned copy of this repository, so you can see the file docker-compose.yml in the current folder. 
     Get-ChildItem docker-compose.yml
 
 # 4. Type this command:
     docker-compose config
-
     #...which should simply list the docker-compose.yml without error, and then type this command 
+
     docker info
-    #which will get Docker to check that all is well with the service and provide some run-time statistics. #You may some warnings appear, but if you're not seeing any errors then we're good to go.
+    #which will get Docker to check that all is well with the service and provide some run-time statistics. 
+    #You may some warnings appear, but if you're not seeing any errors then we're good to go.
  
 # 5. Make sure you have a good internet connection, and then type this command:
     docker-compose build
-    # ...which will cause Docker to build the complete end-to-end GS1 Resolver service. This will take only a short time given a fast internet connection, most of it taken up with downloading the SQL Server instance.
+    # ...which will cause Docker to build the complete end-to-end GS1 Resolver service. 
+    # This will take only a short time given a fast internet connection, most of it taken up with downloading the SQL Server instance.
  
 # 6. You are nearly ready to start the application. Before you do, make sure you have no SQL Server service, MongoDB service or port 80 web server running on your computer as they will clash with Docker as it tries to start the service up."
 
