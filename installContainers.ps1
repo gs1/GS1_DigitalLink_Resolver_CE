@@ -167,8 +167,8 @@ curl -I http://localhost/ui
 # 14. Click   Check file   followed by   Upload file  ."
 # 15. By now the local Mongo database should be built (a build event occurs every one minute) so try out this request in a terminal window:"
 #>
-
 curl -I http://localhost/gtin/09506000134376?serialnumber=12345  
+
 
 # which should result in this appearing in your terminal window:..."
 
