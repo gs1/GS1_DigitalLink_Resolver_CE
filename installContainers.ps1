@@ -93,14 +93,14 @@ Invoke-Expression -Command $installFile
 #############################################
 # Fast start
  
-# 1. Get Docker Desktop      #########
-################### this does not work anymore due to complex new URI, download manually
+# 1. Get Docker Desktop
 $psURI = "https://www.docker.com/products/docker-desktop/"
 $exe = "Docker Desktop Installer.exe"
 $uri ='"' + $psURI + $exe + '"'
 $installFile = '"' + $Downloads + $exe + '"'
 # download
-Invoke-WebRequest -Uri $uri -OutFile $installFile
+##### this does not work anymore due to complex new URI, download manually 
+##### Invoke-WebRequest -Uri $uri -OutFile $installFile
 # install:
 Invoke-Expression -Command $installFile
  
