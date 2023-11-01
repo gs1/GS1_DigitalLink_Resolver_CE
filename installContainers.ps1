@@ -24,8 +24,8 @@ Invoke-WebRequest -Uri $uri -OutFile $installFile
 Invoke-Expression -Command $installFile
  
 # Get Powershell 7
-$psURI = "https://github.com/PowerShell/PowerShell/releases/download/v7.3.3/"
-$exe = "PowerShell-7.3.3-win-x64.msi"
+$psURI = "https://github.com/PowerShell/PowerShell/releases/download/v7.3.9/"
+$exe = "PowerShell-7.3.9-win-x64.msi"
 $uri = $psURI+$exe
 $installFile = $Downloads+$exe
 # download Powershell
