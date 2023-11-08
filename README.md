@@ -92,6 +92,11 @@ services such as 'Snyk' can help you with this. See https://snyk.io/ for more in
 
 ## Versions
 
+### Version 2.6.1 Features
+1. Fix to bug where GCP Redirects have JavaScript falsely detected and thus the entry rejected
+2. Addition of GRAI ability to work like GIAI (see v2.5 feature list below)
+
+
 ### Version 2.6 Features
 
 1. Various improvements resulting from feedback from the user community (thank you!)
