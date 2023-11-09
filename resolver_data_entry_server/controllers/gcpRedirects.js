@@ -85,7 +85,7 @@ exports.getSingleGCPRedirect = asynchHandler(async (req, res, next) => {
 exports.addNewGCPRedirect = asynchHandler(async (req, res, next) => {
   const { authToken } = req;
   const { identificationKeyType, prefixValue, active, targetUrl } = req.body;
-  if (!identificationKeyType || !prefixValue || !(typeof prefixValue === 'string') || !targetUrl || !(typeof targetUrl === 'string') || !utils.detectJavaScriptCode(targetUrl) || !(typeof active === 'boolean')) {
+  if (!identificationKeyType || !prefixValue || !(typeof prefixValue === 'string') || !targetUrl || !(typeof targetUrl === 'string') || utils.detectJavaScriptCode(targetUrl) || !(typeof active === 'boolean')) {
     return next(new BadRequestParameter('Bad request parameters'));
   }
   const isValidUser = await checkAPIAuth(authToken);
