@@ -13,16 +13,6 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned # or Unrestricted
 $Downloads = $env:HOMEDRIVE + $env:HOMEPATH + "\Downloads\"
 Set-Location $Downloads
  
-# Get Git for Windows 
-$psURI = "https://github.com/git-for-windows/git/releases/download/v2.42.0.windows.2/"
-$exe   = "Git-2.42.0.2-64-bit.exe"
-$uri   = $psURI+$exe
-$installFile = $Downloads+$exe
-# download Git
-Invoke-WebRequest -Uri $uri -OutFile $installFile
-# install Git
-Invoke-Expression -Command $installFile
- 
 # Get Powershell 7
 $psURI = "https://github.com/PowerShell/PowerShell/releases/download/v7.3.9/"
 $exe = "PowerShell-7.3.9-win-x64.msi"
@@ -31,6 +21,16 @@ $installFile = $Downloads+$exe
 # download Powershell
 Invoke-WebRequest -Uri $uri -OutFile $installFile
 # install Powershell
+Invoke-Expression -Command $installFile
+
+# Get Git for Windows 
+$psURI = "https://github.com/git-for-windows/git/releases/download/v2.42.0.windows.2/"
+$exe   = "Git-2.42.0.2-64-bit.exe"
+$uri   = $psURI+$exe
+$installFile = $Downloads+$exe
+# download Git
+Invoke-WebRequest -Uri $uri -OutFile $installFile
+# install Git
 Invoke-Expression -Command $installFile
  
 # Get SQL Server Management Studio SSMS from Microsoft for Windows so you can see inside the SQL Server database.
