@@ -135,6 +135,9 @@ const requestHandler = async (request, response) => {
       response.end(JSON.stringify(errorResponse));
       console.log(request.url, ' ===> ailookup ERROR ===>', errorResponse.data);
     }
+  } else if (dlFunction === '/health/live' || dlFunction === '/health/ready') {
+    response.writeHead(200, httpHeaders);
+    response.end('OK');
   } else {
     console.log(`Unknown command: ${dlFunction}`);
     response.end(`{ "ERROR": "Unknown command: ${dlFunction}" }`);
