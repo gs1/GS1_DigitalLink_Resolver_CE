@@ -1,6 +1,28 @@
 const { MongoClient } = require('mongodb');
 
 const mongoConnection = process.env.MONGODBCONN || process.env.DBCONN;
+const mongoClient = new MongoClient(mongoConnection, { useNewUrlParser: true, useUnifiedTopology: true });
+
+let db;
+
+// Connect to the MongoDB client
+mongoClient.connect(err => {
+  if (err) throw err;
+  db = mongoClient.db('gs1resolver');
+});
+
+
+// Gracefully close the MongoDB connection on exit
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
+
+async function cleanup() {
+  console.log('Closing MongoDB connection...');
+  await mongoClient.close();
+  console.log('MongoDB connection closed.');
+  process.exit(0);
+}
+
 
 /**
  * findDigitalLinkEntry connects to the document database and looks for the document
@@ -11,12 +33,8 @@ const mongoConnection = process.env.MONGODBCONN || process.env.DBCONN;
  */
 const findDigitalLinkEntry = async (identifierKeyType, identifierKey) => {
   try {
-    const mongoClient = new MongoClient(mongoConnection, { useNewUrlParser: true, useUnifiedTopology: true });
-    const connClient = await mongoClient.connect();
-    const collection = connClient.db('gs1resolver').collection('uri');
-    const finalResult = await collection.findOne({ _id: `/${identifierKeyType}/${identifierKey}` });
-    await mongoClient.close();
-    return finalResult;
+    const collection = db.collection('uri');
+    return await collection.findOne({ _id: `/${identifierKeyType}/${identifierKey}` });
   } catch (e) {
     console.log(`findDigitalLinkEntry error: ${e}`);
     return null;
@@ -31,12 +49,8 @@ const findDigitalLinkEntry = async (identifierKeyType, identifierKey) => {
 const countEntriesFromUnixTime = async (unixTime) => {
   try {
     unixTime = parseInt(unixTime, 10);
-    const mongoClient = new MongoClient(mongoConnection, { useNewUrlParser: true, useUnifiedTopology: true });
-    const connClient = await mongoClient.connect();
-    const collection = connClient.db('gs1resolver').collection('uri');
-    const finalResult = await collection.countDocuments({ unixtime: { $gte: unixTime } });
-    await mongoClient.close();
-    return finalResult;
+    const collection = db.collection('uri');
+    return await collection.countDocuments({ unixtime: { $gte: unixTime } });
   } catch (err) {
     console.log(`countEntriesFromUnixTime error: ${err}`);
     return -1;
@@ -60,17 +74,13 @@ const getPagedEntriesFromUnixTime = async (unixTime, pageNumber, pageSize) => {
     // Maximum page size is 1000
     pageSize = pageSize > 1000 ? 1000 : pageSize;
     const skips = pageNumber > 0 ? (pageNumber - 1) * pageSize : 0;
-    const mongoClient = new MongoClient(mongoConnection, { useNewUrlParser: true, useUnifiedTopology: true });
-    const connClient = await mongoClient.connect();
-    const collection = connClient.db('gs1resolver').collection('uri');
-    const dataArray = await collection
+    const collection = db.collection('uri');
+    return await collection
       .find({ unixtime: { $gte: unixTime } })
       .skip(skips)
       .limit(pageSize)
       .toArray();
-    await mongoClient.close();
 
-    return dataArray;
   } catch (err) {
     console.log(`getPagesEntriesFromUnixTime error: ${err}`);
     return -1; // -1 denotes error
@@ -87,9 +97,7 @@ const getPagedEntriesFromUnixTime = async (unixTime, pageNumber, pageSize) => {
 const findPrefixEntry = async (identifierKeyType, identifierKey) => {
   let finalResult = null;
   try {
-    const mongoClient = new MongoClient(mongoConnection, { useNewUrlParser: true, useUnifiedTopology: true });
-    const connClient = await mongoClient.connect();
-    const collection = connClient.db('gs1resolver').collection('gcp');
+    const collection = db.collection('gcp');
 
     // To find a match we must chop off more and more of a GS1 Key Value until we get a match
     const identifierKeyOriginalLength = identifierKey.length;
@@ -100,14 +108,12 @@ const findPrefixEntry = async (identifierKeyType, identifierKey) => {
         break; // we've found a result - stop the loop early!
       }
     }
-    await mongoClient.close();
     return finalResult;
   } catch (e) {
     console.log(`findPrefixEntry error: ${e}`);
     return null;
   }
 };
-
 module.exports = {
   findDigitalLinkEntry,
   findPrefixEntry,
