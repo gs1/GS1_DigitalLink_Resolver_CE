@@ -14,6 +14,7 @@ const analyseURI = require('./middleware/analyseURI');
 const resolverDescFileRouter = require('./routes/resolverDescFileRouter');
 // route handler of dashboard page of resolver application
 const dashboardController = require('./dashboard/dashboardController');
+const utilDbController = require('./db/query-controller/utilDbController');
 
 const PORT = process.env.PORT || 8080;
 
@@ -28,6 +29,8 @@ app.use('/hello', heartBeatRouter);
 app.use('/.well-known', wellKnownRouter);
 app.use('/unixtime', unixTimeRouter);
 app.use('/dashboard', dashboardController);
+app.use('/health/live', (req, res) => {res.status(200).send('OK');});
+app.use('/health/ready', utilDbController);
 app.use('/', analyseURI, aiRouterApp);
 
 // Error handler middleware
