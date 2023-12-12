@@ -36,7 +36,6 @@ const findDigitalLinkEntryUsingIdentifier = async ({identifierKeyType, identifie
         } else {
             doc = await collection.findOne({_id: `/${identifierKeyType}/${identifierKey}`});
         }
-        await mongoConn.close();
         return doc;
     } catch (e) {
         utills.logThis('Exception occur in findDigitalLinkEntryUsingIdentifier method');
@@ -80,7 +79,6 @@ const findDigitalLinkPrefixEntry = async ({identifierKeyType, identifierKey}) =>
                 }
             }
         }
-        await mongoConn.close();
         return finalResult;
     } catch (e) {
         utills.logThis('Exception occur in findPrefixEntry method');

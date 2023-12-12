@@ -13,7 +13,6 @@ const uriEntriesCountFromUnixTime = async (unixTime = 0) => {
     const collection = mongoConn.db('gs1resolver').collection('uri');
     const dbResult = await collection.countDocuments({ unixtime: { $gte: +unixTime } });
     utills.logThis(`Get count result from mongo db for unix time ${unixTime}`);
-    await mongoConn.close();
     return dbResult;
   } catch (error) {
     utills.logThis('Exception occur in uriCountByUnixTime query controller method');
@@ -26,22 +25,18 @@ const uriEntriesCountFromUnixTime = async (unixTime = 0) => {
  * Returns a list of documents that are greater than or equal to the supplied unixTime value
  * using a page number and size.
  * @param unixTime
- * @param pageNumber
- * @param pageSize
  * @returns {Promise<number|*>}
  */
-const uriPagedEntriesFromUnixTime = async ({ unixtime, pagenumber, limit }) => {
+const uriPagedEntriesFromUnixTime = async ({ unixtime, pageNumber, limit }) => {
   try {
-    const startIndex = (pagenumber - 1) * limit;
+    const startIndex = (pageNumber - 1) * limit;
     const mongoConn = await dbConnection();
     const collection = mongoConn.db('gs1resolver').collection('uri');
-    const dataArray = await collection
+    return await collection
       .find({ unixtime: { $gte: unixtime } })
       .skip(startIndex)
       .limit(limit)
       .toArray();
-    await mongoConn.close();
-    return dataArray;
   } catch (err) {
     utills.logThis('Exception occur in uriPagedEntriesFromUnixTime method');
     utills.logThis(err);
