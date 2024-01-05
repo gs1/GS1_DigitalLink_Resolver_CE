@@ -21,7 +21,7 @@
 		"http-errors": "~1.6.3",
 		"http-status-codes": "^1.4.0",
 		"morgan": "~1.9.1",
-		"mssql": "^6.2.1",
+		"mssql": "^8.0.0",
 		"node-fetch": "^2.6.1",
 		"pug": "^3.0.2",
 		"pug-lint": "^2.6.0",
