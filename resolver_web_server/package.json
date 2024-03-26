@@ -10,7 +10,7 @@
   "author": "Nick Lansley and Rajesh Kumar Rana for GS1 AISBL",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.19.2",
     "http-status-codes": "^1.4.0",
     "mongodb": "^3.5.8",
     "node-fetch": "^2.6.0"
