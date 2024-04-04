@@ -8,6 +8,9 @@
 ### Follow the announcements!
 * https://github.com/gs1/GS1_DigitalLink_Resolver_CE/discussions/87
 * https://github.com/gs1/GS1_DigitalLink_Resolver_CE/discussions
+
+### Watch the new 'V3' branch
+* https://github.com/gs1/GS1_DigitalLink_Resolver_CE/tree/V3
 ---
 
 ## Community Edition v2.6
