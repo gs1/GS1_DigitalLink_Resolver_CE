@@ -1,22 +1,13 @@
 ## Welcome to the GS1 Digital Link Resolver Community Edition v2.6
 
 ---
-### ADVANCE NOTICE Community Edition v3.0 is on its way
+### ADVANCE NOTICE Community Edition v3.0 is on its way end of April 2024
 * Please note that new v3.0 of GS1 Resolver is on its way with some breaking changes if upgrading from v2.x.
 * This version 2.6 is the last version of the Community Edition v2.x series.
 
-Version 3.0 Features:
-1. **Upgraded and encrypted accounts / authentication system**. It's clear that the some members of the user community still wish
-to use GS1 Resolver's onboard (and very simple!) accounts system. It was designed to get people going before they embedded their
-own accounts/authentication system, but they like the simplicity, so we've designed a new accounts system with upgraded security, 
-encryption of data at rest, and session tokens. However, we strongly recommend that you use your own accounts/authentication system. 
-The new accounts system is designed to be a simple example of how to do it, and is not intended for production use. 
-It is not a substitute for a proper security review of the code.
-2. **IANA language becomes 'language'** and can support both language and territory within the same language code e.g. 'en-GB'.
-      This is a breaking change with v2.x because the language code is no longer restricted to two characters in the SQL database.
-3. **'active' flag property becomes 'public'** reflecting its actual use by the resolver service. 'public' links are those that are
-   visible to the public, and 'public=false' links are those that are only visible to the owner of the link. This is a breaking change.
-
+### Follow the announcements!
+* https://github.com/gs1/GS1_DigitalLink_Resolver_CE/discussions/87
+* https://github.com/gs1/GS1_DigitalLink_Resolver_CE/discussions
 ---
 
 ## Community Edition v2.6
