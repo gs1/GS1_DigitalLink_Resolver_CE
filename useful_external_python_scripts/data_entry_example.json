@@ -1,0 +1,140 @@
+[
+  {
+    "anchor": "/01/09506000134376",
+    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg",
+    "defaultLinktype": "gs1:pip",
+    "links": [
+      {
+        "linktype": "gs1:epil",
+        "href": "https://dalgiardino.com/medicinal-compound/pil.html",
+        "title": "Information for patients",
+        "type": "text/html",
+        "hreflang": [
+          "en"
+        ],
+        "context": [
+          "und",
+          "marketing"
+        ]
+      },
+      {
+        "linktype": "gs1:pip",
+        "href": "https://dalgiardino.com/medicinal-compound/",
+        "title": "Product information",
+        "type": "text/html",
+        "hreflang": [
+          "en",
+          "en-GB"
+        ]
+      },
+      {
+        "linktype": "gs1:pip",
+        "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+        "title": "Product information",
+        "type": "text/html",
+        "hreflang": [
+          "ja"
+        ]
+      },
+      {
+        "linktype": "gs1:pip",
+        "href": "https://dalgiardino.com/medicinal-compound/",
+        "title": "Product information",
+        "type": "text/html",
+        "hreflang": [
+          "en"
+        ],
+        "context": [
+          "und",
+          "marketing"
+        ]
+      },
+      {
+        "linktype": "gs1:pip",
+        "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+        "title": "Product information",
+        "type": "text/html",
+        "hreflang": [
+          "ja"
+        ],
+        "context": [
+          "und",
+          "marketing"
+        ]
+      }
+    ]
+  },
+  {
+    "anchor": "/01/09506000134376",
+    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg",
+    "qualifiers": [
+      {
+        "10": "LOT_123"
+      },
+      {
+        "21": "SERIAL_456"
+      }
+    ],
+    "defaultLinktype": "gs1:pip",
+    "links": [
+      {
+        "linktype": "gs1:epil",
+        "href": "https://dalgiardino.com/medicinal-compound/pil.html",
+        "title": "Information for patients",
+        "type": "text/html",
+        "hreflang": [
+          "en"
+        ],
+        "context": [
+          "und",
+          "marketing"
+        ]
+      },
+      {
+        "linktype": "gs1:pip",
+        "href": "https://dalgiardino.com/medicinal-compound/",
+        "title": "Product information",
+        "type": "text/html",
+        "hreflang": [
+          "en",
+          "en-GB"
+        ]
+      },
+      {
+        "linktype": "gs1:pip",
+        "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+        "title": "Product information",
+        "type": "text/html",
+        "hreflang": [
+          "ja"
+        ]
+      },
+      {
+        "linktype": "gs1:pip",
+        "href": "https://dalgiardino.com/medicinal-compound/",
+        "title": "Product information",
+        "type": "text/html",
+        "hreflang": [
+          "en"
+        ],
+        "context": [
+          "und",
+          "marketing"
+        ]
+      },
+      {
+        "linktype": "gs1:pip",
+        "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+        "title": "Product information",
+        "type": "text/html",
+        "hreflang": [
+          "ja"
+        ],
+        "context": [
+          "und",
+          "marketing"
+        ]
+      }
+    ]
+  }
+]

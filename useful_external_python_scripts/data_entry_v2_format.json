@@ -1,0 +1,194 @@
+[
+  {
+    "identificationKeyType": "01",
+    "identificationKey": "09506000134376",
+    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg",
+    "qualifierPath": "/",
+    "public": true,
+    "responses": [
+      {
+        "linkType": "gs1:epil",
+        "language": "en",
+        "context": "und",
+        "mimeType": "text/html",
+        "linkTitle": "Information for patients",
+        "targetUrl": "https://dalgiardino.com/medicinal-compound/pil.html",
+        "defaultLinkType": false,
+        "defaultLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true,
+        "fwqs": true,
+        "public": true
+      },
+      {
+        "linkType": "gs1:epil",
+        "language": "en",
+        "context": "xx",
+        "mimeType": "text/html",
+        "linkTitle": "Information for patients",
+        "targetUrl": "https://dalgiardino.com/medicinal-compound/pil.html",
+        "defaultLinkType": false,
+        "defaultLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true,
+        "fwqs": true,
+        "public": true
+      },
+      {
+        "linkType": "gs1:pip",
+        "language": "en",
+        "context": [
+          "und",
+          "marketing"
+        ],
+        "mimeType": "text/html",
+        "linkTitle": "Product information",
+        "targetUrl": "https://dalgiardino.com/medicinal-compound/",
+        "defaultLinkType": true,
+        "defaultLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true,
+        "fwqs": true,
+        "public": true
+      },
+      {
+        "linkType": "gs1:pip",
+        "language": "en",
+        "context": "xx",
+        "mimeType": "text/html",
+        "linkTitle": "Product information",
+        "targetUrl": "https://dalgiardino.com/medicinal-compound/",
+        "defaultLinkType": true,
+        "defaultLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true,
+        "fwqs": true,
+        "public": true
+      },
+      {
+        "linkType": "gs1:pip",
+        "language": "ja",
+        "context": "und",
+        "mimeType": "text/html",
+        "linkTitle": "Product information",
+        "targetUrl": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+        "defaultLinkType": false,
+        "defaultLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true,
+        "fwqs": true,
+        "public": true
+      },
+      {
+        "linkType": "gs1:pip",
+        "language": "ja",
+        "context": "xx",
+        "mimeType": "text/html",
+        "linkTitle": "Product information",
+        "targetUrl": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+        "defaultLinkType": false,
+        "defaultLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true,
+        "fwqs": true,
+        "public": true
+      }
+    ]
+  },
+  {
+    "identificationKeyType": "01",
+    "identificationKey": "09506000134376",
+    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg",
+    "qualifierPath": "/10/LOT_123/21/SERIAL_456",
+    "public": true,
+    "responses": [
+      {
+        "linkType": "gs1:epil",
+        "language": "en",
+        "context": "und",
+        "mimeType": "text/html",
+        "linkTitle": "Information for patients",
+        "targetUrl": "https://dalgiardino.com/medicinal-compound/pil.html",
+        "defaultLinkType": false,
+        "defaultLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true,
+        "fwqs": true,
+        "public": true
+      },
+      {
+        "linkType": "gs1:epil",
+        "language": "en",
+        "context": "xx",
+        "mimeType": "text/html",
+        "linkTitle": "Information for patients",
+        "targetUrl": "https://dalgiardino.com/medicinal-compound/pil.html",
+        "defaultLinkType": false,
+        "defaultLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true,
+        "fwqs": true,
+        "public": true
+      },
+      {
+        "linkType": "gs1:pip",
+        "language": "en",
+        "context": [
+          "und",
+          "marketing"
+        ],
+        "mimeType": "text/html",
+        "linkTitle": "Product information",
+        "targetUrl": "https://dalgiardino.com/medicinal-compound/",
+        "defaultLinkType": true,
+        "defaultLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true,
+        "fwqs": true,
+        "public": true
+      },
+      {
+        "linkType": "gs1:pip",
+        "language": "en",
+        "context": "xx",
+        "mimeType": "text/html",
+        "linkTitle": "Product information",
+        "targetUrl": "https://dalgiardino.com/medicinal-compound/",
+        "defaultLinkType": true,
+        "defaultLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true,
+        "fwqs": true,
+        "public": true
+      },
+      {
+        "linkType": "gs1:pip",
+        "language": "ja",
+        "context": "und",
+        "mimeType": "text/html",
+        "linkTitle": "Product information",
+        "targetUrl": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+        "defaultLinkType": false,
+        "defaultLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true,
+        "fwqs": true,
+        "public": true
+      },
+      {
+        "linkType": "gs1:pip",
+        "language": "ja",
+        "context": "xx",
+        "mimeType": "text/html",
+        "linkTitle": "Product information",
+        "targetUrl": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+        "defaultLinkType": false,
+        "defaultLanguage": true,
+        "defaultContext": true,
+        "defaultMimeType": true,
+        "fwqs": true,
+        "public": true
+      }
+    ]
+  }
+]
