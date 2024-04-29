@@ -36,7 +36,7 @@ def _test_gs1_digital_link_syntax(url):
     # add the qualifiers (up to three - CPV, LOT and SERIAL for GTINs, or GLNX for GLNs)
     if len(url_parts) > 3:
         for i in range(3, len(url_parts), 2):
-            ai_data_string += f"({url_parts[i]}){url_parts[i+1]}"
+            ai_data_string += f"({url_parts[i]}){url_parts[i + 1]}"
 
     print(f"DEBUG _test_gs1_digital_link_syntax: ai_data_string: {ai_data_string}")
     # call the toolkit
@@ -242,15 +242,26 @@ def _author_linkset_document(data_entry_format):
         return {"response_status": 500, "error": "Internal Server Error - " + str(e)}
 
 
+def _do_qualifiers_match(qualifiers1, qualifiers2):
+    # qualifiers are lists in the document with up to three sets of AI codes and values:
+    #      [{'aiCode1': 'aiValue1'}, {'aiCode2': 'value2'}{'aiCode2': 'value2'}
+    # They may be in a different order, so we need to check for a match.
+    # Are they the same length?
+    if len(qualifiers1) != len(qualifiers2):
+        return False
+
+    # Loop through each qualifier - are the qualifiers the same?
+    for qualifier1 in qualifiers1:
+        if qualifier1 not in qualifiers2:
+            return False
+
+    return True
+
+
 # Process the document for insertion or update in the database
-def _process_document_upsert(item):
+def _process_document_upsert(authored_doc):
     try:
         # Convert the incoming dictionary date entry item to a linkset-style document ("authored_doc")
-        authored_doc = _author_linkset_document(item)
-        if "error" in authored_doc:
-            return authored_doc, 400
-
-        # print("DEBUG Authored doc: ", json.dumps(authored_doc, indent=2))
 
         # Log the _id of the document that's being processed
         # print('DEBUG Processing item: ', authored_doc['_id'])
@@ -263,24 +274,32 @@ def _process_document_upsert(item):
             print('Document already exists in database: ', authored_doc['_id'])
 
             # Get the document from the read_result
-            db_document = read_result["data"]
+            existing_db_document = read_result["data"]
 
             # Iterate through each key-value pair in the authored_doc
-            for key, value in authored_doc.items():
-                if key[:1] == '/':
-                    print('DEBUG: Key: ', key, 'Value: ', json.dumps(value, indent=2))
+            for entry in authored_doc['data']:
+                # each entry consists of qualifiers and linkset
+                # what we need to do is to see if there is a match in the qualifiers, bearing in mind that the
+                # qualifiers may be in a different order
+                # if there is a match, we need to update the linkset
+                # if there is no match, we need to add the entry to the document
+                # First match the qualifiers:
+                found = False
+                for existing_db_entry in existing_db_document['data']:
+                    if _do_qualifiers_match(existing_db_entry['qualifiers'], entry['qualifiers']):
+                        # If the qualifiers match, update the linkset
+                        existing_db_entry['linkset'].extend(entry['linkset'])
+                        found = True
+                        break
 
-                    # Log which key we're updating
-                    print('Updating document: ', authored_doc['_id'], 'with key', key)
+                if not found:
+                    # If the qualifiers don't match, add the entry to the document
+                    existing_db_document['data'].append(entry)
 
-                    # Update the value in the database document with the new value
-                    db_document[key] = authored_doc[key]
+                update_result = data_entry_db.update_document(existing_db_document)
 
-                    # Perform the update operation in the database
-                    update_result = data_entry_db.update_document(db_document)
-
-                    # Build the result entry and return it along with update status 201
-                    return {"entry": authored_doc['_id'], "qualifiers": key, "result": update_result}, 201
+                # Build the result entry and return it along with update status 200 (as the doc was updated)
+                return {"entry": authored_doc['_id'], "qualifiers": entry['qualifiers'], "result": update_result}, 200
 
         # Document doesn't exist, so we create it
         elif read_result["response_status"] == 404:
@@ -303,6 +322,25 @@ def _process_document_upsert(item):
         return {"response_status": 500, "error": "Internal Server Error - " + str(e)}, 500
 
 
+def _author_mongo_linkset_list(data_list):
+    transformed_data_list = []
+    for data in data_list:
+        linkset_doc = _author_linkset_document(data)
+        # Now we check if there is already a document with the same '_id' in the transformed_data_list
+        # If there is, we append the 'data' list to the existing document
+        # If there isn't, we append the document to the transformed_data_list
+        found = False
+        for transformed_data in transformed_data_list:
+            if transformed_data['_id'] == linkset_doc['_id']:
+                transformed_data['data'].extend(linkset_doc['data'])
+                found = True
+                break
+        if not found:
+            transformed_data_list.append(_author_linkset_document(data))
+
+    return transformed_data_list
+
+
 def create_document(data):
     try:
         # If 'data' is a list
@@ -310,8 +348,10 @@ def create_document(data):
             print('Processing list of items: ', len(data))
             create_results_list = []  # Initialize a list to store results
 
+            authored_db_linkset_docs = _author_mongo_linkset_list(data)
+
             # Iterate over each item in the data list
-            for item in data:
+            for item in authored_db_linkset_docs:
                 validated_doc = _validata_data(item)
                 # Process each 'item' in the list for insertion using the helper function we created
                 # and get the result and status
@@ -331,7 +371,8 @@ def create_document(data):
 
         # If 'data' is a dictionary (i.e., a single entry and not a list)
         elif isinstance(data, dict):
-            validated_doc = _validata_data(data)
+            authored_linkset_doc = _author_linkset_document(data)
+            validated_doc = _validata_data(authored_linkset_doc)
 
             # Process the single 'data' entry for insertion using the helper function and get the result and status
             result, status = _process_document_upsert(validated_doc)
