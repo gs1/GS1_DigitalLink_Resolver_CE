@@ -111,5 +111,30 @@
         ]
       }
     ]
+  },
+  {
+    "anchor": "/01/05059697759130",
+    "itemDescription": "Tesco Health Chewable Vitamin C 120 Tablets",
+    "defaultLinktype": "gs1:pip",
+    "qualifiers": [
+      {
+        "21": "{serialnumber}"
+      }
+    ],
+    "links": [
+      {
+        "linktype": "gs1:pip",
+        "href": "https://www.tesco.ie/groceries/en-IE/products/312097626?serial={serialnumber}",
+        "title": "Tesco Health Chewable Vitamin C 120 Tablets page on Tesco.ie with serial number",
+        "type": "text/html",
+        "hreflang": [
+          "en"
+        ],
+        "context": [
+          "sales",
+          "marketing"
+        ]
+      }
+    ]
   }
 ]

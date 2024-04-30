@@ -1,5 +1,3 @@
-version: "3.6"
-
 services:
   database-service:
     build: './database_server'
