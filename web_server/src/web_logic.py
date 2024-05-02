@@ -285,7 +285,7 @@ def _replace_linkset_template_variables(linkset, template_variables_list):
         return {"response_status": 500, "error": f"Unexpected error - {str(e)}"}
 
 
-def handle_link_type(linktype, linkset, accept_language_list, context, media_types_list):
+def handle_link_type(linktype, linkset, accept_language_list, context, media_types_list, linkset_requested=False):
     """
     This function handles different types of links. It takes in the linktype,
     linkset dictionary, and other related arguments, and determines which
@@ -296,10 +296,11 @@ def handle_link_type(linktype, linkset, accept_language_list, context, media_typ
     :param accept_language_list: Argument passed to the function that might be used to determine the link type doc.
     :param context: Argument passed to the function that might be used to determine the link type doc.
     :param media_types_list: Argument passed to the function that might be used to determine the link type doc.
+    :param linkset_requested: If true, the entire linkset for the entry is returned.
     :return: A dictionary with `response_status` and either the linkset `data` or an `error` message.
     """
     try:
-        if linktype == 'all' or linktype == 'linkset':
+        if linkset_requested or linktype == 'all' or linktype == 'linkset':
             return {"response_status": 200, "data": linkset}
 
         full_linktype = 'https://gs1.org/voc/defaultLink' if linktype is None else f'https://gs1.org/voc/{linktype}'
@@ -334,7 +335,7 @@ def handle_link_type(linktype, linkset, accept_language_list, context, media_typ
 
 
 def read_document(identifiers, doc_id, qualifier_path='/', linktype=None, accept_language_list=None, context=None,
-                  media_types_list=None):
+                  media_types_list=None, linkset_requested=False):
     """
     Reads a document from the data source and returns the most appropriate link data.
 
@@ -345,13 +346,14 @@ def read_document(identifiers, doc_id, qualifier_path='/', linktype=None, accept
     :param accept_language_list: List of acceptable languages which influences the selection of the linktype document.
     :param context: Context information passed in from the caller.
     :param media_types_list: List of acceptable media links which influences the selection of the linktype document.
+    :param linkset_requested: if true, the entire linkset for the entry is returned
     :return: A response dictionary which includes the response status and either the link data or error message.
     """
     try:
         # Validate the digital link and fetch the associated document.
         dl_test_result, response = _validate_and_fetch_document(identifiers, qualifier_path, doc_id)
 
-        # If the digital link syntax is invalid, or a database erros / document not found occurs
+        # If the digital link syntax is invalid, or a database errors / document not found occurs
         # then return the error response.
         if not dl_test_result or response['response_status'] != 200:
             return response
@@ -366,7 +368,7 @@ def read_document(identifiers, doc_id, qualifier_path='/', linktype=None, accept
                 for data in database_doc['data']:
                     if len(data['qualifiers']) == 0:
                         linkset = data['linkset'][0]
-                        response = handle_link_type(linktype, linkset, accept_language_list, context, media_types_list)
+                        response = handle_link_type(linktype, linkset, accept_language_list, context, media_types_list, linkset_requested)
 
                         # If a valid response is prepared return it.
                         return response
@@ -386,7 +388,7 @@ def read_document(identifiers, doc_id, qualifier_path='/', linktype=None, accept
 
                     # Use handle_link_type to either return the appropriate linktype document
                     # or proceed to the next data item.
-                    response = handle_link_type(linktype, linkset, accept_language_list, context, media_types_list)
+                    response = handle_link_type(linktype, linkset, accept_language_list, context, media_types_list, linkset_requested)
 
                     # If a valid response is prepared return it.
                     if response:

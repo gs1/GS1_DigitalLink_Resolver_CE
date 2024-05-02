@@ -1,97 +1,38 @@
 [
   {
     "anchor": "/01/09506000134376",
-    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg",
+    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg Capsules",
     "defaultLinktype": "gs1:pip",
     "links": [
       {
-        "linktype": "gs1:epil",
-        "href": "https://dalgiardino.com/medicinal-compound/pil.html",
-        "title": "Information for patients",
-        "type": "text/html",
-        "hreflang": [
-          "en"
-        ]
-      },
-      {
         "linktype": "gs1:pip",
-        "href": "https://dalgiardino.com/medicinal-compound/",
-        "title": "Product information",
+        "href": "https://dalgiardino.com/medicinal-compound/pil.html",
+        "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules page on dalgiardino.com",
         "type": "text/html",
         "hreflang": [
           "en"
         ],
         "context": [
-          "und",
+          "sales",
           "marketing"
-        ]
-      },
-      {
-        "linktype": "gs1:pip",
-        "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
-        "title": "Product information",
-        "type": "text/html",
-        "hreflang": [
-          "ja"
         ]
       }
     ]
   },
   {
     "anchor": "/01/09506000134376",
-    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg",
+    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg Capsules (serialized)",
     "defaultLinktype": "gs1:pip",
     "qualifiers": [
       {
-        "10": "LOT_123"
-      },
-      {
-        "21": "SERIAL_456"
+        "21": "{serialnumber}"
       }
     ],
     "links": [
       {
-        "linktype": "gs1:epil",
-        "href": "https://dalgiardino.com/medicinal-compound/pil.html",
-        "title": "Information for patients",
-        "type": "text/html",
-        "hreflang": [
-          "en"
-        ]
-      },
-      {
         "linktype": "gs1:pip",
-        "href": "https://dalgiardino.com/medicinal-compound/",
-        "title": "Product information",
-        "type": "text/html",
-        "hreflang": [
-          "en"
-        ],
-        "context": [
-          "und",
-          "marketing"
-        ]
-      },
-      {
-        "linktype": "gs1:pip",
-        "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
-        "title": "Product information",
-        "type": "text/html",
-        "hreflang": [
-          "ja"
-        ]
-      }
-    ]
-  },
-  {
-    "anchor": "/01/05059697759130",
-    "itemDescription": "Tesco Health Chewable Vitamin C 120 Tablets",
-    "defaultLinktype": "gs1:pip",
-    "links": [
-      {
-        "linktype": "gs1:pip",
-        "href": "https://www.tesco.ie/groceries/en-IE/products/312097626",
-        "title": "Tesco Health Chewable Vitamin C 120 Tablets page on Tesco.ie",
+        "href": "https://dalgiardino.com/medicinal-compound/pil.html?serial={serialnumber}",
+        "title": "Serialised Dal Giardino Medicinal Compound 50 x 200mg Capsules page on dalgiardino.com",
         "type": "text/html",
         "hreflang": [
           "en"
@@ -102,30 +43,9 @@
         ]
       },
       {
-        "linktype": "gs1:pip",
-        "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
-        "title": "Product information",
-        "type": "text/html",
-        "hreflang": [
-          "ja"
-        ]
-      }
-    ]
-  },
-  {
-    "anchor": "/01/05059697759130",
-    "itemDescription": "Tesco Health Chewable Vitamin C 120 Tablets",
-    "defaultLinktype": "gs1:pip",
-    "qualifiers": [
-      {
-        "21": "{serialnumber}"
-      }
-    ],
-    "links": [
-      {
-        "linktype": "gs1:pip",
-        "href": "https://www.tesco.ie/groceries/en-IE/products/312097626?serial={serialnumber}",
-        "title": "Tesco Health Chewable Vitamin C 120 Tablets page on Tesco.ie with serial number",
+        "linktype": "gs1:certificationInfo",
+        "href": "https://dalgiardino.com/medicinal-compound/product.html?serial={serialnumber}&cert=1",
+        "title": "Certificate 1 for serialised Dal Giardino Medicinal Compound 50 x 200mg Capsules product page on dalgiardino.com",
         "type": "text/html",
         "hreflang": [
           "en"

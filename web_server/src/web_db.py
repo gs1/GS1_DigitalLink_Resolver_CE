@@ -9,11 +9,11 @@ def _init_connection():
     return resolver_collection
 
 
-def _reformat_id(id):
-    id = id.replace('/', '_')
-    if id[:1] == '_':
-        id = id[1:]
-    return id
+def _reformat_id(anchor_id):
+    anchor_id = anchor_id.replace('/', '_')
+    if anchor_id[:1] == '_':
+        anchor_id = anchor_id[1:]
+    return anchor_id
 
 
 # Read a document from the 'gs1resolver' collection
@@ -30,7 +30,7 @@ def read_document(anchor):
         return {"response_status": 200, "data": document}
 
     except bson_errors.InvalidId as e:
-        return {"response_status": 400, "error": "Invalid ID format: " + str(e)}
+        return {"response_status": 500, "error": "Invalid ID format: " + str(e)}
     except errors.PyMongoError as e:
         # General PyMongo Error
         return {"response_status": 500, "error": "Database error: " + str(e)}

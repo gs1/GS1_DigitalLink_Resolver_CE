@@ -39,23 +39,25 @@ def author_mongo_linkset_list(data_list):
 def author_v3_data_entry_list(data_list):
     transformed_data_list = []
     for data in data_list:
-        transformed_data_list.append(author_data_entry_document(data))
+        transformed_data_list.append(convert_mongo_linkset_to_v3(data))
 
     return transformed_data_list
 
 
-def author_data_entry_document(mongo_linkset_format):
+def convert_mongo_linkset_to_v3(mongo_linkset_format):
     """
     Transforms the provided mongo linkset format into the more compact Resolver CE v3 data entry format.
     """
-    output_item = {
-        'anchor': "/" + mongo_linkset_format['_id'].replace('_', '/'),
-        'itemDescription': '',
-        'defaultLinktype': '',
-        'links': []
-    }
+    output_items = []
 
     for item in mongo_linkset_format['data']:
+        output_item = {
+            'anchor': "/" + mongo_linkset_format['_id'].replace('_', '/'),
+            'itemDescription': '',
+            'defaultLinktype': mongo_linkset_format['defaultLinktype'],
+            'links': []
+        }
+
         if 'qualifiers' in item:
             qualifiers = item['qualifiers']
         else:
@@ -67,7 +69,6 @@ def author_data_entry_document(mongo_linkset_format):
                         'https://gs1.org/voc/') and key != 'https://gs1.org/voc/defaultLink' and key != 'https://gs1.org/voc/defaultLinkMulti':
                     linktype = 'gs1:' + key.split('/')[-1]
                     output_item['itemDescription'] = linkset['itemDescription']
-                    output_item['defaultLinktype'] = linktype
 
                     # qualifiers are optional
                     if qualifiers is not None and qualifiers != []:
@@ -93,12 +94,17 @@ def author_data_entry_document(mongo_linkset_format):
 
                         output_item['links'].append(output_link)
 
-    return output_item
+            output_items.append(output_item)
+
+    return output_items
 
 
 def author_mongo_linkset_document(data_entry_format):
+    default_linktype = data_entry_format['defaultLinktype']
+
     database_doc = {
         "_id": data_entry_format["anchor"].split('/')[-2] + '_' + data_entry_format["anchor"].split('/')[-1],
+        "defaultLinktype": default_linktype,
         "data": []
     }
 
@@ -130,16 +136,16 @@ def author_mongo_linkset_document(data_entry_format):
         linkset_obj[linktype].append(linkset_entry)
 
         # Check is this linktype is the default linktype:
-        if data_entry_format['defaultLinktype'] == link['linktype']:
+        if default_linktype == link['linktype']:
             # If we are dealing with multiple languages, append 'defaultLinkMulti' to the linkset_obj
             if isinstance(linkset_entry['hreflang'], list) and len(linkset_entry['hreflang']) > 1:
                 linkset_obj['https://gs1.org/voc/defaultLinkMulti'] = linkset_entry
 
-        # In any case we append 'defaultLink' to the linkset_obj with only linktype, href and title
-        linkset_obj['defaultLink'] = {
-            "href": link['href'],
-            "title": link['title']
-        }
+            # In any case we append 'defaultLink' to the linkset_obj with only linktype, href and title
+            linkset_obj['defaultLink'] = {
+                "href": link['href'],
+                "title": link['title']
+            }
 
     # finally we re-arrange 'defaultLink' to be the first element in the list and
     # defaultLinkMulti to be the second element in the list:
@@ -168,7 +174,7 @@ def handle_data(action, item):
         'data_entry_to_mongo_linkset_list': author_mongo_linkset_list,
         'mongo_linkset_to_data_entry_list': author_v3_data_entry_list,
         'data_entry_to_mongo_linkset_document': author_mongo_linkset_document,
-        'mongo_linkset_to_data_entry_document': author_data_entry_document
+        'mongo_linkset_to_data_entry_document': convert_mongo_linkset_to_v3
     }
 
     return switches.get(action, lambda: "Invalid direction")(item)

@@ -70,10 +70,10 @@ class DocOperations(TokenResource):
             elif not token_result['result']:
                 return token_result['message'], 403
 
-            anchor = f'{anchor_ai_code}/{anchor_ai}'
-            print('GET', anchor)
-            response_data = data_entry_logic.read_document(anchor)
+            document_id = f'{anchor_ai_code}_{anchor_ai}'
+            response_data = data_entry_logic.read_document(document_id)
             return response_data, response_data['response_status']
+
         except Exception as e:
             logger.warning('Error getting document ' + str(e))
             abort(500, description="Error getting document")
@@ -88,14 +88,14 @@ class DocOperations(TokenResource):
             elif not token_result['result']:
                 return token_result['message'], 403
 
-            anchor = f'/{anchor_ai_code}/{anchor_ai}'
-            print('PUT', anchor)
+            document_id = f'{anchor_ai_code}_{anchor_ai}'
             if not request.is_json:
                 return "Request must be in JSON format", 415
 
             data = request.json
-            response_data = data_entry_logic.update_document(anchor, data)
+            response_data = data_entry_logic.update_document(document_id, data)
             return response_data, response_data['response_status']
+
         except Exception as e:
             logger.warning('Error updating document: ' + str(e))
             abort(500, description="Error updating document: " + str(e))
@@ -110,10 +110,10 @@ class DocOperations(TokenResource):
             elif not token_result['result']:
                 return token_result['message'], 403
 
-            anchor = f'/{anchor_ai_code}/{anchor_ai}'
-            print('DELETE', anchor)
-            response_data = data_entry_logic.delete_document(anchor)
+            document_id = f'{anchor_ai_code}_{anchor_ai}'
+            response_data = data_entry_logic.delete_document(document_id)
             return response_data, response_data['response_status']
+
         except Exception as e:
             logger.warning('Error deleting document: ' + str(e))
             abort(450, description="Error deleting document")

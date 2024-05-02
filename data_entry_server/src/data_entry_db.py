@@ -51,15 +51,15 @@ def create_document(data):
 
 
 # Read a document from the 'gs1resolver' collection
-def read_document(anchor):
+def read_document(document_id):
     try:
         resolver_coll = _init_connection()
-        anchor = _reformat_id(anchor)
-        document = resolver_coll.find_one({"_id": anchor})
+        document_id = _reformat_id(document_id)
+        document = resolver_coll.find_one({"_id": document_id})
 
         # Document not found
         if not document:
-            return {"response_status": 404, "error": f"No document found for anchor: {anchor}"}
+            return {"response_status": 404, "error": f"No document found for anchor: {document_id}"}
 
         return {"response_status": 200, "data": document}
 
@@ -97,19 +97,19 @@ def update_document(data):
 
 
 # Delete a document from the 'gs1resolver' collection
-def delete_document(anchor):
+def delete_document(document_id):
     # Using the 'gs1resolver' collection
 
     try:
         resolver_coll = _init_connection()
-        anchor = _reformat_id(anchor)
-        result = resolver_coll.delete_one({"_id": anchor})
+        document_id = _reformat_id(document_id)
+        result = resolver_coll.delete_one({"_id": document_id})
 
         if result.deleted_count == 0:
-            return {"response_status": 404, "error": f"No document found with id: {anchor}"}  # Document not found
+            return {"response_status": 404, "error": f"No document found with id: {document_id}"}  # Document not found
 
         # Operation was successful and the document was deleted
-        return {"response_status": 200, "data": f"Document with anchor {anchor} deleted successfully"}
+        return {"response_status": 200, "data": f"Document with anchor {document_id} deleted successfully"}
 
     except bson_errors.InvalidId as e:
         return {"response_status": 400, "error": "Invalid ID format: " + str(e)}

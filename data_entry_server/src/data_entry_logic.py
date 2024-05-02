@@ -106,72 +106,88 @@ def _convert_v2_to_v3(data_entry_v2_doc):
 
 # Transforms the provided mongo linkset format into the more compact Resolver CE v3 data entry format.
 def _convert_mongo_linkset_to_v3(mongo_linkset_format):
-    # Initial assignment and empty dictionary initialization
-    output_item = {}
-    qualifier_path = '/'
+    """
+    Transforms the provided mongo linkset format into the more compact Resolver CE v3 data entry format.
+    """
+    try:
+        output_items = []
 
-    # If the key '/' is in the 'item' dictionary, populate the 'output_item' dictionary with appropriate values
-    # including an empty 'links' list.
-    if '/' in mongo_linkset_format:
-        output_item = {'anchor': mongo_linkset_format['/']['linkset'][0]['anchor'],
-                       'itemDescription': mongo_linkset_format['/']['linkset'][0]['itemDescription'],
-                       'defaultLinktype': 'gs1:not_yet_set',
-                       'links': []}
+        for item in mongo_linkset_format['data']:
+            output_item = {
+                'anchor': "/" + mongo_linkset_format['_id'].replace('_', '/'),
+                'itemDescription': '',
+                'defaultLinktype': mongo_linkset_format['defaultLinktype'],
+                'links': []
+            }
 
-    # If the key '/' is not in the 'item' dictionary, find the dictionary name starting with '/' and having length > 1
-    # and split it by '/' to get the qualifiers.
-    else:
-        for key, value in mongo_linkset_format.items():
-            if key.startswith('/') and len(key) > 1:
-                qualifier_path = key
-                qualifier_path_items = qualifier_path.strip('/').split('/')
-                qualifiers = [{qualifier_path_items[i]: qualifier_path_items[i + 1]} for i in
-                              range(0, len(qualifier_path_items), 2)]
+            if 'qualifiers' in item:
+                qualifiers = item['qualifiers']
+            else:
+                qualifiers = None
 
-                # Populate 'output_item' dictionary
-                output_item = {'anchor': mongo_linkset_format[qualifier_path]['linkset'][0]['anchor'],
-                               'itemDescription': mongo_linkset_format[qualifier_path]['linkset'][0]['itemDescription'],
-                               'defaultLinktype': 'gs1:pip',
-                               'qualifiers': qualifiers,
-                               'links': []}
+            for linkset in item['linkset']:
+                for key in linkset:
+                    if key.startswith(
+                            'https://gs1.org/voc/') and key != 'https://gs1.org/voc/defaultLink' and key != 'https://gs1.org/voc/defaultLinkMulti':
+                        linktype = 'gs1:' + key.split('/')[-1]
+                        output_item['itemDescription'] = linkset['itemDescription']
 
-    # Iterate over the 'linkset' items, ignoring 'default' keys and updating remaining with a specific prefix.
-    for key, value in mongo_linkset_format[qualifier_path]['linkset'][0].items():
-        if key.startswith('https://gs1.org/voc/'):
-            if key in ['https://gs1.org/voc/defaultLink', 'https://gs1.org/voc/defaultLinkMulti']:
-                continue
-            linktype = 'gs1:' + key.split('/')[-1]
-            for sub_item in value:
-                # Reorder the sub_item dictionary ensuring linktype is the first key, then
-                # append it to the 'links' list in the 'output_item' dictionary.
-                reordered_sub_item = {"linktype": linktype,
-                                      "href": sub_item["href"],
-                                      "title": sub_item["title"],
-                                      "type": sub_item["type"],
-                                      "hreflang": sub_item["hreflang"]}
+                        # qualifiers are optional
+                        if qualifiers is not None and qualifiers != []:
+                            output_item['qualifiers'] = qualifiers
 
-                if 'context' in sub_item and sub_item['context']:
-                    reordered_sub_item['context'] = sub_item['context']
+                        for link in linkset[key]:
+                            if 'context' in link:
+                                context = link['context']
+                            else:
+                                context = []
 
-                output_item['links'].append(reordered_sub_item)
+                            output_link = {
+                                'linktype': linktype,
+                                'href': link['href'],
+                                'title': link['title'],
+                                'type': link['type'],
+                                'hreflang': link['hreflang'],
+                            }
 
-    return output_item
+                            # context is optional
+                            if context is not None and context != []:
+                                output_link['context'] = context
+
+                            output_item['links'].append(output_link)
+
+                output_items.append(output_item)
+
+        return output_items
 
 
-def _author_linkset_document(data_entry_format):
+    except KeyError as key_error:
+        print(f'Missing key during conversion: {key_error}')
+        return None
+    except ValueError as value_error:
+        print(f'Type error occured: {value_error}')
+        return None
+    except Exception as e:
+        print(f'An unexpected error occurred during conversion: {e}')
+        return None
+
+
+def _author_mongo_linkset_document(data_entry_format):
     try:
         # First we must check if this a v2 or v3 document, and convert it to v3 if it's v2
         if 'identificationKeyType' in data_entry_format:
             print('Converting v2 to v3')
-            item = _convert_v2_to_v3(data_entry_format)
+            data_entry_format = _convert_v2_to_v3(data_entry_format)
         elif 'anchor' in data_entry_format:
             print('Document is already in v3 format')
         else:
             return {"response_status": 400, "error": "Invalid data format: " + str(data_entry_format)}
 
-        # Create the database document with the anchor as the document id
+        default_linktype = data_entry_format['defaultLinktype']
+
         database_doc = {
             "_id": data_entry_format["anchor"].split('/')[-2] + '_' + data_entry_format["anchor"].split('/')[-1],
+            "defaultLinktype": default_linktype,
             "data": []
         }
 
@@ -203,16 +219,16 @@ def _author_linkset_document(data_entry_format):
             linkset_obj[linktype].append(linkset_entry)
 
             # Check is this linktype is the default linktype:
-            if data_entry_format['defaultLinktype'] == link['linktype']:
+            if default_linktype == link['linktype']:
                 # If we are dealing with multiple languages, append 'defaultLinkMulti' to the linkset_obj
                 if isinstance(linkset_entry['hreflang'], list) and len(linkset_entry['hreflang']) > 1:
                     linkset_obj['https://gs1.org/voc/defaultLinkMulti'] = linkset_entry
 
-            # In any case we append 'defaultLink' to the linkset_obj with only linktype, href and title
-            linkset_obj['defaultLink'] = {
-                "href": link['href'],
-                "title": link['title']
-            }
+                # In any case we append 'defaultLink' to the linkset_obj with only linktype, href and title
+                linkset_obj['defaultLink'] = {
+                    "href": link['href'],
+                    "title": link['title']
+                }
 
         # finally we re-arrange 'defaultLink' to be the first element in the list and
         # defaultLinkMulti to be the second element in the list:
@@ -325,7 +341,7 @@ def _process_document_upsert(authored_doc):
 def _author_mongo_linkset_list(data_list):
     transformed_data_list = []
     for data in data_list:
-        linkset_doc = _author_linkset_document(data)
+        linkset_doc = _author_mongo_linkset_document(data)
         # Now we check if there is already a document with the same '_id' in the transformed_data_list
         # If there is, we append the 'data' list to the existing document
         # If there isn't, we append the document to the transformed_data_list
@@ -336,7 +352,7 @@ def _author_mongo_linkset_list(data_list):
                 found = True
                 break
         if not found:
-            transformed_data_list.append(_author_linkset_document(data))
+            transformed_data_list.append(_author_mongo_linkset_document(data))
 
     return transformed_data_list
 
@@ -371,7 +387,7 @@ def create_document(data):
 
         # If 'data' is a dictionary (i.e., a single entry and not a list)
         elif isinstance(data, dict):
-            authored_linkset_doc = _author_linkset_document(data)
+            authored_linkset_doc = _author_mongo_linkset_document(data)
             validated_doc = _validata_data(authored_linkset_doc)
 
             # Process the single 'data' entry for insertion using the helper function and get the result and status
@@ -387,10 +403,10 @@ def create_document(data):
         return {"response_status": 500, "error": "Internal Server Error - " + str(e)}
 
 
-def read_document(anchor):
+def read_document(document_id):
     try:
         # get the document from the database
-        result = data_entry_db.read_document(anchor)
+        result = data_entry_db.read_document(document_id)
 
         # If found in the database, convert the document to the v3 format.
         # If not found, return the result as is (with the 404 status)
@@ -403,7 +419,7 @@ def read_document(anchor):
         return {"response_status": 500, "error": "Internal Server Error"}
 
 
-def update_document(anchor, data):
+def update_document(document_id, data):
     # currently update_document is not implemented in a different form from create_document
     # although this can change, for now we just call create_document
     return create_document(data)

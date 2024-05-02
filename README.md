@@ -1,13 +1,24 @@
-## 📢 Version 3.0 is Imminent!
+## 📢 Welcome to GS1 Resolver Community Edition Version 3.0 Beta 1
 
-We're thrilled to announce that the new **GS1 Resolver v3.0** is on the brink of release, bringing significant enhancements:
+GS1 Resolver is a free and open-source software that allows you to resolve GS1 identifiers to their corresponding web resources. This software is developed by the GS1 Resolver Community and is based on the GS1 Digital Link standard.
 
-1. **Multiple Links**: Serve multiple links from a single context, a notable improvement over the previous single-link limitation. This is particularly useful if your product has multiple certificates or related documents.
+### 🚀 What's new in this version?
+1. Completely revised and simplified architecture for better performance and scalability.
+2. Improved support for GS1 Digital Link and GS1 Web URI according to th standard published at https://ref.gs1.org/standards/resolver/
 
-2. **Simplified Data Input**: The data input methods have been revamped for user-friendliness. The complex structures of versions 1 and 2 are now obsolete, paving the way for straightforward data entry.
+### 📚 Simplified Architecture
+The new architecture is based on a microservices approach. In this solution the data entry service with its API can be separated from the Front-end resolving web service.
+The main components, each architected as separate container images, are:
+1. **Data Entry Service**: This service is responsible for storing and managing the GS1 identifiers and their corresponding web resources.
+2. **Front-end Web Service**: This service is responsible for resolving GS1 identifiers to their corresponding web resources, and redirecting web clients as needed
+3. **Single Document Database** : This database is used to store the GS1 identifiers and their corresponding web resources in an IETF LinkSet format.
+4. **Frontend Proxy Server**: This server is responsible for routing the incoming requests to the appropriate service when used together in a Docker composition or Kubernetes cluster.
 
-3. **Separate GTIN Qualifiers**: GTIN qualifiers are now independent, free from a fixed 'qualifier path', offering enhanced flexibility.
+### 📦 Installation
+The GS1 Resolver Community Edition is available as a Docker image. You can run the software using the following command:
+```bash
+docker compose up -d --build
+```
+This command will download the base container images from Docker Hub, build the necessary images, and start the services.
 
-4. **Unified Database**: Streamline your infrastructure as maintaining both SQL *and* Document databases is no longer necessary—only the Document database is required.
-
-The rollout of the latest version is scheduled for **April 2024**. It will be introduced here in this 'V3' branch in this **GitHub** project and labeled as a **release-candidate**. This allows for thorough testing, ensuring all bugs are addressed and that the Resolver is fully compliant with GS1 Digital Link standards.
+The service will then be available at http://localhost:8080.
