@@ -212,15 +212,21 @@ def _do_qualifiers_match(qualifier_path, doc_qualifiers):
 
 def _process_serialised_identifier(identifier):
     """
-    Processes the serialised component of the identifier and returns the wanted_db_document.
+    Processes the serialised component of the identifier and returns the wanted_db_document. It works by
+    removing more and more of the serialised component until either:
+        1) a match is found AND the linkset documents has {0} or {1} template variables present, OR
+        2) The identifier, including '/<ai-code>/', is reduced to 12 characters.
 
-    :param identifier: The identifier portion of the digital link.
+    If a match is found, it will return the wanted_db_document with the serialised component processed.
+    If no match is found, it will return None.
+
+    :param identifier: The identifier portion of the digital link .e.g. '/8004/0950600013430000001'
     :return: The wanted_db_document with the serialised component processed, or None if no match found.
     """
     for i in range(len(identifier) - 1, 11, -1):
         wanted_db_document = web_db.read_document(identifier[:i])
         if wanted_db_document['response_status'] == 200:
-            # Partial matches MUST have a template variable in the href property. If not, we have a problem!
+            # Partial matches MUST have a template variable in the href property. If not, we reject the match.
             # We have found a partial match, but we need to check for the presence of
             # special template variable:
             #    {0} in the href property (which means we redirect using the full identifier)
@@ -229,6 +235,11 @@ def _process_serialised_identifier(identifier):
             #  and search for the template variable. We will do the latter unless we find it slower!
             wanted_json = json.dumps(wanted_db_document['data'])
 
+            if '{0}' not in wanted_json and '{1}' not in wanted_json:
+                # No template variables found in the linkset - this is not a partial match because we cannot
+                # substitute the template variable part of the href redirect with a template variable.
+                continue
+
             # we need to extract the value part of the identifier after the second '/'
             ai_value = identifier[:i].split('/')[2]
             # remove the partial match from the full incoming identifier to get the remainder of the value.
@@ -236,8 +247,6 @@ def _process_serialised_identifier(identifier):
             # '095060001343' and the incoming identifier is '/8004/095060001343999999'
             # then ai_partial_value is '999999'.
             ai_partial_value = identifier.split('/')[2].replace(ai_value, '')
-            print('ai_value:', ai_value)
-            print('ai_partial_value:', ai_partial_value)
 
             # Now we need to replace the template variables {0} and {1} with the actual values
             while '{0}' in wanted_json:
@@ -247,7 +256,6 @@ def _process_serialised_identifier(identifier):
 
             # convert the json string back to a dictionary
             wanted_db_document['data'] = json.loads(wanted_json)
-            print('_process_serialised_identifier() wanted_db_document:', json.dumps(wanted_db_document, indent=2))
             return wanted_db_document
 
     return None
