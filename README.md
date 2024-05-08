@@ -1,7 +1,7 @@
 ## Welcome to the GS1 Digital Link Resolver Community Edition v2.6
 
 ---
-### ADVANCE NOTICE Community Edition v3.0 is on its way end of April 2024
+### ADVANCE NOTICE Community Edition v3.0 is on its way in beta form from 9 May 2024
 * Please note that new v3.0 of GS1 Resolver is on its way with some breaking changes if upgrading from v2.x.
 * This version 2.6 is the last version of the Community Edition v2.x series.
 
