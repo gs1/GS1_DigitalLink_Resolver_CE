@@ -107,13 +107,11 @@ def convert_v2_to_v3(data_entry_v2_doc):
             'href': response['targetUrl'],
             'title': response['linkTitle'],
             'type': response['mimeType'],
-            'hreflang': [response['language']]
+            'hreflang': [response['ianaLanguage']]
         }
         if GO_RESOLVER_V2_FORMAT:
-            link['public'] = True
             link['hreflang'] = [response['language']]
         else:
-            link['active'] = True
             link['hreflang'] = [response['ianaLanguage']]
 
         if 'context' in response and isinstance(response['context'], list):
@@ -129,8 +127,8 @@ def convert_v2_to_v3(data_entry_v2_doc):
         for link_existing in rec_v3['links']:
             if link_existing['linktype'] == link['linktype'] and link_existing['href'] == link['href']:
                 # first make sure that the language is not already in the list
-                if response['language'] not in link_existing['hreflang']:
-                    link_existing['hreflang'].append(response['language'])
+                if response['ianaLanguage'] not in link_existing['hreflang']:
+                    link_existing['hreflang'].append(response['ianaLanguage'])
                 found = True
                 break
 
