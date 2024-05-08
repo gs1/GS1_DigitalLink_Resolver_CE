@@ -128,21 +128,21 @@ class APITestCase(unittest.TestCase):
             self.assertEqual(linkset['itemDescription'], 'Dal Giardino Medicinal Compound 50 x 200mg Capsules',
                              'Linkset anchor does not match expected value')
 
-
-        # Now we test the same entry with different linktypes
+        # Now we test the same entry with different linktypes and languages
         # first, we test the default linktype for GTIN 09506000134352 which should be a link
         # aligned with 'gs1:sustainabilityInfo' and should redirect to: https://dalgiardino.com/about/ as
         # long as we include the 'Accept-Language: en' header
-        print('Now find the default entry for anchor /01/09506000134352 using the Resolver frontend web server')
-        headers = self.headers.copy()
-        headers['Accept-Language'] = 'en'
-        headers['Accept'] = '*/*'
-        web_response = requests.get(self.resolver_url + '/01/09506000134352', allow_redirects=False, headers=headers)
-        print("web_response.text:", web_response.text)
-        self.assertEqual(web_response.status_code, 307, 'Read test: '
-                                                        'Frontend server did not return 307 (Temporary Redirect) status code')
-        self.assertEqual('https://dalgiardino.com/about/', web_response.headers['Location'],
-                         'Link was not directed correctly with default linktype')
+        for linktype in ['gs1:hasRetailers', 'gs1:pip', 'gs1:recipeInfo', 'gs1:sustainabilityInfo']:
+            for language in ['en', 'es', 'vi', 'ja']:
+                print('Now find the entry with anchor /01/09506000134352 using the Resolver frontend web server')
+                print('Linktype:', linktype, 'Language:', language)
+                headers = self.headers.copy()
+                headers['Accept-Language'] = language
+                headers['Accept'] = '*/*'
+                web_response = requests.get(self.resolver_url + '/01/09506000134352?linktype=' + linktype, allow_redirects=False, headers=headers)
+                wanted_link_endswith = f'test_lt={linktype}&test_lang={language}'
+                self.assertEqual(web_response.status_code, 307, 'Read test: Frontend server did not return 307 (Temporary Redirect) status code')
+                self.assertTrue(web_response.headers['Location'].endswith(wanted_link_endswith), f'Location link was "{web_response.headers["Location"]}" and so did not end with "{wanted_link_endswith}"')
 
 
         # let's do the same for the fixed asset 8004 entry - we should get a 307 redirect to:
