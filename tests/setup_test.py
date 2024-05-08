@@ -90,7 +90,6 @@ class APITestCase(unittest.TestCase):
 
         self.assertEqual(web_response.status_code, 307, 'Read test: '
                                                         'Frontend server did not return 307 (Temporary Redirect) status code')
-        print(web_response.headers)
         self.assertEqual(web_response.headers['Location'], 'https://dalgiardino.com/medicinal-compound/pil.html',
                          'Link was not directed correctly')
 
@@ -128,6 +127,23 @@ class APITestCase(unittest.TestCase):
             self.assertEqual(linkset['anchor'], '/01/09506000134376', 'Linkset anchor does not match expected value')
             self.assertEqual(linkset['itemDescription'], 'Dal Giardino Medicinal Compound 50 x 200mg Capsules',
                              'Linkset anchor does not match expected value')
+
+
+        # Now we test the same entry with different linktypes
+        # first, we test the default linktype for GTIN 09506000134352 which should be a link
+        # aligned with 'gs1:sustainabilityInfo' and should redirect to: https://dalgiardino.com/about/ as
+        # long as we include the 'Accept-Language: en' header
+        print('Now find the default entry for anchor /01/09506000134352 using the Resolver frontend web server')
+        headers = self.headers.copy()
+        headers['Accept-Language'] = 'en'
+        headers['Accept'] = '*/*'
+        web_response = requests.get(self.resolver_url + '/01/09506000134352', allow_redirects=False, headers=headers)
+        print("web_response.text:", web_response.text)
+        self.assertEqual(web_response.status_code, 307, 'Read test: '
+                                                        'Frontend server did not return 307 (Temporary Redirect) status code')
+        self.assertEqual('https://dalgiardino.com/about/', web_response.headers['Location'],
+                         'Link was not directed correctly with default linktype')
+
 
         # let's do the same for the fixed asset 8004 entry - we should get a 307 redirect to:
         # "https://dalgiardino.com/medicinal-compound/assets/8004/0950600013430000001.html"

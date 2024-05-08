@@ -359,14 +359,16 @@ def _replace_linkset_template_variables(linkset, template_variables_list):
         return {"response_status": 500, "error": f"Unexpected error - {str(e)}"}
 
 
-def handle_link_type(linktype, linkset, accept_language_list, context, media_types_list, linkset_requested=False):
+def _handle_link_type(linktype, default_linktype, linkset, accept_language_list, context, media_types_list,
+                      linkset_requested=False):
     """
     This function handles different types of links. It takes in the linktype,
     linkset dictionary, and other related arguments, and determines which
     part of the linkset dictionary to return based on the linktype.
 
     :param linktype: This can be 'all', 'linkset', none, or a specific type of link.
-    :param linkset: A dictionary that contains the linkset data.
+    :param linkset: A dictionary that contains the database entry, including linkset data.
+    :param default_linktype: The default linktype for the entry.
     :param accept_language_list: Argument passed to the function that might be used to determine the link type doc.
     :param context: Argument passed to the function that might be used to determine the link type doc.
     :param media_types_list: Argument passed to the function that might be used to determine the link type doc.
@@ -377,22 +379,19 @@ def handle_link_type(linktype, linkset, accept_language_list, context, media_typ
         if linkset_requested or linktype == 'all' or linktype == 'linkset':
             return {"response_status": 200, "data": linkset}
 
-        full_linktype = 'https://gs1.org/voc/defaultLink' if linktype is None else f'https://gs1.org/voc/{linktype}'
+        default_full_linktype = f'https://gs1.org/voc/{default_linktype.replace("gs1:", "")}'
+        wanted_linktype_entry = linkset[0][default_full_linktype] if linktype is None else linkset[0][f'https://gs1.org/voc/{linktype.replace("gs1:", "")}']
 
-        if full_linktype in linkset:
-            linktype_doc_list = linkset[full_linktype]
+        if isinstance(wanted_linktype_entry, list):
+            wanted_linktype_doc = _return_appropriate_linktype_doc(wanted_linktype_entry, accept_language_list,
+                                                                   context, media_types_list)
+        else:
+            wanted_linktype_doc = wanted_linktype_entry
 
-            if isinstance(linktype_doc_list, list):
-                wanted_linktype_doc = _return_appropriate_linktype_doc(linktype_doc_list, accept_language_list,
-                                                                       context, media_types_list)
-            else:
-                wanted_linktype_doc = linktype_doc_list
-
-            if wanted_linktype_doc is not None:
-                return {"response_status": 307, "data": wanted_linktype_doc}
-            else:
-                return {"response_status": 404, "error": f"No linkset found for linktype: {full_linktype}"}
-        return {"response_status": 404, "error": f"No linkset found for linktype: {linktype}"}
+        if wanted_linktype_doc is not None:
+            return {"response_status": 307, "data": wanted_linktype_doc}
+        else:
+            return {"response_status": 404, "error": f"No linkset found for linktype: {wanted_linktype_entry}"}
 
     except KeyError as e:
         print(f"handle_link_type - KeyError occurred. Details: {str(e)}")
@@ -439,30 +438,42 @@ def read_document(identifiers, doc_id, qualifier_path='/', linktype=None, accept
             # If qualifier_path is NoneType or '/', we look for an instance in the document
             # where there are no qualifiers.
             if qualifier_path is None or qualifier_path == '/':
-                for data in database_doc['data']:
-                    if len(data['qualifiers']) == 0:
-                        linkset = data['linkset'][0]
-                        response = handle_link_type(linktype, linkset, accept_language_list, context, media_types_list, linkset_requested)
-
-                        # If a valid response is prepared return it.
+                for entry in database_doc['data']:
+                    if len(entry['qualifiers']) == 0:
+                        response = _handle_link_type(linktype,
+                                                     database_doc['defaultLinktype'],
+                                                     entry['linkset'],
+                                                     accept_language_list,
+                                                     context,
+                                                     media_types_list,
+                                                     linkset_requested
+                                                     )
                         return response
 
             # If we are here then there are qualifiers to process.
             # Iterate through each data item in the document.
-            for data in database_doc['data']:
+            for entry in database_doc['data']:
                 # Iterate through each data item in the document and check if any qualifiers
                 # in the data item match the qualifier path.
-                yes_qualifiers_match, template_variables_list = _do_qualifiers_match(qualifier_path, data['qualifiers'])
+                yes_qualifiers_match, template_variables_list = _do_qualifiers_match(qualifier_path,
+                                                                                     entry['qualifiers'])
 
                 # If qualifiers match, replace template variables and process the linkset.
                 if yes_qualifiers_match:
-                    linkset = data['linkset'][0]
                     if len(template_variables_list) > 0:
-                        linkset = _replace_linkset_template_variables(linkset, template_variables_list)
+                        entry['linkset'] = _replace_linkset_template_variables(entry['linkset'],
+                                                                               template_variables_list)
 
                     # Use handle_link_type to either return the appropriate linktype document
                     # or proceed to the next data item.
-                    response = handle_link_type(linktype, linkset, accept_language_list, context, media_types_list, linkset_requested)
+                    response = _handle_link_type(linktype,
+                                                 database_doc['defaultLinktype'],
+                                                 entry['linkset'],
+                                                 accept_language_list,
+                                                 context,
+                                                 media_types_list,
+                                                 linkset_requested
+                                                 )
 
                     # If a valid response is prepared return it.
                     if response:

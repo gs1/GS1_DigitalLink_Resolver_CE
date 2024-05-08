@@ -67,15 +67,6 @@
       ]
     },
     {
-      "linktype": "gs1:productSustainabilityInfo",
-      "href": "https://dalgiardino.com/about/index.html.vi",
-      "title": "Ph\u00e1t tri\u1ec3n b\u1ec1n v\u1eefng v\u00e0 t IN STAGE TEST 1",
-      "type": "text/html",
-      "hreflang": [
-        "vi"
-      ]
-    },
-    {
       "linktype": "gs1:recipeInfo",
       "href": "https://dalgiardino.com/mushroom-squash-risotto/",
       "title": "Wild Mushroom And Butternut Squash Risotto",
