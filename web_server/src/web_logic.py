@@ -218,7 +218,8 @@ def _validate_and_fetch_document(identifiers, qualifier_path, doc_id):
     :param qualifier_path: The qualifier path of the digital link, if any (e.g., '/22/455')
     :param doc_id: The document ID to look up in the database.
     :return: A tuple where the first element is the result of the syntactic validation of the digital link,
-             and the second element is the wanted_db_document from trying to read the document with the given doc_id from the database.
+             and the second element is the wanted_db_document from trying to read the document with the given doc_id
+             from the database.
     """
     try:
         # Concatenate the identifiers and qualifier_path to form the complete digital link
@@ -232,20 +233,69 @@ def _validate_and_fetch_document(identifiers, qualifier_path, doc_id):
             return {"response_status": 400, "error": "Invalid Digital Link Syntax"}, None
 
         # If the link syntax is valid, attempt to fetch the corresponding document from the database.
+        print('identifiers:', identifiers)
         wanted_db_document = web_db.read_document(doc_id)
 
-        return dl_test_result, wanted_db_document
+        if wanted_db_document['response_status'] == 200:
+            # document found - there is nothing more we need to do here.
+            return dl_test_result, wanted_db_document
+
+        prefixes = ['/8003/', '/8004/', '/00/']
+        if wanted_db_document['response_status'] == 404 and any(identifiers.startswith(prefix) for prefix in prefixes):
+            # If we are being asked to search for GIAIs (8004), GRAIs (8003) or SSCCs (00) then an exact match may not
+            # be immediately available. These Application Identifiers have a serialised component built into the
+            # identifier itself. We need to strip off the last character and try again until we reach a point
+            # where we have a match, or we have reduced the identifiers string to just 12 characters.
+            # If you wish you can add other AI codes to this list if you think you would like to apply the same
+            # logic to them. For example, partial GTINs (01) might be useful. If so, just add their AI code with a
+            # leading and trailing forward-slash to the 'prefixes' list above. e.g. adding GTIN:
+            #     prefixes = ['/8003/', '/8004/', '/00/', '/01/']
+            # We include both leading and trailing forward-slashes to ensure we are matching the AI code and not
+            # a partial match of the AI value.
+            for i in range(len(identifiers) - 1, 11, -1):
+                wanted_db_document = web_db.read_document(identifiers[:i])
+                if wanted_db_document['response_status'] == 200:
+                    # Partial matches MUST have a template variable in the href property. If not, we have a problem!
+                    # We have found a partial match, but we need to check for the presence of
+                    # special template variable:
+                    #    {0} in the href property (which means we redirect using the full identifier)
+                    #    {1} which means we redirect using the partial identifier.
+                    #  We can either traverse the linkset object or we can just convert the entire object to a string
+                    #  and search for the template variable. We will do the latter unless we find it slower!
+                    wanted_json = json.dumps(wanted_db_document['data'])
+
+                    # we need to extract the value part of the identifier after the second '/'
+                    ai_value = identifiers.split('/')[2]
+                    # remove the partial match from the full incoming identifier to get the remainder of the value.
+                    # For example if ai_value is '/8004/095060001343' and the incoming identifier
+                    # is '/8004/095060001343999999' then ai_partial_value is '999999'.
+                    ai_partial_value = ai_value.replace(identifiers[:i].split('/')[2], '')
+
+                    # Now we need to replace the template variables {0} and {1} with the actual values
+                    while '{0}' in wanted_json:
+                        wanted_json = wanted_json.replace('{0}', ai_value)
+                    while '{1}' in wanted_json:
+                        wanted_json = wanted_json.replace('{1}', ai_partial_value)
+
+                    # convert the json string back to a dictionary
+                    wanted_db_document['data'] = json.loads(wanted_json)
+
+                    # everything is valid, we can return the document
+                    return dl_test_result, wanted_db_document
+
+        # We have searched and there is no partial match that has template variables {0} or {1}
+        return {"response_status": 404, "error": f"No document found for anchor: {doc_id}"}, None
 
     except ValueError as e:
-        print(f"validate_and_fetch_document - ValueError occurred. Details: {str(e)}")
+        print(f"_validate_and_fetch_document - ValueError occurred. Details: {str(e)}")
         return {"response_status": 400,
                 "error": f"ValueError occurred. Possibly invalid identifiers or qualifier_path. Details: {str(e)}"}, None
     except TypeError as e:
-        print(f"validate_and_fetch_document - TypeError occurred. Details: {str(e)}")
+        print(f"_validate_and_fetch_document - TypeError occurred. Details: {str(e)}")
         return {"response_status": 400,
                 "error": f"TypeError occurred. Expected string-like object. Details: {str(e)}"}, None
     except Exception as e:
-        print(f"validate_and_fetch_document - Unexpected error occurred. Details: {str(e)}")
+        print(f"_validate_and_fetch_document - Unexpected error occurred. Details: {str(e)}")
         return {"response_status": 500, "error": f"Unexpected error occurred. Details: {str(e)}"}, None
 
 

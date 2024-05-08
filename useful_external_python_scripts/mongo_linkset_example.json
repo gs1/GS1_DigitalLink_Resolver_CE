@@ -1,147 +1,175 @@
 [
   {
-    "anchor": "/01/09506000134376",
-    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg",
+    "_id": "01_09506000134376",
     "defaultLinktype": "gs1:pip",
-    "links": [
+    "data": [
       {
-        "linktype": "gs1:epil",
-        "href": "https://dalgiardino.com/medicinal-compound/pil.html",
-        "title": "Information for patients",
-        "type": "text/html",
-        "hreflang": [
-          "en"
+        "qualifiers": [],
+        "linkset": [
+          {
+            "anchor": "/01/09506000134376",
+            "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg",
+            "https://gs1.org/voc/defaultLink": {
+              "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+              "title": "Product information"
+            },
+            "https://gs1.org/voc/epil": [
+              {
+                "href": "https://dalgiardino.com/medicinal-compound/pil.html",
+                "title": "Information for patients",
+                "type": "text/html",
+                "hreflang": [
+                  "en"
+                ]
+              }
+            ],
+            "https://gs1.org/voc/pip": [
+              {
+                "href": "https://dalgiardino.com/medicinal-compound/",
+                "title": "Product information",
+                "type": "text/html",
+                "hreflang": [
+                  "en"
+                ],
+                "context": [
+                  "und",
+                  "marketing"
+                ]
+              },
+              {
+                "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+                "title": "Product information",
+                "type": "text/html",
+                "hreflang": [
+                  "ja"
+                ]
+              }
+            ]
+          }
         ]
       },
       {
-        "linktype": "gs1:pip",
-        "href": "https://dalgiardino.com/medicinal-compound/",
-        "title": "Product information",
-        "type": "text/html",
-        "hreflang": [
-          "en"
+        "qualifiers": [
+          {
+            "10": "LOT_123"
+          },
+          {
+            "21": "SERIAL_456"
+          }
         ],
-        "context": [
-          "und",
-          "marketing"
-        ]
-      },
-      {
-        "linktype": "gs1:pip",
-        "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
-        "title": "Product information",
-        "type": "text/html",
-        "hreflang": [
-          "ja"
+        "linkset": [
+          {
+            "anchor": "/01/09506000134376",
+            "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg",
+            "https://gs1.org/voc/defaultLink": {
+              "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+              "title": "Product information"
+            },
+            "https://gs1.org/voc/epil": [
+              {
+                "href": "https://dalgiardino.com/medicinal-compound/pil.html",
+                "title": "Information for patients",
+                "type": "text/html",
+                "hreflang": [
+                  "en"
+                ]
+              }
+            ],
+            "https://gs1.org/voc/pip": [
+              {
+                "href": "https://dalgiardino.com/medicinal-compound/",
+                "title": "Product information",
+                "type": "text/html",
+                "hreflang": [
+                  "en"
+                ],
+                "context": [
+                  "und",
+                  "marketing"
+                ]
+              },
+              {
+                "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+                "title": "Product information",
+                "type": "text/html",
+                "hreflang": [
+                  "ja"
+                ]
+              }
+            ]
+          }
         ]
       }
     ]
   },
   {
-    "anchor": "/01/09506000134376",
-    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg",
+    "_id": "01_05059697759130",
     "defaultLinktype": "gs1:pip",
-    "qualifiers": [
+    "data": [
       {
-        "10": "LOT_123"
-      },
-      {
-        "21": "SERIAL_456"
-      }
-    ],
-    "links": [
-      {
-        "linktype": "gs1:epil",
-        "href": "https://dalgiardino.com/medicinal-compound/pil.html",
-        "title": "Information for patients",
-        "type": "text/html",
-        "hreflang": [
-          "en"
+        "qualifiers": [],
+        "linkset": [
+          {
+            "anchor": "/01/05059697759130",
+            "itemDescription": "Tesco Health Chewable Vitamin C 120 Tablets",
+            "https://gs1.org/voc/defaultLink": {
+              "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+              "title": "Product information"
+            },
+            "https://gs1.org/voc/pip": [
+              {
+                "href": "https://www.tesco.ie/groceries/en-IE/products/312097626",
+                "title": "Tesco Health Chewable Vitamin C 120 Tablets page on Tesco.ie",
+                "type": "text/html",
+                "hreflang": [
+                  "en"
+                ],
+                "context": [
+                  "sales",
+                  "marketing"
+                ]
+              },
+              {
+                "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
+                "title": "Product information",
+                "type": "text/html",
+                "hreflang": [
+                  "ja"
+                ]
+              }
+            ]
+          }
         ]
       },
       {
-        "linktype": "gs1:pip",
-        "href": "https://dalgiardino.com/medicinal-compound/",
-        "title": "Product information",
-        "type": "text/html",
-        "hreflang": [
-          "en"
+        "qualifiers": [
+          {
+            "21": "{serialnumber}"
+          }
         ],
-        "context": [
-          "und",
-          "marketing"
-        ]
-      },
-      {
-        "linktype": "gs1:pip",
-        "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
-        "title": "Product information",
-        "type": "text/html",
-        "hreflang": [
-          "ja"
-        ]
-      }
-    ]
-  },
-  {
-    "anchor": "/01/05059697759130",
-    "itemDescription": "Tesco Health Chewable Vitamin C 120 Tablets",
-    "defaultLinktype": "gs1:pip",
-    "links": [
-      {
-        "linktype": "gs1:pip",
-        "href": "https://www.tesco.ie/groceries/en-IE/products/312097626",
-        "title": "Tesco Health Chewable Vitamin C 120 Tablets page on Tesco.ie",
-        "type": "text/html",
-        "hreflang": [
-          "en"
-        ],
-        "context": [
-          "sales",
-          "marketing"
-        ]
-      },
-      {
-        "linktype": "gs1:pip",
-        "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
-        "title": "Product information",
-        "type": "text/html",
-        "hreflang": [
-          "ja"
-        ]
-      }
-    ]
-  },
-  {
-    "anchor": "/01/05059697759130",
-    "itemDescription": "Tesco Health Chewable Vitamin C 120 Tablets",
-    "defaultLinktype": "gs1:pip",
-    "qualifiers": [
-      {
-        "21": "{serialnumber}"
-      }
-    ],
-    "links": [
-      {
-        "linktype": "gs1:pip",
-        "href": "https://www.tesco.ie/groceries/en-IE/products/312097626?serial={serialnumber}",
-        "title": "Tesco Health Chewable Vitamin C 120 Tablets page on Tesco.ie with serial number",
-        "type": "text/html",
-        "hreflang": [
-          "en"
-        ],
-        "context": [
-          "sales",
-          "marketing"
-        ]
-      },
-      {
-        "linktype": "gs1:pip",
-        "href": "https://dalgiardino.com/medicinal-compound/index.html.ja",
-        "title": "Product information",
-        "type": "text/html",
-        "hreflang": [
-          "ja"
+        "linkset": [
+          {
+            "anchor": "/01/05059697759130",
+            "itemDescription": "Tesco Health Chewable Vitamin C 120 Tablets",
+            "https://gs1.org/voc/defaultLink": {
+              "href": "https://www.tesco.ie/groceries/en-IE/products/312097626?serial={serialnumber}",
+              "title": "Tesco Health Chewable Vitamin C 120 Tablets page on Tesco.ie with serial number"
+            },
+            "https://gs1.org/voc/pip": [
+              {
+                "href": "https://www.tesco.ie/groceries/en-IE/products/312097626?serial={serialnumber}",
+                "title": "Tesco Health Chewable Vitamin C 120 Tablets page on Tesco.ie with serial number",
+                "type": "text/html",
+                "hreflang": [
+                  "en"
+                ],
+                "context": [
+                  "sales",
+                  "marketing"
+                ]
+              }
+            ]
+          }
         ]
       }
     ]

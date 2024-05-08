@@ -1,0 +1,328 @@
+{
+  "_id": "gs1resolver.json",
+  "name": "GS1 Resolver Community Edition v3.0",
+  "resolverRoot": "https://id.mydomain.org",
+  "termsOfUse": "https://www.gs1.org/standards/resolver/terms-of-use",
+  "supportedLinkType": [
+    {
+      "namespace": "http://gs1.org/voc/",
+      "prefix": "gs1:"
+    },
+    {
+      "namespace": "http://schema.org/",
+      "prefix": "schema:"
+    }
+  ],
+  "supportedPrimaryKeys": [
+    "all"
+  ],
+  "supportedContextValuesEnumerated": [
+    "dscsaSaleableReturn"
+  ],
+  "supportedContextValuesExternal": [
+    {
+      "nameOfList": "ISO-3166 Alpha-2",
+      "url": "https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes"
+    }
+  ],
+  "linkTypeDefaultCanBeAll": true,
+  "contact": {
+    "fn": "My Organisation",
+    "hasAddress": {
+      "streetAddress": "My Street Address",
+      "locality": "My Locality (Town or City)",
+      "country-name": "My Country",
+      "postal-code": "My Postal Code"
+    },
+    "hasTelephone": "tel:+00 00000 000000"
+  },
+  "supportsLanguageVariants": true,
+  "supportsSemanticInterpretation": true,
+  "validatesAIcombinations": true,
+  "activeLinkTypes": {
+    "en": {
+      "gs1:activityIdeas": {
+        "title": "Activity Ideas",
+        "description": "A link to ideas for using a product or engaging in other forms of entertainment, particularly with children.",
+        "url": "https://gs1.org/voc/activityIdeas"
+      },
+      "gs1:allergenInfo": {
+        "title": "Allergen information",
+        "description": "A link to a description of the allergen information.",
+        "url": "https://gs1.org/voc/allergenInfo"
+      },
+      "gs1:brandHomepageClinical": {
+        "title": "Information for professionals about this brand",
+        "description": "A link to a brand presence aimed at clinical professionals.",
+        "url": "https://gs1.org/voc/brandHomepageClinical"
+      },
+      "gs1:brandHomepagePatient": {
+        "title": "Information for patients about this brand",
+        "description": "A link to a brand presence aimed at patients.",
+        "url": "https://gs1.org/voc/brandHomepagePatient"
+      },
+      "gs1:certificationInfo": {
+        "title": "Certification Information",
+        "description": "A link to certification information.",
+        "url": "https://gs1.org/voc/certificationInfo"
+      },
+      "gs1:consumerHandlingStorageInfo": {
+        "title": "Consumer handling and storage information",
+        "description": "A link to information about safe handling and storage for consumer use.",
+        "url": "https://gs1.org/voc/consumerHandlingStorageInfo"
+      },
+      "gs1:epcis": {
+        "title": "EPC Information Services (EPCIS) repository",
+        "description": "A link to an EPCIS repository of visibility event data.",
+        "url": "https://gs1.org/voc/epcis"
+      },
+      "gs1:epil": {
+        "title": "Electronic Patient Information Leaflet",
+        "description": "A link to an electronic patient information leaflet.",
+        "url": "https://gs1.org/voc/epil"
+      },
+      "gs1:faqs": {
+        "title": "Frequently Asked Questions",
+        "description": "A link to a set of frequently asked questions.",
+        "url": "https://gs1.org/voc/faqs"
+      },
+      "gs1:hasRetailers": {
+        "title": "Has Retailers",
+        "description": "A link to a list of retailers.",
+        "url": "https://gs1.org/voc/hasRetailers"
+      },
+      "gs1:ingredientsInfo": {
+        "title": "Ingredients information",
+        "description": "A link to facts about ingredients.",
+        "url": "https://gs1.org/voc/ingredientsInfo"
+      },
+      "gs1:instructions": {
+        "title": "Instructions",
+        "description": "A link to instructions, such as assembly instructions, usage tips etc.",
+        "url": "https://gs1.org/voc/instructions"
+      },
+      "gs1:jws": {
+        "title": "JSON Web Signature",
+        "description": "A link to a JSON Web Signature",
+        "url": "https://gs1.org/voc/jws"
+      },
+      "gs1:leaveReview": {
+        "title": "Leave a review",
+        "description": "A link through which a review can be added.",
+        "url": "https://gs1.org/voc/leaveReview"
+      },
+      "gs1:masterData": {
+        "title": "Master data",
+        "description": "A link to a source of structured master data for the entity. This is typically for B2B applications.",
+        "url": "https://gs1.org/voc/masterData"
+      },
+      "gs1:nutritionalInfo": {
+        "title": "Nutritional Information",
+        "description": "A link to nutritional facts.",
+        "url": "https://gs1.org/voc/nutritionalInfo"
+      },
+      "gs1:pip": {
+        "title": "Product Information Page",
+        "description": "A link to information specifically about the identified item, typically operated by the brand owner or a retailer of the product and aimed at consumers. It may include links to further information, product description, specifications etc.",
+        "url": "https://gs1.org/voc/pip"
+      },
+      "gs1:productSustainabilityInfo": {
+        "title": "Sustainability and recycling (deprecated)",
+        "description": "This term has been deprecated. Please use gs1:sustainabilityInfo instead.",
+        "url": "https://gs1.org/voc/productSustainabilityInfo"
+      },
+      "gs1:promotion": {
+        "title": "Promotion",
+        "description": "A link to a promotion.",
+        "url": "https://gs1.org/voc/promotion"
+      },
+      "gs1:purchaseSuppliesOrAccessories": {
+        "title": "Purchase supplies or accessories",
+        "description": "A link to information about where supplies or accessories for the item can be purchased or ordered.",
+        "url": "https://gs1.org/voc/purchaseSuppliesOrAccessories"
+      },
+      "gs1:quickStartGuide": {
+        "title": "Quick start guide",
+        "description": "A link to a description of the key features needed to be understood to begin using the item or interacting with something new.",
+        "url": "https://gs1.org/voc/quickStartGuide"
+      },
+      "gs1:recallStatus": {
+        "title": "Recall status",
+        "description": "A link to information about whether the product has been recalled or not, typically an API.",
+        "url": "https://gs1.org/voc/recallStatus"
+      },
+      "gs1:recipeInfo": {
+        "title": "Recipe website",
+        "description": "A link to a recipe website.",
+        "url": "https://gs1.org/voc/recipeInfo"
+      },
+      "gs1:registerProduct": {
+        "title": "Register purchase",
+        "description": "A link to an entry point for registering ownership of a product including for warranty purposes.",
+        "url": "https://gs1.org/voc/registerProduct"
+      },
+      "gs1:relatedVideo": {
+        "title": "Related video",
+        "description": "A link to any video, or document that has an embedded video, that describes or relates to the identified item, organisation, or location in some way.",
+        "url": "https://gs1.org/voc/relatedVideo"
+      },
+      "gs1:review": {
+        "title": "Reviews",
+        "description": "A link to reviews.",
+        "url": "https://gs1.org/voc/review"
+      },
+      "gs1:safetyInfo": {
+        "title": "Safety information",
+        "description": "A link to safety information.",
+        "url": "https://gs1.org/voc/safetyInfo"
+      },
+      "gs1:serviceInfo": {
+        "title": "Service information",
+        "description": "A link to service or maintenance instructions.",
+        "url": "https://gs1.org/voc/serviceInfo"
+      },
+      "gs1:smartLabel": {
+        "title": "SmartLabel",
+        "description": "A link to the product's SmartLabel page.",
+        "url": "https://gs1.org/voc/smartLabel"
+      },
+      "gs1:smpc": {
+        "title": "Summary Product Characteristics (SmPC)",
+        "description": "A link to Summary Product Characteristics. To be used specifically when linking to information for healthcare professionals.",
+        "url": "https://gs1.org/voc/smpc"
+      },
+      "gs1:socialMedia": {
+        "title": "Social media",
+        "description": "A link to a social media channel. The title will typically be replaced by the name of the channel.",
+        "url": "https://gs1.org/voc/socialMedia"
+      },
+      "gs1:support": {
+        "title": "Support",
+        "description": "A link to a source of support such as a helpdesk, chat support, email etc.",
+        "curie": "gs1:support",
+        "url": "https://gs1.org/voc/support"
+      },
+      "traceability": {
+        "title": "Traceability information",
+        "description": "A link to traceability information (includes track and trace).  Traceability information may be provided for consumption by humans or computers. If the target is an EPCIS repository, use gs1:epcis instead.",
+        "url": "https://gs1.org/voc/traceability"
+      },
+      "gs1:tutorial": {
+        "title": "Tutorial",
+        "description": "A link to a tutorial or set of tutorials, such as online classes, how-to videos etc.",
+        "url": "https://gs1.org/voc/tutorial"
+      },
+      "gs1:verificationService": {
+        "title": "Verification Service",
+        "description": "A link to a GS1 Lightweight Messaging Service for verifying the status of a product, organisation, or location and its identifier.",
+        "url": "https://gs1.org/voc/verificationService"
+      },
+      "gs1:whatsInTheBox": {
+        "title": "What's in the box?",
+        "description": "A link to a description of all the individual items in a packaged item.",
+        "url": "https://gs1.org/voc/whatsInTheBox"
+      },
+      "gs1:sustainabilityInfo": {
+        "title": "Sustainability and recycling",
+        "description": "A link to information relating to sustainability and recycling requirements or processes.",
+        "url": "https://gs1.org/voc/sustainabilityInfo"
+      },
+      "gs1:locationInfo": {
+        "title": "Location information",
+        "description": "A link to a map, directions, or other location-related information.  For B2B location  information, see gs1:logisticsInfo.  For details specific to hours of operation, see gs1:openingHoursInfo",
+        "url": "https://gs1.org/voc/locationInfo"
+      },
+      "gs1:logisticsInfo": {
+        "title": "Logistics information",
+        "description": "A link to B2B logistics information related to a physical location.",
+        "url": "https://gs1.org/voc/logisticsInfo"
+      },
+      "gs1:careersInfo": {
+        "title": "Careers information",
+        "description": "A link to information about jobs, careers, or other employment opportunities associated to an organisation or location.",
+        "url": "https://gs1.org/voc/careersInfo"
+      },
+      "gs1:eventsInfo": {
+        "title": "Events information",
+        "description": "A link to event details.  For a page specifically for scheduling a reservation or booking an appointment, see gs1:scheduleTime.",
+        "url": "https://gs1.org/voc/eventsInfo"
+      },
+      "gs1:menuInfo": {
+        "title": "Menu information",
+        "description": "A link to menu details. This may include food menus, services, or other offerings provided by an organisation or at a location.  For details specific to allergens only, see gs1:allergenInfo .  For details specific to nutrition information only, see gs1:nutritionalInfo .  For details specific to ingredients only, see gs1:ingredientsInfo .",
+        "url": "https://gs1.org/voc/menuInfo"
+      },
+      "gs1:scheduleTime": {
+        "title": "Scheduling/Reservation",
+        "description": "A link to a site that offers information on scheduling, appointments, or reservations. This may or may not allow the user to book the reservation.",
+        "url": "https://gs1.org/voc/scheduleTime"
+      },
+      "gs1:paymentLink": {
+        "title": "Make Payment",
+        "description": "A link to a place where payments details are provided and/or payments can be made by the user.",
+        "url": "https://gs1.org/voc/paymentLink"
+      },
+      "gs1:userAgreement": {
+        "title": "Sign waiver/agreement/document",
+        "description": "A link to an agreement or waiver.",
+        "curie": "gs1:userAgreement",
+        "url": "https://gs1.org/voc/userAgreement"
+      },
+      "statisticInfo": {
+        "title": "Statistics",
+        "description": "A link to information about statistics regarding an organisation, location, or other entity.",
+        "url": "https://gs1.org/voc/statisticInfo"
+      },
+      "gs1:openingHoursInfo": {
+        "title": "Opening hours information",
+        "description": "A link to details on hours of operation.",
+        "url": "https://gs1.org/voc/openingHoursInfo"
+      },
+      "gs1:homepage": {
+        "title": "Organisation Information Page",
+        "description": "A link to general information about an organisation or brand. Typically the homepage of an organisation's website. It may include links to further information such as certifications, careers, payments, reservations, etc.",
+        "url": "https://gs1.org/voc/homepage"
+      },
+      "gs1:registryEntry": {
+        "title": "Entry in a register",
+        "description": "A link to an entry in a register, such as a business register or register of locations. Such registers may act as alternative identifiers, such as official company numbers, LEIs, other location identifiers etc.",
+        "url": "https://gs1.org/voc/registryEntry"
+      },
+      "gs1:disassemblyInfo": {
+        "title": "Product disassembly",
+        "description": "A link to the instructions for dismantling/disassembly.",
+        "url": "https://gs1.org/voc/disassemblyInfo"
+      },
+      "gs1:handlingEndOfLife": {
+        "title": "Product EOL handling",
+        "description": "A link to the instructions for end-of-life handling as required by a product passport. The information will include instructions for reuse, repair, disassembly and recycling.",
+        "url": "https://gs1.org/voc/handlingEndOfLife"
+      },
+      "gs1:productPassport": {
+        "title": "Product Passport",
+        "description": "A link to the product passport which provides information on a product’s origin, durability, composition, reuse, repair and dismantling possibilities, and end-of-life handling.",
+        "url": "https://gs1.org/voc/productPassport"
+      },
+      "gs1:recyclingInfo": {
+        "title": "Product recycling",
+        "description": "A link to the instructions for recycling a product.",
+        "url": "https://gs1.org/voc/recyclingInfo"
+      },
+      "gs1:repairInfo": {
+        "title": "Product repair",
+        "description": "A link to the instructions for the repair of a product.",
+        "url": "https://gs1.org/voc/repairInfo"
+      },
+      "gs1:reuseInfo": {
+        "title": "Product re-use",
+        "description": "A link to the information on how to re-use a product when it changes from one user to the other (like how to deal with exiting certifications or warranties, quality control instructions)",
+        "url": "https://gs1.org/voc/reuseInfo"
+      },
+      "gs1:sorting": {
+        "title": "Sorting",
+        "description": "A link to information related to sorting at a recycling centre or other reclamation process)",
+        "url": "https://gs1.org/voc/sorting"
+      }
+    }
+  }
+}
