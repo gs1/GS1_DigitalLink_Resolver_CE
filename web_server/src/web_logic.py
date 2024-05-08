@@ -210,11 +210,11 @@ def _do_qualifiers_match(qualifier_path, doc_qualifiers):
         return False, [f"Unexpected error occurred. Details: {str(e)}"]
 
 
-def _validate_and_fetch_document(identifiers, qualifier_path, doc_id):
+def _validate_and_fetch_document(identifier, qualifier_path, doc_id):
     """
     Validates the syntax of the digital link and fetches the corresponding document for a given document ID.
 
-    :param identifiers: The identifier portion of the digital link (e.g., '01/09550001563533')
+    :param identifier: The identifier portion of the digital link (e.g., '01/09550001563533')
     :param qualifier_path: The qualifier path of the digital link, if any (e.g., '/22/455')
     :param doc_id: The document ID to look up in the database.
     :return: A tuple where the first element is the result of the syntactic validation of the digital link,
@@ -223,7 +223,7 @@ def _validate_and_fetch_document(identifiers, qualifier_path, doc_id):
     """
     try:
         # Concatenate the identifiers and qualifier_path to form the complete digital link
-        digital_link = identifiers + (qualifier_path if qualifier_path is not None else '')
+        digital_link = identifier + (qualifier_path if qualifier_path is not None else '')
 
         # Check if the digital link has valid syntax.
         dl_test_result = _test_gs1_digital_link_syntax(digital_link)
@@ -233,7 +233,7 @@ def _validate_and_fetch_document(identifiers, qualifier_path, doc_id):
             return {"response_status": 400, "error": "Invalid Digital Link Syntax"}, None
 
         # If the link syntax is valid, attempt to fetch the corresponding document from the database.
-        print('identifiers:', identifiers)
+        print('identifier:', identifier)
         wanted_db_document = web_db.read_document(doc_id)
 
         if wanted_db_document['response_status'] == 200:
@@ -241,7 +241,7 @@ def _validate_and_fetch_document(identifiers, qualifier_path, doc_id):
             return dl_test_result, wanted_db_document
 
         prefixes = ['/8003/', '/8004/', '/00/']
-        if wanted_db_document['response_status'] == 404 and any(identifiers.startswith(prefix) for prefix in prefixes):
+        if wanted_db_document['response_status'] == 404 and any(identifier.startswith(prefix) for prefix in prefixes):
             # If we are being asked to search for GIAIs (8004), GRAIs (8003) or SSCCs (00) then an exact match may not
             # be immediately available. These Application Identifiers have a serialised component built into the
             # identifier itself. We need to strip off the last character and try again until we reach a point
@@ -252,8 +252,8 @@ def _validate_and_fetch_document(identifiers, qualifier_path, doc_id):
             #     prefixes = ['/8003/', '/8004/', '/00/', '/01/']
             # We include both leading and trailing forward-slashes to ensure we are matching the AI code and not
             # a partial match of the AI value.
-            for i in range(len(identifiers) - 1, 11, -1):
-                wanted_db_document = web_db.read_document(identifiers[:i])
+            for i in range(len(identifier) - 1, 11, -1):
+                wanted_db_document = web_db.read_document(identifier[:i])
                 if wanted_db_document['response_status'] == 200:
                     # Partial matches MUST have a template variable in the href property. If not, we have a problem!
                     # We have found a partial match, but we need to check for the presence of
@@ -265,11 +265,14 @@ def _validate_and_fetch_document(identifiers, qualifier_path, doc_id):
                     wanted_json = json.dumps(wanted_db_document['data'])
 
                     # we need to extract the value part of the identifier after the second '/'
-                    ai_value = identifiers.split('/')[2]
+                    ai_value = identifier[:i].split('/')[2]
                     # remove the partial match from the full incoming identifier to get the remainder of the value.
-                    # For example if ai_value is '/8004/095060001343' and the incoming identifier
-                    # is '/8004/095060001343999999' then ai_partial_value is '999999'.
-                    ai_partial_value = ai_value.replace(identifiers[:i].split('/')[2], '')
+                    # For example if ai_value (matched with the DB entry because it responded with '200') is
+                    # '095060001343' and the incoming identifier is '/8004/095060001343999999'
+                    # then ai_partial_value is '999999'.
+                    ai_partial_value = identifier.split('/')[2].replace(ai_value, '')
+                    print('ai_value:', ai_value)
+                    print('ai_partial_value:', ai_partial_value)
 
                     # Now we need to replace the template variables {0} and {1} with the actual values
                     while '{0}' in wanted_json:
