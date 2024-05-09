@@ -203,7 +203,7 @@ class APITestCase(unittest.TestCase):
                                                         'Frontend server did not return 404 (Not Found) status code')
 
         # Another new feature in Resolver CE v3.0 is to return more than one link for a request should the database
-        # contain more than one link for that request. This feature is a result in a chnage to the way we think about
+        # contain more than one link for that request. This feature is a result in a change to the way we think about
         # the relationship between lot numbers and serial numbers in a GS1 Digital Link. Before this new standard
         # the main way to encode GTINs with qualifiers such as lot and serial numbers was in an GS1-128 barcode.
         # An example of the encoding looked like this (re-using data from our tests so far):
