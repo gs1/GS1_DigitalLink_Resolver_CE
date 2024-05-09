@@ -22,6 +22,8 @@ services:
     depends_on:
       - database-service
     restart: always
+    ports:
+      - "3000:3000"
     networks:
       - resolver-internal-network
 

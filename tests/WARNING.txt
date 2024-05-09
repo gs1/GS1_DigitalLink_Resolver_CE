@@ -1,0 +1,2 @@
+WARNING
+Please do not edit or change the data in json files in this folder, or the tests in setup_test.py will fail!!
