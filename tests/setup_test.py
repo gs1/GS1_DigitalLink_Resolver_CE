@@ -21,6 +21,8 @@ class APITestCase(unittest.TestCase):
                 with open(file, 'r') as f:
                     self.data_entries.append(json.load(f))
 
+
+
     def test_data_entry_CRUD_cycle(self):
         print('Running Create / Read / Update / Delete cycle test on data entry')
 
@@ -219,9 +221,15 @@ class APITestCase(unittest.TestCase):
         # But let's test it works!
         print('Request linktype gs1:lotNumber /01/09506000134376/10/LOT01/21/HELLOWORLD using the Resolver frontend web server')
         web_response = requests.get(self.resolver_url + '/01/09506000134376/10/LOT01/21/HELLOWORLD', allow_redirects=False)
-        self.assertEqual(web_response.status_code, 307, 'Read test: '
-                                                        'Frontend server did not return 307 (Temporary Redirect) status code')
-
+        self.assertEqual(300, web_response.status_code, 'Read test: '
+                                                        'Frontend server did not return 300 (Temporary Redirect) status code')
+        response_300 = web_response.json()
+        self.assertIn('linkset', response_300, 'Read test: Response did not contain "linkset" key')
+        self.assertEqual(len(response_300['linkset']), 2, 'Read test: Response did not contain two links in the linkset')
+        self.assertEqual(response_300['linkset'][1]['href'], 'https://dalgiardino.com/medicinal-compound/pil.html?lot=LOT01',
+                         'Read test: First link in the linkset did not match expected value')
+        self.assertEqual(response_300['linkset'][0]['href'], 'https://dalgiardino.com/medicinal-compound/pil.html?serial=HELLOWORLD',
+                            'Read test: Second link in the linkset did not match expected value')
 
 
         # let's find fixed asset 8004 entry - we should get a 307 redirect to:

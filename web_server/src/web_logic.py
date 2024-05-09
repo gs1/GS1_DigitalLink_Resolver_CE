@@ -447,7 +447,7 @@ def read_document(identifiers, doc_id, qualifier_path='/', linktype=None, accept
             if qualifier_path is None or qualifier_path == '/':
                 for entry in database_doc['data']:
                     if len(entry['qualifiers']) == 0:
-                        response = _handle_link_type(linktype,
+                        return _handle_link_type(linktype,
                                                      database_doc['defaultLinktype'],
                                                      entry['linkset'],
                                                      accept_language_list,
@@ -455,10 +455,10 @@ def read_document(identifiers, doc_id, qualifier_path='/', linktype=None, accept
                                                      media_types_list,
                                                      linkset_requested
                                                      )
-                        return response
 
             # If we are here then there are qualifiers to process.
             # Iterate through each data item in the document.
+            response_links_list = []
             for entry in database_doc['data']:
                 relevant_linksets_list = []
 
@@ -470,28 +470,36 @@ def read_document(identifiers, doc_id, qualifier_path='/', linktype=None, accept
                 # If qualifiers match, replace template variables and process the linkset.
                 if yes_qualifiers_match:
                     if len(template_variables_list) > 0:
-                        print('DEBUG entry = ', json.dumps(entry, indent=2))
                         entry['linkset'] = _replace_linkset_template_variables(entry['linkset'],
                                                                                template_variables_list)
                         relevant_linksets_list.append(entry)
-                        print('DEBUG entry after template variable replacement = ', json.dumps(entry, indent=2))
 
                     # Use handle_link_type to either return the appropriate linktype document
                     # or proceed to the next data item.
-                    response = _handle_link_type(linktype,
+                    response_links_list.append(_handle_link_type(linktype,
                                                  database_doc['defaultLinktype'],
                                                  entry['linkset'],
                                                  accept_language_list,
                                                  context,
                                                  media_types_list,
                                                  linkset_requested
-                                                 )
+                                                 ))
 
-                    # If a valid response is prepared return it.
-                    if response:
-                        return response
+            # If a single valid response is prepared, return it.
+            if len(response_links_list) == 1 and response_links_list[0]['response_status'] == 307:
+                return response_links_list[0]
 
-            # If a necessary linkset was not found, return an error.
+            # If multiple valid responses are prepared, return a 300 response with the linkset data.
+            elif len(response_links_list) > 1:
+                response_http_300 = {'response_status': 300, "linkset": []}
+
+                for response in response_links_list:
+                    if response['response_status'] == 307:
+                        response_http_300['linkset'].append(response['data'])
+
+                return response_http_300
+
+            # If execution arrives here, a necessary linkset was not found, return a 404 Not Found.
             return {"response_status": 404, "error": f"No linkset found for linktype: {linktype}"}
 
     except Exception as e:
