@@ -25,6 +25,8 @@ class APITestCase(unittest.TestCase):
 
     def test_data_entry_CRUD_cycle(self):
         print('Running Create / Read / Update / Delete cycle test on data entry')
+        # Welcome to this test script. Its aim is to test the CRUD cycle of a data entry in the Resolver database.
+        # It will also walk you through the features and behaviours of the Resolver API and its frontend server.
 
         #### INITIAL DELETES TO START THE TEST ####
         for entry in self.data_entries:
@@ -218,11 +220,11 @@ class APITestCase(unittest.TestCase):
         # independent of each other, they are NOT related to each other!
         # Resolver CE v3.0 now understands this relationship and will return both the lot number and the serial number
         # in the linkset for the GTIN 09506000134376. This is a new feature in Resolver CE v3.0.
-        # But let's test it works!
+        # But let's test it works and returns an HTTP 300 (Multiple Links) status code.
         print('Request linktype gs1:lotNumber /01/09506000134376/10/LOT01/21/HELLOWORLD using the Resolver frontend web server')
         web_response = requests.get(self.resolver_url + '/01/09506000134376/10/LOT01/21/HELLOWORLD', allow_redirects=False)
         self.assertEqual(300, web_response.status_code, 'Read test: '
-                                                        'Frontend server did not return 300 (Temporary Redirect) status code')
+                                                        'Frontend server did not return 300 (Multiple Links Redirect) status code')
         response_300 = web_response.json()
         self.assertIn('linkset', response_300, 'Read test: Response did not contain "linkset" key')
         self.assertEqual(len(response_300['linkset']), 2, 'Read test: Response did not contain two links in the linkset')
