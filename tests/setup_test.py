@@ -54,7 +54,8 @@ class APITestCase(unittest.TestCase):
 
                 # Check that the status code is 200 or 201
                 assert response.status_code in [200,
-                                                201], 'Create test: Server did not return 200 (OK) or 201 (Created) status code'
+                                                201], (f'Create test: Server returned {response.status_code} instead of'
+                                                       ' 200 (OK) or 201 (Created) status code')
 
                 # Or assert other things about the response, for example that the content is not empty
                 self.assertNotEqual(response.content, '')
@@ -128,24 +129,77 @@ class APITestCase(unittest.TestCase):
             self.assertEqual(linkset['itemDescription'], 'Dal Giardino Medicinal Compound 50 x 200mg Capsules',
                              'Linkset anchor does not match expected value')
 
-        # Now we test the same entry with different linktypes and languages
-        # first, we test the default linktype for GTIN 09506000134352 which should be a link
-        # aligned with 'gs1:sustainabilityInfo' and should redirect to: https://dalgiardino.com/about/ as
-        # long as we include the 'Accept-Language: en' header
+        # Now we test the same entry with different linktypes and languages.
+        # The test data for GTIN 09506000134352 has links in three linktypes and four languages, Those links
+        # deliberately end with the linktype and language included in the URL, so we can check that the correct
+        # link is returned by the Resolver frontend server. Example ending is: '?test_lt=gs1:recipeInfo&test_lang=en'
         for linktype in ['gs1:hasRetailers', 'gs1:pip', 'gs1:recipeInfo', 'gs1:sustainabilityInfo']:
             for language in ['en', 'es', 'vi', 'ja']:
                 print('Now find the entry with anchor /01/09506000134352 using the Resolver frontend web server')
-                print('Linktype:', linktype, 'Language:', language)
+                print('that has Linktype:', linktype, ' and Language:', language)
                 headers = self.headers.copy()
                 headers['Accept-Language'] = language
                 headers['Accept'] = '*/*'
-                web_response = requests.get(self.resolver_url + '/01/09506000134352?linktype=' + linktype, allow_redirects=False, headers=headers)
+                web_response = requests.get(self.resolver_url + '/01/09506000134352?linktype=' + linktype,
+                                            allow_redirects=False, headers=headers)
                 wanted_link_endswith = f'test_lt={linktype}&test_lang={language}'
-                self.assertEqual(web_response.status_code, 307, 'Read test: Frontend server did not return 307 (Temporary Redirect) status code')
-                self.assertTrue(web_response.headers['Location'].endswith(wanted_link_endswith), f'Location link was "{web_response.headers["Location"]}" and so did not end with "{wanted_link_endswith}"')
+                self.assertEqual(web_response.status_code, 307,
+                                 'Read test: Frontend server did not return 307 (Temporary Redirect) status code')
+                self.assertTrue(web_response.headers['Location'].endswith(wanted_link_endswith),
+                                f'Location link was "{web_response.headers["Location"]}" and so did not end with "{wanted_link_endswith}"')
+
+        # For this language test we will use the 'Accept-Language' header to request the language in a way that is more
+        # realistic for web browsers, which request several languages in the 'Accept-Language' header. The Resolver
+        # frontend server should return the link in the language that is most preferred by the web browser.
+        # For this test, 'Accept-Language' header is set to three variations of typical Accept-Language values.
+        # For example 'en-GB,en;q=0.9,en-US;q=0.8,en-IE;q=0.7' which is interpreted as:
+        #     'en-GB' is most preferred, then 'en', then 'en-US', then 'en-IE'.
+        # GTIN 09506000134376 has 'gs1:registerProduct' links separately for 'en-US', 'en-IE' and
+        # ('en-GB' and 'en' combined).
+        # At the end of each link is '?register=en-GB', '?register=en-US', '?register=en-IE'.
+        # This test will check that the Resolver frontend server returns the correct link for the
+        # most preferred language.
+        # Note that the last test is a negative test, where the 'Accept-Language' header does not include 'en-??'
+        # instead it includes 'fr-??' and so the Resolver frontend server should return the 'en-GB' link because it
+        # is the first link in the list of links for gs1:registerProduct. This is an example of the Resolver
+        # frontend server returning the default language link when the requested language is not available.
+
+        language_tests = [
+            {'accept-language': 'en-GB,en;q=0.9,en-US;q=0.8,en-IE;q=0.7', 'expected': 'en-GB'},
+            {'accept-language': 'en,en-US;q=0.8,en-IE;q=0.7', 'expected': 'en-GB'},
+            {'accept-language': 'en-US,en;q=0.9,en-GB;q=0.8,en-IE;q=0.7', 'expected': 'en-US'},
+            {'accept-language': 'en-IE,en;q=0.9,en-GB;q=0.8,en-US;q=0.7', 'expected': 'en-IE'},
+            {'accept-language': 'fr-BE,fr-FR;q=0.8,fr;q-0.7', 'expected': 'en-GB'}
+        ]
+
+        for test in language_tests:
+            print('Now find the entry with anchor /01/09506000134376 using the Resolver frontend web server')
+            print('that has Linktype: gs1:registerProduct and "Accept-Language" header: ' + test['accept-language'])
+
+            headers = self.headers.copy()
+            headers['Accept-Language'] = test['accept-language']
+            headers['Accept'] = '*/*'
+
+            expected_href = f'https://dalgiardino.com/medicinal-compound/register.html?register={test["expected"]}'
+
+            web_response = requests.get(self.resolver_url + '/01/09506000134376?linktype=gs1:registerProduct',
+                                        allow_redirects=False, headers=headers)
+            self.assertEqual(web_response.status_code, 307, 'Read test: '
+                                                            'Frontend server did not return 307 (Temporary Redirect) status code')
+            self.assertEqual(web_response.headers['Location'], expected_href,
+                             f'Location link "{web_response.headers["Location"]}" is not "{expected_href}"')
+
+        # This next test is a change to Resolver's behaviour compared to previous versions. If a request asks for a
+        # linktype that is not available in the linkset, the Resolver frontend server should return a 404 status code.
+        # In previous versions, the Resolver frontend server would return the default Link in the linkset. It is now
+        # considered incorrect to send back something you didn't ask for, or is irrelevant to the request.
+        print('Request linktype gs1:safetyInfo /01/09506000134376 using the Resolver frontend web server')
+        web_response = requests.get(self.resolver_url + '/01/09506000134376?linktype=gs1:safetyInfo', allow_redirects=False)
+        self.assertEqual(web_response.status_code, 404, 'Read test: '
+                                                        'Frontend server did not return 404 (Not Found) status code')
 
 
-        # let's do the same for the fixed asset 8004 entry - we should get a 307 redirect to:
+        # let's find fixed asset 8004 entry - we should get a 307 redirect to:
         # "https://dalgiardino.com/medicinal-compound/assets/8004/0950600013430000001.html"
         print('Now find the fixed asset /8004/0950600013430000001 using the Resolver frontend web server')
         web_response = requests.get(self.resolver_url + '/8004/0950600013430000001', allow_redirects=False)

@@ -23,7 +23,7 @@
         <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
       </ENTRIES>
     </EXTENSION>
-    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/useful_external_python_scripts/convert_date_entry_between_v3_and_linkset_db_format.py" />
+    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/useful_external_python_scripts/convert_data_entry_between_v3_and_linkset_db_format.py" />
     <option name="PARAMETERS" value="mongo_linkset_example.json data_entry_v3_output.json mongo_linkset_to_data_entry" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />

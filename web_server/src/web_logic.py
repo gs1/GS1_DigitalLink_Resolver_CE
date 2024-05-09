@@ -394,8 +394,8 @@ def _handle_link_type(linktype, default_linktype, linkset, accept_language_list,
             return {"response_status": 404, "error": f"No linkset found for linktype: {wanted_linktype_entry}"}
 
     except KeyError as e:
-        print(f"handle_link_type - KeyError occurred. Details: {str(e)}")
-        return {"response_status": 400, "error": f"KeyError occurred. Details: {str(e)}"}
+        print(f"handle_link_type - Linktype not found in linkset. Details: {str(e)}")
+        return {"response_status": 404, "error": f"Linktype not found in linkset. Details: {str(e)}"}
 
     except TypeError as e:
         print(f"handle_link_type - TypeError occurred. Details: {str(e)}")

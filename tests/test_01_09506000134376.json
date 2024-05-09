@@ -16,6 +16,34 @@
           "sales",
           "marketing"
         ]
+      },
+      {
+        "linktype": "gs1:registerProduct",
+        "href": "https://dalgiardino.com/medicinal-compound/register.html?register=en-GB",
+        "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules en-GB and en Registration Page",
+        "type": "text/html",
+        "hreflang": [
+          "en-GB",
+          "en"
+        ]
+      },
+      {
+        "linktype": "gs1:registerProduct",
+        "href": "https://dalgiardino.com/medicinal-compound/register.html?register=en-US",
+        "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules en-US Registration Page",
+        "type": "text/html",
+        "hreflang": [
+          "en-US"
+        ]
+      },
+      {
+        "linktype": "gs1:registerProduct",
+        "href": "https://dalgiardino.com/medicinal-compound/register.html?register=en-IE",
+        "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules en-IE Registration Page",
+        "type": "text/html",
+        "hreflang": [
+          "en-IE"
+        ]
       }
     ]
   },
