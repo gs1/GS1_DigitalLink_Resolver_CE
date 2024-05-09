@@ -1,15 +1,15 @@
 ## Welcome to the GS1 Digital Link Resolver Community Edition v2.6
 
 ---
-### ADVANCE NOTICE Community Edition v3.0 is on its way in beta form from 9 May 2024
-* Please note that new v3.0 of GS1 Resolver is on its way with some breaking changes if upgrading from v2.x.
+## IMPORTANT! Community Edition v3.0 is now out in Beta form!
+* Please note that new v3.0 of GS1 Resolver is now live in beta form with some breaking changes if upgrading from v2.x.
 * This version 2.6 is the last version of the Community Edition v2.x series.
+* Go straight to v3.0: https://github.com/gs1/GS1_DigitalLink_Resolver_CE/tree/V3
 
 ### Follow the announcements!
-* https://github.com/gs1/GS1_DigitalLink_Resolver_CE/discussions/87
 * https://github.com/gs1/GS1_DigitalLink_Resolver_CE/discussions
 
-### Watch the new 'V3' branch
+### Watch the new 'V3' branch - now live!
 * https://github.com/gs1/GS1_DigitalLink_Resolver_CE/tree/V3
 ---
 
