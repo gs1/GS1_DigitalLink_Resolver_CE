@@ -192,9 +192,16 @@ def _do_qualifiers_match(qualifier_path, doc_qualifiers):
                             doc_qualifier[key] = qualifier_path_item[key]
 
         # Check if qualifiers in the path list have a match in document qualifiers. If not, return False
+        # Importantly, we return true if ANY qualifier in the path list is in the document qualifiers.
+        # In resolver 1.x and 2.x, ALL qualifiers in the path list must be in the document qualifiers.
+        no_qualifiers_match = True
         for qualifier_path_item in qualifiers_path_list:
-            if qualifier_path_item not in doc_qualifiers:
-                return False, None
+            if qualifier_path_item in doc_qualifiers:
+                no_qualifiers_match = False
+                break
+
+        if no_qualifiers_match:
+            return False, None
 
         # If no issues encountered above, return True along with the template variable list
         return True, template_variable_list
@@ -267,7 +274,7 @@ def _validate_and_fetch_document(identifier, qualifier_path, doc_id):
     If not found, it will return the same wanted_db_document as before.
 
     :param identifier: The identifier portion of the digital link (e.g., '01/09550001563533')
-    :param qualifier_path: The qualifier path of the digital link, if any (e.g., '/22/455')
+    :param qualifier_path: The qualifier path of the digital link, if any (e.g., '/22/455') only used to validate syntax
     :param doc_id: The document ID to look up in the database.
     :return: A tuple where the first element is the result of the syntactic validation of the digital link,
              and the second element is the wanted_db_document from trying to read the document with the given doc_id
@@ -453,6 +460,8 @@ def read_document(identifiers, doc_id, qualifier_path='/', linktype=None, accept
             # If we are here then there are qualifiers to process.
             # Iterate through each data item in the document.
             for entry in database_doc['data']:
+                relevant_linksets_list = []
+
                 # Iterate through each data item in the document and check if any qualifiers
                 # in the data item match the qualifier path.
                 yes_qualifiers_match, template_variables_list = _do_qualifiers_match(qualifier_path,
@@ -461,8 +470,11 @@ def read_document(identifiers, doc_id, qualifier_path='/', linktype=None, accept
                 # If qualifiers match, replace template variables and process the linkset.
                 if yes_qualifiers_match:
                     if len(template_variables_list) > 0:
+                        print('DEBUG entry = ', json.dumps(entry, indent=2))
                         entry['linkset'] = _replace_linkset_template_variables(entry['linkset'],
                                                                                template_variables_list)
+                        relevant_linksets_list.append(entry)
+                        print('DEBUG entry after template variable replacement = ', json.dumps(entry, indent=2))
 
                     # Use handle_link_type to either return the appropriate linktype document
                     # or proceed to the next data item.

@@ -198,6 +198,31 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(web_response.status_code, 404, 'Read test: '
                                                         'Frontend server did not return 404 (Not Found) status code')
 
+        # Another new feature in Resolver CE v3.0 is to return more than one link for a request should the database
+        # contain more than one link for that request. This feature is a result in a chnage to the way we think about
+        # the relationship between lot numbers and serial numbers in a GS1 Digital Link. Before this new standard
+        # the main way to encode GTINs with qualifiers such as lot and serial numbers was in an GS1-128 barcode.
+        # An example of the encoding looked like this (re-using data from our tests so far):
+        #     (01)9506000134376(10)LOT01(21)HELLOWORLD
+        # Importantly, the lot and serial numbers are independent of each other. This means that the lot number LOT01
+        # could be used with any serial number, and the serial number HELLOWORLD could be used with any lot number.
+        # But look what happens if we encode the same data in a GS1 Digital Link:
+        #     https://resolver.example.com/01/09506000134376/10/LOT01/21/HELLOWORLD
+        # In a classic interpretation of this web address, it would be understood that the serial number HELLOWORLD is
+        # associated with the lot number LOT01. We might say that there is a serial number 'HELLOWORLD' within lot
+        # number 'LOT01.' and there may be another serial number with the same value 'HELLOWORLD' in 'LOT02'.
+        # But this is not the case! The serial number HELLOWORLD is associated with the GTIN 09506000134376, and the
+        # lot number LOT01 is associated with the GTIN 09506000134376. The lot number and the serial number are
+        # independent of each other, they are NOT related to each other!
+        # Resolver CE v3.0 now understands this relationship and will return both the lot number and the serial number
+        # in the linkset for the GTIN 09506000134376. This is a new feature in Resolver CE v3.0.
+        # But let's test it works!
+        print('Request linktype gs1:lotNumber /01/09506000134376/10/LOT01/21/HELLOWORLD using the Resolver frontend web server')
+        web_response = requests.get(self.resolver_url + '/01/09506000134376/10/LOT01/21/HELLOWORLD', allow_redirects=False)
+        self.assertEqual(web_response.status_code, 307, 'Read test: '
+                                                        'Frontend server did not return 307 (Temporary Redirect) status code')
+
+
 
         # let's find fixed asset 8004 entry - we should get a 307 redirect to:
         # "https://dalgiardino.com/medicinal-compound/assets/8004/0950600013430000001.html"
