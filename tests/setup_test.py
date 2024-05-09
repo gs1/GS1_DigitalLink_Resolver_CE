@@ -224,7 +224,7 @@ class APITestCase(unittest.TestCase):
         print('Request linktype gs1:lotNumber /01/09506000134376/10/LOT01/21/HELLOWORLD using the Resolver frontend web server')
         web_response = requests.get(self.resolver_url + '/01/09506000134376/10/LOT01/21/HELLOWORLD', allow_redirects=False)
         self.assertEqual(300, web_response.status_code, 'Read test: '
-                                                        'Frontend server did not return 300 (Multiple Links Redirect) status code')
+                                                        'Frontend server did not return 300 (Multiple Links) status code')
         response_300 = web_response.json()
         self.assertIn('linkset', response_300, 'Read test: Response did not contain "linkset" key')
         self.assertEqual(len(response_300['linkset']), 2, 'Read test: Response did not contain two links in the linkset')
