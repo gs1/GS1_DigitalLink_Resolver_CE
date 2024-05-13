@@ -19,7 +19,7 @@ The main components, each architected as separate container images, are:
 3. **Single Document Database** : This database is used to store the GS1 identifiers and their corresponding web resources in an IETF LinkSet format.
 4. **Frontend Proxy Server**: This server is responsible for routing the incoming requests to the appropriate service when used together in a Docker composition or Kubernetes cluster.
 
-<img alt="GS1 Resolver CE v3.0 Architecture.jpg" height="1080" src="GS1%20Resolver%20CE%20v3.0%20Architecture.jpg" title="The simplified GS1 Resolver Community Edition version 3 architecture diagram" width="1920"/>
+<img alt="GS1 Resolver CE v3.0 Architecture.jpg" src="GS1%20Resolver%20CE%20v3.0%20Architecture.jpg" title="The simplified GS1 Resolver Community Edition version 3 architecture diagram"/>
 
 
 Indeed, part of the innovative design is to make it possible to run Resolver CE v3.0 with just two containers:
