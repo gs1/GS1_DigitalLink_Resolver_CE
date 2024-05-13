@@ -201,7 +201,12 @@ class APITestCase(unittest.TestCase):
         web_response = requests.get(self.resolver_url + '/01/09506000134376?linktype=gs1:safetyInfo', allow_redirects=False)
         self.assertEqual(web_response.status_code, 404, 'Read test: '
                                                         'Frontend server did not return 404 (Not Found) status code')
-
+        ############################################################################################################
+        # UPDATE: This new logic below is, after talking with Phil Archer, a little incorrect and will be updated
+        # shortly along with a small code change. This is because Resolver should endeavour to redirect as much as
+        # possible and only respond with multiple links as a last resort or if the client is asking specifically for
+        # the linkset, or where there are several links of the same linktype such as certificates. Bear with us!
+        ############################################################################################################
         # Another new feature in Resolver CE v3.0 is to return more than one link for a request should the database
         # contain more than one link for that request. This feature is a result in a change to the way we think about
         # the relationship between lot numbers and serial numbers in a GS1 Digital Link. Before this new standard
