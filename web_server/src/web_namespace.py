@@ -171,8 +171,12 @@ def _process_response(doc_id, identifiers, qualifier_path=None):
         return response
 
     # If response_data['status'] is 307, we need to return a redirect response
+    print('DEBUG: _process_response - response_data:', response_data)
     if response_data['response_status'] == 307:
         response.headers['Location'] = response_data['data']['href']
         return response
+
+    elif response_data['response_status'] == 300:
+        return {'linkset': response_data['data']}, 300
 
     return response

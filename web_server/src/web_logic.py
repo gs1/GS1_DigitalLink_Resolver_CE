@@ -53,7 +53,128 @@ def _test_gs1_digital_link_syntax(url):
     return _call_gs1_toolkit(ai_data_string)
 
 
-def _return_appropriate_linktype_doc(linktype_doc_list, accept_language_list, context, media_types_list):
+def _match_all_three_contexts(linktype_doc_list, accept_language_list, context, media_types_list):
+    wanted_doc_list = []
+    print('DEBUG Can we match on all three contexts?:', accept_language_list, context, media_types_list)
+    for linktype_doc in linktype_doc_list:
+        if 'hreflang' in linktype_doc and \
+                'context' in linktype_doc and \
+                'type' in linktype_doc and \
+                any(value in linktype_doc['hreflang'] for value in accept_language_list) and \
+                context in linktype_doc['context'] and \
+                linktype_doc['type'] in media_types_list:
+            print('DEBUG Found a match on all three contexts')
+            wanted_doc_list.append(linktype_doc)
+
+    # If list is not empty, return it. Otherwise, return None
+    return wanted_doc_list if wanted_doc_list else None
+
+
+def _match_accept_language_and_context(linktype_doc_list, accept_language_list, context):
+    wanted_doc_list = []
+    print('DEBUG Can we match on accept_language_list and context?:', accept_language_list, context)
+    for linktype_doc in linktype_doc_list:
+        if 'hreflang' in linktype_doc and \
+                'context' in linktype_doc and \
+                any(value in linktype_doc['hreflang'] for value in accept_language_list) and \
+                context in linktype_doc['context']:
+            print('DEBUG Found a match on accept_language_list and context')
+            wanted_doc_list.append(linktype_doc)
+
+    # If list is not empty, return it. Otherwise, return None
+    return wanted_doc_list if wanted_doc_list else None
+
+
+def _match_accept_language_and_media_types(linktype_doc_list, accept_language_list, media_types_list):
+    wanted_doc_list = []
+    print('DEBUG Can we match on accept_language_list and media_types_list?:', accept_language_list, media_types_list)
+    for linktype_doc in linktype_doc_list:
+        if 'hreflang' in linktype_doc and \
+                'type' in linktype_doc and \
+                any(value in linktype_doc['hreflang'] for value in accept_language_list) and \
+                linktype_doc['type'] in media_types_list:
+            print('DEBUG Found a match on accept_language_list and media_types_list')
+            wanted_doc_list.append(linktype_doc)
+
+    # If list is not empty, return it. Otherwise, return None
+    return wanted_doc_list if wanted_doc_list else None
+
+
+def _match_context_and_media_types(linktype_doc_list, context, media_types_list):
+    wanted_doc_list = []
+    print('DEBUG Can we match on context and media_types_list?:', context, media_types_list)
+    for linktype_doc in linktype_doc_list:
+        if 'context' in linktype_doc and \
+                'type' in linktype_doc and \
+                context in linktype_doc['context'] and \
+                (linktype_doc['type'] in media_types_list or 'und' in linktype_doc['type']):
+            print('DEBUG Found a match on context and media_types_list')
+            wanted_doc_list.append(linktype_doc)
+
+    # If list is not empty, return it. Otherwise, return None
+    return wanted_doc_list if wanted_doc_list else None
+
+
+def _match_accept_language(linktype_doc_list, accept_language_list):
+    wanted_doc_list = []
+    print('DEBUG Can we match on accept_language_list?:', accept_language_list)
+    for linktype_doc in linktype_doc_list:
+        if 'hreflang' in linktype_doc and \
+                any(value in linktype_doc['hreflang'] for value in accept_language_list):
+            print('DEBUG Found a match on accept_language_list')
+            wanted_doc_list.append(linktype_doc)
+
+    # If list is not empty, return it. Otherwise, return None
+    return wanted_doc_list if wanted_doc_list else None
+
+
+def _match_context(linktype_doc_list, context):
+    wanted_doc_list = []
+    print('DEBUG Can we match on context?:', context)
+    for linktype_doc in linktype_doc_list:
+        if 'context' in linktype_doc and \
+                context in linktype_doc['context']:
+            print('DEBUG Found a match on context')
+            wanted_doc_list.append(linktype_doc)
+
+    # If list is not empty, return it. Otherwise, return None
+    return wanted_doc_list if wanted_doc_list else None
+
+
+def _match_media_type(linktype_doc_list, media_types_list):
+    wanted_doc_list = []
+    print('DEBUG Can we match on media_types_list?:', media_types_list)
+    for linktype_doc in linktype_doc_list:
+        if 'type' in linktype_doc and \
+                (linktype_doc['type'] in media_types_list or 'und' in linktype_doc['type']):
+            print('DEBUG Found a match on media_types_list')
+            wanted_doc_list.append(linktype_doc)
+
+    # If list is not empty, return it. Otherwise, return None
+    return wanted_doc_list if wanted_doc_list else None
+
+
+def _match_und_hreflang(linktype_doc_list):
+    wanted_doc_list = []
+    for linktype_doc in linktype_doc_list:
+        if 'hreflang' in linktype_doc and 'und' in linktype_doc['hreflang']:
+            print('DEBUG Found a "und" match in linktype_doc[hreflang]')
+            wanted_doc_list.append(linktype_doc)
+    if wanted_doc_list:
+        return wanted_doc_list
+
+
+def _match_und_media_type(linktype_doc_list):
+    wanted_doc_list = []
+    for linktype_doc in linktype_doc_list:
+        if 'type' in linktype_doc and 'und' in linktype_doc['type']:
+            print('DEBUG Found a "und" match in linktype_doc[type]')
+            wanted_doc_list.append(linktype_doc)
+    if wanted_doc_list:
+        return wanted_doc_list
+
+
+def _get_appropriate_linktype_docs_list(linktype_doc_list, accept_language_list, context, media_types_list):
     """
     This function returns the most appropriate linktype document from a list of linktype documents.
     It does this by checking if the linktype document matches the accept_language_list, context, and media_types_list.
@@ -61,85 +182,29 @@ def _return_appropriate_linktype_doc(linktype_doc_list, accept_language_list, co
     :param accept_language_list:
     :param context:
     :param media_types_list:
-    :return:
+    :return wanted_doc_list:
     """
-    # First, can we find a match for all three of accept_language_list, context and media_type:
-    # print("DEBUG Can we match on all three contexts?:", accept_language_list, context, media_types_list)
-    for linktype_doc in linktype_doc_list:
-        if 'hreflang' in linktype_doc:
-            if any(value in accept_language_list for value in linktype_doc['hreflang']):
-                if 'context' in linktype_doc:
-                    if context in linktype_doc['context']:
-                        if 'type' in linktype_doc:
-                            if linktype_doc['type'] in media_types_list:
-                                # print('DEBUG Found a match on all three contexts')
-                                return linktype_doc
-
-    # No? Then can we find a match for accept_language_list and context:
-    # print("DEBUG Can we match on accept_language_list and context?:", accept_language_list, context)
-    for linktype_doc in linktype_doc_list:
-        if 'hreflang' in linktype_doc:
-            if any(value in accept_language_list for value in linktype_doc['hreflang']):
-                if 'context' in linktype_doc:
-                    if context in linktype_doc['context']:
-                        # print('DEBUG Found a match on accept_language_list and context')
-                        return linktype_doc
-
-    # Still no? Then can we find a match for accept_language_list and media_types_list:
-    # print("DEBUG Can we match on accept_language_list and media_types_list?:", accept_language_list, media_types_list)
-    for linktype_doc in linktype_doc_list:
-        if 'hreflang' in linktype_doc:
-            if any(value in accept_language_list for value in linktype_doc['hreflang']):
-                if 'type' in linktype_doc:
-                    if linktype_doc['type'] in media_types_list:
-                        # print('DEBUG Found a match on accept_language_list and media_types_list')
-                        return linktype_doc
-
-    # Still no? Then can we find a match for context and media_types_list:
-    # print("DEBUG Can we match on context and media_types_list?:", context, media_types_list)
-    for linktype_doc in linktype_doc_list:
-        if 'context' in linktype_doc:
-            if context in linktype_doc['context']:
-                if 'type' in linktype_doc:
-                    if linktype_doc['type'] in media_types_list:
-                        # print('DEBUG Found a match on context and media_types_list')
-                        return linktype_doc
-
-    # Still here? Then can we find a match for accept_language_list only:
-    # print("DEBUG Can we match on accept_language_list only?:", accept_language_list)
-    for linktype_doc in linktype_doc_list:
-        if 'hreflang' in linktype_doc:
-            if any(value in accept_language_list for value in linktype_doc['hreflang']):
-                # print('DEBUG Found a match on accept_language_list')
-                return linktype_doc
-
-    # Still here? Then can we find a match for context only:
-    # print("DEBUG Can we match on context only?:", context)
-    for linktype_doc in linktype_doc_list:
-        if 'context' in linktype_doc:
-            if context in linktype_doc['context']:
-                # print('DEBUG Found a match on context')
-                return linktype_doc
-
-    # Still here? Then can we find a match for media_types_list only:
-    # print("DEBUG Can we match on media_types_list only?:", media_types_list)
-    for linktype_doc in linktype_doc_list:
-        if 'type' in linktype_doc:
-            if linktype_doc['type'] in media_types_list:
-                # print('DEBUG Found a match on media_types_list')
-                return linktype_doc
-
-    # Still here? Then can we find a match for no qualifiers:
-    # print("DEBUG Can we match on no qualifiers?")
-    for linktype_doc in linktype_doc_list:
-        if 'hreflang' in linktype_doc:
-            if linktype_doc['hreflang'] == 'und':
-                # print('DEBUG Found a match on no qualifiers')
-                return linktype_doc
-
+    if match := _match_all_three_contexts(linktype_doc_list, accept_language_list, context, media_types_list):
+        return match
+    elif match := _match_accept_language_and_context(linktype_doc_list, accept_language_list, context):
+        return match
+    elif match := _match_accept_language_and_media_types(linktype_doc_list, accept_language_list, media_types_list):
+        return match
+    elif match := _match_context_and_media_types(linktype_doc_list, context, media_types_list):
+        return match
+    elif match := _match_accept_language(linktype_doc_list, accept_language_list):
+        return match
+    elif match := _match_context(linktype_doc_list, context):
+        return match
+    elif match := _match_media_type(linktype_doc_list, media_types_list):
+        return match
+    elif match := _match_und_hreflang(linktype_doc_list):
+        return match
+    elif match := _match_und_media_type(linktype_doc_list):
+        return match
     # We are out of reasonable options, return the first linktype_doc in the list:
-    # print("DEBUG Returning the first linktype_doc in the list")
-    return linktype_doc_list[0]
+    print('DEBUG Returning the first linktype_doc in the list')
+    return linktype_doc_list
 
 
 def _do_qualifiers_match(qualifier_path, doc_qualifiers):
@@ -368,37 +433,32 @@ def _replace_linkset_template_variables(linkset, template_variables_list):
 
 def _handle_link_type(linktype, default_linktype, linkset, accept_language_list, context, media_types_list,
                       linkset_requested=False):
-    """
-    This function handles different types of links. It takes in the linktype,
-    linkset dictionary, and other related arguments, and determines which
-    part of the linkset dictionary to return based on the linktype.
-
-    :param linktype: This can be 'all', 'linkset', none, or a specific type of link.
-    :param linkset: A dictionary that contains the database entry, including linkset data.
-    :param default_linktype: The default linktype for the entry.
-    :param accept_language_list: Argument passed to the function that might be used to determine the link type doc.
-    :param context: Argument passed to the function that might be used to determine the link type doc.
-    :param media_types_list: Argument passed to the function that might be used to determine the link type doc.
-    :param linkset_requested: If true, the entire linkset for the entry is returned.
-    :return: A dictionary with `response_status` and either the linkset `data` or an `error` message.
-    """
     try:
-        if linkset_requested or linktype == 'all' or linktype == 'linkset':
+        if linkset_requested or linktype in ['all', 'linkset']:
             return {"response_status": 200, "data": linkset}
 
         default_full_linktype = f'https://gs1.org/voc/{default_linktype.replace("gs1:", "")}'
-        wanted_linktype_entry = linkset[0][default_full_linktype] if linktype is None else linkset[0][f'https://gs1.org/voc/{linktype.replace("gs1:", "")}']
+        wanted_linktype_entry = linkset[0][default_full_linktype] if linktype is None else linkset[0][
+            f'https://gs1.org/voc/{linktype.replace("gs1:", "")}']
 
-        if isinstance(wanted_linktype_entry, list):
-            wanted_linktype_doc = _return_appropriate_linktype_doc(wanted_linktype_entry, accept_language_list,
-                                                                   context, media_types_list)
-        else:
-            wanted_linktype_doc = wanted_linktype_entry
+        wanted_linktype_docs_list = _get_appropriate_linktype_docs_list(
+            wanted_linktype_entry,
+            accept_language_list,
+            context,
+            media_types_list) if isinstance(wanted_linktype_entry, list) else wanted_linktype_entry
 
-        if wanted_linktype_doc is not None:
-            return {"response_status": 307, "data": wanted_linktype_doc}
+        print('wanted_linktype_docs_list:', wanted_linktype_docs_list)
+
+        if not wanted_linktype_docs_list:
+            response_status, data, error_msg = 404, None, f"No linkset found for linktype: {wanted_linktype_entry}"
         else:
-            return {"response_status": 404, "error": f"No linkset found for linktype: {wanted_linktype_entry}"}
+            if len(wanted_linktype_docs_list) == 1:
+                response_status, data, error_msg = 307, wanted_linktype_docs_list[0], None
+            else:
+                response_status, data, error_msg = 300, wanted_linktype_docs_list, None
+
+        return {"response_status": response_status, "data": data, "error": error_msg} if error_msg else {
+            "response_status": response_status, "data": data}
 
     except KeyError as e:
         print(f"handle_link_type - Linktype not found in linkset. Details: {str(e)}")
@@ -447,60 +507,59 @@ def read_document(identifiers, doc_id, qualifier_path='/', linktype=None, accept
             if qualifier_path is None or qualifier_path == '/':
                 for entry in database_doc['data']:
                     if len(entry['qualifiers']) == 0:
+                        print('read_document: No qualifiers found in the document')
                         return _handle_link_type(linktype,
-                                                     database_doc['defaultLinktype'],
-                                                     entry['linkset'],
-                                                     accept_language_list,
-                                                     context,
-                                                     media_types_list,
-                                                     linkset_requested
-                                                     )
-
-            # If we are here then there are qualifiers to process.
-            # Iterate through each data item in the document.
-            response_links_list = []
-            for entry in database_doc['data']:
-                relevant_linksets_list = []
-
-                # Iterate through each data item in the document and check if any qualifiers
-                # in the data item match the qualifier path.
-                yes_qualifiers_match, template_variables_list = _do_qualifiers_match(qualifier_path,
-                                                                                     entry['qualifiers'])
-
-                # If qualifiers match, replace template variables and process the linkset.
-                if yes_qualifiers_match:
-                    if len(template_variables_list) > 0:
-                        entry['linkset'] = _replace_linkset_template_variables(entry['linkset'],
-                                                                               template_variables_list)
-                        relevant_linksets_list.append(entry)
-
-                    # Use handle_link_type to either return the appropriate linktype document
-                    # or proceed to the next data item.
-                    response_links_list.append(_handle_link_type(linktype,
                                                  database_doc['defaultLinktype'],
                                                  entry['linkset'],
                                                  accept_language_list,
                                                  context,
                                                  media_types_list,
                                                  linkset_requested
-                                                 ))
+                                                 )
+
+            # If we are here then there are qualifiers to process.
+            # Iterate through each data item in the document.
+            response_links_list = []
+            for entry in database_doc['data']:
+                # Iterate through each data item in the document and check if any qualifiers
+                # in the data item match the qualifier path.
+                yes_qualifiers_match, template_variables_list = _do_qualifiers_match(qualifier_path,
+                                                                                     entry['qualifiers'])
+
+                print('yes_qualifiers_match:', yes_qualifiers_match)
+                # If qualifiers match, replace template variables and process the linkset.
+                if yes_qualifiers_match:
+                    if len(template_variables_list) > 0:
+                        entry['linkset'] = _replace_linkset_template_variables(entry['linkset'],
+                                                                               template_variables_list)
+
+
+                    # Use handle_link_type to either return the appropriate linktype document
+                    # or proceed to the next data item.
+                    response_links_list.append(_handle_link_type(linktype,
+                                                                 database_doc['defaultLinktype'],
+                                                                 entry['linkset'],
+                                                                 accept_language_list,
+                                                                 context,
+                                                                 media_types_list,
+                                                                 linkset_requested
+                                                                 ))
+
+            print('response_links_list:', response_links_list)
+            if not response_links_list:
+                # If execution arrives here, a necessary linkset was not found, return a 404 Not Found.
+                return {"response_status": 404, "error": f"No linkset found for linktype: {linktype}"}
 
             # If a single valid response is prepared, return it.
             if len(response_links_list) == 1 and response_links_list[0]['response_status'] == 307:
                 return response_links_list[0]
 
             # If multiple valid responses are prepared, return a 300 response with the linkset data.
-            elif len(response_links_list) > 1:
-                response_http_300 = {'response_status': 300, "linkset": []}
+            if len(response_links_list) == 1 and response_links_list[0]['response_status'] == 300:
+                return response_links_list[0]
 
-                for response in response_links_list:
-                    if response['response_status'] == 307:
-                        response_http_300['linkset'].append(response['data'])
-
-                return response_http_300
-
-            # If execution arrives here, a necessary linkset was not found, return a 404 Not Found.
-            return {"response_status": 404, "error": f"No linkset found for linktype: {linktype}"}
+            # If multiple valid responses are prepared, return a 200 response with the linkset data.
+            return {"response_status": 200, "data": response_links_list}
 
     except Exception as e:
         # Log the exception and return a server error response.

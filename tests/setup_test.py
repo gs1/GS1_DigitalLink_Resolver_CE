@@ -21,12 +21,12 @@ class APITestCase(unittest.TestCase):
                 with open(file, 'r') as f:
                     self.data_entries.append(json.load(f))
 
-
-
     def test_data_entry_CRUD_cycle(self):
         print('Running Create / Read / Update / Delete cycle test on data entry')
         # Welcome to this test script. Its aim is to test the CRUD cycle of a data entry in the Resolver database.
         # It will also walk you through the features and behaviours of the Resolver API and its frontend server.
+        # if you want to keep the data entries in Mongo DB at the wnd of the test, set this flag to False:
+        DELETE_ENTRIES_ON_COMPLETION = True
 
         #### INITIAL DELETES TO START THE TEST ####
         for entry in self.data_entries:
@@ -94,7 +94,7 @@ class APITestCase(unittest.TestCase):
         web_response = requests.get(gs1_digital_link, allow_redirects=False)  # important to prevent auto-redirect
 
         self.assertEqual(web_response.status_code, 307, 'Read test: '
-                                                        'Frontend server did not return 307 (Temporary Redirect) status code')
+                                                        f'Frontend server did not return 307 (Temporary Redirect) status code, instead sending HTTP {web_response.status_code}')
         self.assertEqual(web_response.headers['Location'], 'https://dalgiardino.com/medicinal-compound/pil.html',
                          'Link was not directed correctly')
 
@@ -173,7 +173,7 @@ class APITestCase(unittest.TestCase):
             {'accept-language': 'en,en-US;q=0.8,en-IE;q=0.7', 'expected': 'en-GB'},
             {'accept-language': 'en-US,en;q=0.9,en-GB;q=0.8,en-IE;q=0.7', 'expected': 'en-US'},
             {'accept-language': 'en-IE,en;q=0.9,en-GB;q=0.8,en-US;q=0.7', 'expected': 'en-IE'},
-            {'accept-language': 'fr-BE,fr-FR;q=0.8,fr;q-0.7', 'expected': 'en-GB'}
+            {'accept-language': 'fr-BE,fr-FR;q=0.8,fr;q-0.7', 'expected': 'non-English'}
         ]
 
         for test in language_tests:
@@ -198,46 +198,40 @@ class APITestCase(unittest.TestCase):
         # In previous versions, the Resolver frontend server would return the default Link in the linkset. It is now
         # considered incorrect to send back something you didn't ask for, or is irrelevant to the request.
         print('Request linktype gs1:safetyInfo /01/09506000134376 using the Resolver frontend web server')
-        web_response = requests.get(self.resolver_url + '/01/09506000134376?linktype=gs1:safetyInfo', allow_redirects=False)
+        web_response = requests.get(self.resolver_url + '/01/09506000134376?linktype=gs1:safetyInfo',
+                                    allow_redirects=False)
         self.assertEqual(web_response.status_code, 404, 'Read test: '
                                                         'Frontend server did not return 404 (Not Found) status code')
-        ############################################################################################################
-        # UPDATE: This new logic below is, after talking with Phil Archer, a little incorrect and will be updated
-        # shortly along with a small code change. This is because Resolver should endeavour to redirect as much as
-        # possible and only respond with multiple links as a last resort or if the client is asking specifically for
-        # the linkset, or where there are several links of the same linktype such as certificates. Bear with us!
-        ############################################################################################################
-        # Another new feature in Resolver CE v3.0 is to return more than one link for a request should the database
-        # contain more than one link for that request. This feature is a result in a change to the way we think about
-        # the relationship between lot numbers and serial numbers in a GS1 Digital Link. Before this new standard
-        # the main way to encode GTINs with qualifiers such as lot and serial numbers was in an GS1-128 barcode.
-        # An example of the encoding looked like this (re-using data from our tests so far):
-        #     (01)9506000134376(10)LOT01(21)HELLOWORLD
-        # Importantly, the lot and serial numbers are independent of each other. This means that the lot number LOT01
-        # could be used with any serial number, and the serial number HELLOWORLD could be used with any lot number.
-        # But look what happens if we encode the same data in a GS1 Digital Link:
-        #     https://resolver.example.com/01/09506000134376/10/LOT01/21/HELLOWORLD
-        # In a classic interpretation of this web address, it would be understood that the serial number HELLOWORLD is
-        # associated with the lot number LOT01. We might say that there is a serial number 'HELLOWORLD' within lot
-        # number 'LOT01.' and there may be another serial number with the same value 'HELLOWORLD' in 'LOT02'.
-        # But this is not the case! The serial number HELLOWORLD is associated with the GTIN 09506000134376, and the
-        # lot number LOT01 is associated with the GTIN 09506000134376. The lot number and the serial number are
-        # independent of each other, they are NOT related to each other!
-        # Resolver CE v3.0 now understands this relationship and will return both the lot number and the serial number
-        # in the linkset for the GTIN 09506000134376. This is a new feature in Resolver CE v3.0.
+
+        # This next test is a change to Resolver's behaviour compared to previous versions. The uploaded linkset
+        # can include multiple links for the same linktype and language, context and mimetype whereas before only one
+        # link could ever be stored. In our test data we have three gs1:certificationInfo entries for GTIN
+        # 09506000134376 which has a lot number, with the same type ('text/html') and language ('en')
+        # The Resolver frontend server should return a 300 status.
+
         # But let's test it works and returns an HTTP 300 (Multiple Links) status code.
-        print('Request linktype gs1:lotNumber /01/09506000134376/10/LOT01/21/HELLOWORLD using the Resolver frontend web server')
-        web_response = requests.get(self.resolver_url + '/01/09506000134376/10/LOT01/21/HELLOWORLD', allow_redirects=False)
+        print('HTTP 300 test - Request linktype gs1:certificationInfo /01/09506000134376/10/LOT01 using the Resolver frontend web server')
+        web_response = requests.get(self.resolver_url + '/01/09506000134376/10/LOT01?linktype=gs1:certificationInfo',
+                                    allow_redirects=False)
         self.assertEqual(300, web_response.status_code, 'Read test: '
                                                         'Frontend server did not return 300 (Multiple Links) status code')
         response_300 = web_response.json()
         self.assertIn('linkset', response_300, 'Read test: Response did not contain "linkset" key')
-        self.assertEqual(len(response_300['linkset']), 2, 'Read test: Response did not contain two links in the linkset')
-        self.assertEqual(response_300['linkset'][1]['href'], 'https://dalgiardino.com/medicinal-compound/pil.html?lot=LOT01',
-                         'Read test: First link in the linkset did not match expected value')
-        self.assertEqual(response_300['linkset'][0]['href'], 'https://dalgiardino.com/medicinal-compound/pil.html?serial=HELLOWORLD',
-                            'Read test: Second link in the linkset did not match expected value')
+        self.assertEqual(len(response_300['linkset']), 3,
+                         'Read test: Response did not contain three links in the linkset')
 
+        if len(response_300['linkset']) > 0:
+            self.assertEqual(response_300['linkset'][0]['href'],
+                             'https://dalgiardino.com/medicinal-compound/certificate_1?lot=LOT01',
+                             'Read test: First link in the linkset did not match expected value for certificate 1')
+        if len(response_300['linkset']) > 1:
+            self.assertEqual(response_300['linkset'][1]['href'],
+                             'https://dalgiardino.com/medicinal-compound/certificate_2?lot=LOT01',
+                             'Read test: Second link in the linkset did not match expected value for certificate 2')
+        if len(response_300['linkset']) > 2:
+            self.assertEqual(response_300['linkset'][2]['href'],
+                             'https://dalgiardino.com/medicinal-compound/certificate_3?lot=LOT01',
+                             'Read test: Third link in the linkset did not match expected value for certificate 3')
 
         # let's find fixed asset 8004 entry - we should get a 307 redirect to:
         # "https://dalgiardino.com/medicinal-compound/assets/8004/0950600013430000001.html"
@@ -265,21 +259,24 @@ class APITestCase(unittest.TestCase):
         # print('Now update the entry with anchor /01/09506000134376')
 
         #### DELETE ENTRIES ####
-        for entry in self.data_entries:
-            # First, make sure no such entry exists in the database
-            if isinstance(entry, list):
-                print('delete the entry with anchor', entry[0]['anchor'], 'using DELETE /entry')
-                response = requests.delete(self.api_url + entry[0]['anchor'], headers=self.headers)
-            else:
-                print('delete the entry with anchor', entry['anchor'], 'using DELETE /entry')
-                response = requests.delete(self.api_url + entry['anchor'], headers=self.headers)
+        if DELETE_ENTRIES_ON_COMPLETION:
+            for entry in self.data_entries:
+                # First, make sure no such entry exists in the database
+                if isinstance(entry, list):
+                    print('delete the entry with anchor', entry[0]['anchor'], 'using DELETE /entry')
+                    response = requests.delete(self.api_url + entry[0]['anchor'], headers=self.headers)
+                else:
+                    print('delete the entry with anchor', entry['anchor'], 'using DELETE /entry')
+                    response = requests.delete(self.api_url + entry['anchor'], headers=self.headers)
 
-            # We want to make sure we get a 200 status code to denote that the entry was deleted
-            # or a 404 status code to denote that the entry was not found (and therefore not deleted)
-            self.assertIn(response.status_code, [200, 404], 'Create test (initial delete): '
-                                                            'Server did not return 200 (OK) or 404 (Not Found) status code')
+                # We want to make sure we get a 200 status code to denote that the entry was deleted
+                # or a 404 status code to denote that the entry was not found (and therefore not deleted)
+                self.assertIn(response.status_code, [200, 404], 'Create test (initial delete): '
+                                                                'Server did not return 200 (OK) or 404 (Not Found) status code')
 
-        print('Data entry CRUD cycle test completed successfully')
+            print('Data entry CRUD cycle test completed successfully - all data entries deleted from the database')
+        else:
+            print('Data entry CRUD cycle test completed successfully - data remains in the database')
 
 
 if __name__ == '__main__':

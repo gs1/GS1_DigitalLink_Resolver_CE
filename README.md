@@ -45,7 +45,7 @@ This container is just there to route incoming requests to data-entry and resolv
 2. There is an authentication key that can be set as a secret and provided by the calling client when acting on the Resolver CE data entry API. Alternatively, you can easily replace our simple 'Bearer' authentication with your own authentication mechanism. You would likely run the data entry service on your internal network and accessed by your existing applications, with only the Resolving web server facing the internet - although they are both accessible via the provided proxy server 'out of the box'.
 
 
-## What does it mean to be be in 'beta'?
+## What does it mean to be in 'beta'?
 Resolver CE v3.0 is in beta because we are still working on the following:
 1. **Testing**: We are still testing the software to ensure that it is stable and reliable.
 2. **Documentation**: We are still working on the documentation to make it easier for users to understand how to use the software.
