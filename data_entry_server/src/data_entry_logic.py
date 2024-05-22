@@ -249,7 +249,11 @@ def _author_mongo_linkset_document(data_entry_format):
 
         database_doc["data"].append(data)
 
-        return database_doc
+        return {"response_status": 200, "data": database_doc}
+
+    except KeyError as key_error:
+        print(f'Missing key during conversion: {key_error}')
+        return {"response_status": 400, "error": f'Missing key during conversion: {key_error}'}
 
     except Exception as e:
         # If there's any exception during processing, return a server error response
@@ -339,53 +343,74 @@ def _process_document_upsert(authored_doc):
 
 
 def _author_mongo_linkset_list(data_list):
-    transformed_data_list = []
-    for data in data_list:
-        linkset_doc = _author_mongo_linkset_document(data)
-        # Now we check if there is already a document with the same '_id' in the transformed_data_list
-        # If there is, we append the 'data' list to the existing document
-        # If there isn't, we append the document to the transformed_data_list
-        found = False
-        for transformed_data in transformed_data_list:
-            if transformed_data['_id'] == linkset_doc['_id']:
-                transformed_data['data'].extend(linkset_doc['data'])
-                found = True
-                break
-        if not found:
-            transformed_data_list.append(_author_mongo_linkset_document(data))
+    try:
+        transformed_data_list = []
+        for data in data_list:
+            linkset_result = _author_mongo_linkset_document(data)
 
-    return transformed_data_list
+            if linkset_result['response_status'] != 200:
+                # If there's an error, return the linkset_result which contains the error status and message
+                return linkset_result
+
+            else:
+                linkset_doc = linkset_result['data']
+
+                # Now we check if there is already a document with the same '_id' in the transformed_data_list
+                # If there is, we append the 'data' list to the existing document
+                # If there isn't, we append the document to the transformed_data_list
+                found = False
+                for transformed_data in transformed_data_list:
+                    if transformed_data['_id'] == linkset_doc['_id']:
+                        transformed_data['data'].extend(linkset_doc['data'])
+                        found = True
+                        break
+                if not found:
+                    transformed_data_list.append(linkset_doc)
+
+        return {"response_status": 200, "data": transformed_data_list}
+
+    except Exception as e:
+        # If there's any exception during processing, return a server error response
+        print('_author_mongo_linkset_list: Error processing document: ', str(e))
+        return {"response_status": 500, "error": "Internal Server Error - " + str(e)}
 
 
 def create_document(data):
     try:
         # If 'data' is a list
         if isinstance(data, list):
-            print('Processing list of items: ', len(data))
+            print(f'Processing list of {len(data)} items: ')
             create_results_list = []  # Initialize a list to store results
 
-            authored_db_linkset_docs = _author_mongo_linkset_list(data)
+            authored_db_linkset_result = _author_mongo_linkset_list(data)
 
-            # Iterate over each item in the data list
-            for item in authored_db_linkset_docs:
-                validated_doc = _validata_data(item)
-                # Process each 'item' in the list for insertion using the helper function we created
-                # and get the result and status
-                result, status = _process_document_upsert(validated_doc)
-                print('Result: ', result, 'Status: ', status)
+            if authored_db_linkset_result['response_status'] != 200:
+                return authored_db_linkset_result
 
-                # If the status is not 201 (successful creation) or 200 (successful update)
-                # return the results list so far and the status
-                if status not in [200, 201]:
-                    return create_results_list, status
+            else:
+                authored_db_linkset_docs = authored_db_linkset_result['data']
 
-                # If the item was successfully processed, append it to the result list
-                create_results_list.append(result)
+                # Iterate over each item in the data list
+                for item in authored_db_linkset_docs:
+                    print('Processing item: ', item['_id'])
+                    validated_doc = _validata_data(item)
+                    # Process each 'item' in the list for insertion using the helper function we created
+                    # and get the result and status
+                    result, status = _process_document_upsert(validated_doc)
+                    print('Result: ', result, 'Status: ', status)
 
-            # Once all items have been processed, return the total result list and the successful status 201
-            return create_results_list, 201
+                    # If the status is not 201 (successful creation) or 200 (successful update)
+                    # return the results list so far and the status
+                    if status not in [200, 201]:
+                        return create_results_list, status
 
-        # If 'data' is a dictionary (i.e., a single entry and not a list)
+                    # If the item was successfully processed, append it to the result list
+                    create_results_list.append(result)
+
+                # Once all items have been processed, return the total result list and the successful status 201
+                return create_results_list, 201
+
+            # If 'data' is a dictionary (i.e., a single entry and not a list)
         elif isinstance(data, dict):
             authored_linkset_doc = _author_mongo_linkset_document(data)
             validated_doc = _validata_data(authored_linkset_doc)
