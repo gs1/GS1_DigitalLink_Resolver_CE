@@ -126,11 +126,6 @@
         "description": "A link to information specifically about the identified item, typically operated by the brand owner or a retailer of the product and aimed at consumers. It may include links to further information, product description, specifications etc.",
         "url": "https://gs1.org/voc/pip"
       },
-      "gs1:productSustainabilityInfo": {
-        "title": "Sustainability and recycling (deprecated)",
-        "description": "This term has been deprecated. Please use gs1:sustainabilityInfo instead.",
-        "url": "https://gs1.org/voc/productSustainabilityInfo"
-      },
       "gs1:promotion": {
         "title": "Promotion",
         "description": "A link to a promotion.",

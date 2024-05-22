@@ -437,17 +437,17 @@ def _handle_link_type(linktype, default_linktype, linkset, accept_language_list,
         if linkset_requested or linktype in ['all', 'linkset']:
             return {"response_status": 200, "data": linkset}
 
-        default_full_linktype = f'https://gs1.org/voc/{default_linktype.replace("gs1:", "")}'
-        wanted_linktype_entry = linkset[0][default_full_linktype] if linktype is None else linkset[0][
-            f'https://gs1.org/voc/{linktype.replace("gs1:", "")}']
+        if linktype is None:
+            default_full_linktype = f'https://gs1.org/voc/{default_linktype.replace("gs1:", "")}'
+            wanted_linktype_entry = linkset[0][default_full_linktype]
+        else:
+            wanted_linktype_entry = linkset[0][f'https://gs1.org/voc/{linktype.replace("gs1:", "")}']
 
         wanted_linktype_docs_list = _get_appropriate_linktype_docs_list(
             wanted_linktype_entry,
             accept_language_list,
             context,
             media_types_list) if isinstance(wanted_linktype_entry, list) else wanted_linktype_entry
-
-        print('wanted_linktype_docs_list:', wanted_linktype_docs_list)
 
         if not wanted_linktype_docs_list:
             response_status, data, error_msg = 404, None, f"No linkset found for linktype: {wanted_linktype_entry}"
@@ -532,7 +532,6 @@ def read_document(identifiers, doc_id, qualifier_path='/', linktype=None, accept
                     if len(template_variables_list) > 0:
                         entry['linkset'] = _replace_linkset_template_variables(entry['linkset'],
                                                                                template_variables_list)
-
 
                     # Use handle_link_type to either return the appropriate linktype document
                     # or proceed to the next data item.
