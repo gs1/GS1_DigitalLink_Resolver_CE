@@ -53,6 +53,7 @@ class DocOperationsIdentifiersOnly(Resource):
     @api.doc(description="Get a document its anchor (GS1 identifiers only)")
     def get(self, anchor_ai_code, anchor_ai):
         try:
+            anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
             identifiers = f'/{anchor_ai_code}/{anchor_ai}'
             doc_id = f'{anchor_ai_code}_{anchor_ai}'
             print('GET', doc_id)
@@ -69,6 +70,8 @@ class DocOperationsIdentifiersOnly(Resource):
         @api.doc(description="Get a document its anchor (GS1 identifiers plus one qualifier)")
         def get(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1):
             try:
+
+                anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
                 identifiers = f'/{anchor_ai_code}/{anchor_ai}'
                 doc_id = f'{anchor_ai_code}_{anchor_ai}'
                 print('GET', doc_id)
@@ -88,6 +91,7 @@ class DocOperationsIdentifiersOnly(Resource):
         @api.doc(description="Get a document its anchor (GS1 identifiers plus two qualifiers)")
         def get(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code, qualifier_2):
             try:
+                anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
                 identifiers = f'/{anchor_ai_code}/{anchor_ai}'
                 doc_id = f'{anchor_ai_code}_{anchor_ai}'
                 print('GET', doc_id)
@@ -106,6 +110,7 @@ class DocOperationsIdentifiersOnly(Resource):
         def get(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code, qualifier_2,
                 qualifier_3_code, qualifier_3):
             try:
+                anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
                 identifiers = f'/{anchor_ai_code}/{anchor_ai}'
                 doc_id = f'{anchor_ai_code}/{anchor_ai}'
                 print('GET', doc_id)
@@ -147,6 +152,14 @@ def _get_request_parameters():
         linkset_requested = False
 
     return accept_language_list, context, linktype, media_types_list, linkset_requested
+
+
+def _confirm_gtin_14( anchor_ai, anchor_ai_code):
+    # if the anchor_ai_code is '01' and the length of the anchor_ai is 13, add a leading zero
+    # to cope with GRIN-13 entries
+    if anchor_ai_code == '01' and len(anchor_ai) == 13:
+        anchor_ai = '0' + anchor_ai
+    return anchor_ai
 
 
 def _process_response(doc_id, identifiers, qualifier_path=None):
