@@ -354,6 +354,7 @@ def _validate_and_fetch_document(identifier, qualifier_path, doc_id):
 
         # If the link syntax is invalid, return an error dictionary along with a `None` wanted_db_document.
         if not dl_test_result:
+            print('Invalid Digital Link Syntax')
             return {"response_status": 400, "error": "Invalid Digital Link Syntax"}, None
 
         # If the link syntax is valid, attempt to fetch the corresponding document from the database.
@@ -474,6 +475,19 @@ def _handle_link_type(linktype, default_linktype, linkset, accept_language_list,
         return {"response_status": 500, "error": f"Unexpected error occurred. Details: {str(e)}"}
 
 
+def convert_gtin_13_to_14(identifier):
+    """
+    Converts a GTIN-13 to a GTIN-14 by adding a leading zero to the GTIN-13
+    within the identifier in GS1 Digital Link. FOr example '/01/7058544561276' becomes '/01/07058544561276'
+    :param identifier: The identifier containing The GTIN-13 to be converted to a GTIN-14.
+    :return: The identifier with the GTIN-13 converted to a GTIN-14.
+    """
+    gtin_13 = identifier.split('/')[2]
+    if len(gtin_13) == 13:
+        return '/01/0' + gtin_13
+    return identifier
+
+
 def read_document(identifiers, doc_id, qualifier_path='/', linktype=None, accept_language_list=None, context=None,
                   media_types_list=None, linkset_requested=False):
     """
@@ -490,17 +504,20 @@ def read_document(identifiers, doc_id, qualifier_path='/', linktype=None, accept
     :return: A response dictionary which includes the response status and either the link data or error message.
     """
     try:
+        # If the identifier is a GTIN-13, convert it to a GTIN-14.
+        if '/01/' in identifiers:
+            identifiers = convert_gtin_13_to_14(identifiers)
+
         # Validate the digital link and fetch the associated document.
-        dl_test_result, response = _validate_and_fetch_document(identifiers, qualifier_path, doc_id)
+        dl_test_result, wanted_db_document = _validate_and_fetch_document(identifiers, qualifier_path, doc_id)
 
         # If the digital link syntax is invalid, or a database errors / document not found occurs
         # then return the error response.
-        if not dl_test_result or response['response_status'] != 200:
-            return response
+        if dl_test_result['response_status'] != 200:
+            return dl_test_result
 
-        # If the response is successful, proceed with processing.
-        if response and response['response_status'] == 200:
-            database_doc = response['data']
+        else:
+            database_doc = wanted_db_document['data']
 
             # If qualifier_path is NoneType or '/', we look for an instance in the document
             # where there are no qualifiers.

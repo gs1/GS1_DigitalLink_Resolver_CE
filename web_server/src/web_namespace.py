@@ -159,6 +159,7 @@ def _process_response(doc_id, identifiers, qualifier_path=None):
                                             context,
                                             media_types_list,
                                             linkset_requested)
+
     response = Response(
         response=json.dumps(response_data),  # Set response data
         status=response_data['response_status'],  # Set status code
@@ -171,7 +172,6 @@ def _process_response(doc_id, identifiers, qualifier_path=None):
         return response
 
     # If response_data['status'] is 307, we need to return a redirect response
-    print('DEBUG: _process_response - response_data:', response_data)
     if response_data['response_status'] == 307:
         response.headers['Location'] = response_data['data']['href']
         return response
