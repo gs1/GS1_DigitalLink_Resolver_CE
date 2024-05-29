@@ -178,6 +178,8 @@ def _get_appropriate_linktype_docs_list(linktype_doc_list, accept_language_list,
     """
     This function returns the most appropriate linktype document from a list of linktype documents.
     It does this by checking if the linktype document matches the accept_language_list, context, and media_types_list.
+    NOTE: I have included 'DEBUG' statements in all the called functions so you csn see the decisions being made
+    when deciding which link to choose.
     :param linktype_doc_list:
     :param accept_language_list:
     :param context:
@@ -526,7 +528,6 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
                 yes_qualifiers_match, template_variables_list = _do_qualifiers_match(qualifier_path,
                                                                                      entry['qualifiers'])
 
-                print('yes_qualifiers_match:', yes_qualifiers_match)
                 # If qualifiers match, replace template variables and process the linkset.
                 if yes_qualifiers_match:
                     if len(template_variables_list) > 0:
@@ -544,7 +545,6 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
                                                                  linkset_requested
                                                                  ))
 
-            print('response_links_list:', response_links_list)
             if not response_links_list:
                 # If execution arrives here, a necessary linkset was not found, return a 404 Not Found.
                 return {"response_status": 404, "error": f"No linkset found for linktype: {linktype}"}

@@ -28,17 +28,14 @@ def _test_gs1_digital_link_syntax(url):
     # (01)09521234543213(10)LOT(21)SERIAL
     # We then call the toolkit and return the true/false result.
     url_parts = url.split('/')
-    print('DEBUG _test_gs1_digital_link_syntax: url_parts:', url_parts)
     # add the identifier
     ai_data_string = f"({url_parts[1]}){url_parts[2]}"
-    print(f"DEBUG _test_gs1_digital_link_syntax: ai_data_string: {ai_data_string}")
 
     # add the qualifiers (up to three - CPV, LOT and SERIAL for GTINs, or GLNX for GLNs)
     if len(url_parts) > 3:
         for i in range(3, len(url_parts), 2):
             ai_data_string += f"({url_parts[i]}){url_parts[i + 1]}"
 
-    print(f"DEBUG _test_gs1_digital_link_syntax: ai_data_string: {ai_data_string}")
     # call the toolkit
     return _call_gs1_toolkit(ai_data_string)
 
@@ -172,7 +169,7 @@ def _convert_mongo_linkset_to_v3(mongo_linkset_format):
         return None
 
 
-def _author_mongo_linkset_document(data_entry_format):
+def _author_db_linkset_document(data_entry_format):
     try:
         # First we must check if this a v2 or v3 document, and convert it to v3 if it's v2
         if 'identificationKeyType' in data_entry_format:
@@ -283,9 +280,6 @@ def _process_document_upsert(authored_doc):
     try:
         # Convert the incoming dictionary date entry item to a linkset-style document ("authored_doc")
 
-        # Log the _id of the document that's being processed
-        # print('DEBUG Processing item: ', authored_doc['_id'])
-
         # Try to read the document from the database
         read_result = data_entry_db.read_document(authored_doc['_id'])
 
@@ -342,11 +336,11 @@ def _process_document_upsert(authored_doc):
         return {"response_status": 500, "error": "Internal Server Error - " + str(e)}, 500
 
 
-def _author_mongo_linkset_list(data_list):
+def _author_db_linkset_list(data_list):
     try:
         transformed_data_list = []
         for data in data_list:
-            linkset_result = _author_mongo_linkset_document(data)
+            linkset_result = _author_db_linkset_document(data)
 
             if linkset_result['response_status'] != 200:
                 # If there's an error, return the linkset_result which contains the error status and message
@@ -382,10 +376,10 @@ def create_document(data):
             print(f'Processing list of {len(data)} items: ')
             create_results_list = []  # Initialize a list to store results
 
-            authored_db_linkset_result = _author_mongo_linkset_list(data)
+            authored_db_linkset_result = _author_db_linkset_list(data)
 
             if authored_db_linkset_result['response_status'] != 200:
-                return authored_db_linkset_result
+                return authored_db_linkset_result, authored_db_linkset_result['response_status']
 
             else:
                 authored_db_linkset_docs = authored_db_linkset_result['data']
@@ -410,15 +404,12 @@ def create_document(data):
                         print('Error deleting document before we create the new version: ', item['_id'])
                         create_results_list.append(delete_result)
 
-
-
-
                 # Once all items have been processed, return the total result list and the successful status 201
                 return create_results_list, 201
 
             # If 'data' is a dictionary (i.e., a single entry and not a list)
         elif isinstance(data, dict):
-            authored_linkset_doc = _author_mongo_linkset_document(data)
+            authored_linkset_doc = _author_db_linkset_document(data)
             validated_doc = _validata_data(authored_linkset_doc)
 
             # Process the single 'data' entry for insertion using the helper function and get the result and status
