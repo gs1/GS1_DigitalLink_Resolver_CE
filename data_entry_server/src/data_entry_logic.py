@@ -441,6 +441,24 @@ def read_document(document_id):
         return {"response_status": 500, "error": "Internal Server Error"}
 
 
+def read_index():
+    try:
+        # get the document index from the database
+        result = data_entry_db.read_index()
+
+        if result['response_status'] == 200:
+            # format the list to include the '/' at the beginning and replace the '_' with '/'
+            formatted_list = []
+            for item in result['data']:
+                formatted_list.append('/{}'.format(item.replace('_', '/')))
+            result['data'] = formatted_list
+
+        return result
+
+    except Exception as e:
+        return {"response_status": 500, "error": "Internal Server Error"}
+
+
 def update_document(document_id, data):
     # currently update_document is not implemented in a different form from create_document
     # although this can change, for now we just call create_document

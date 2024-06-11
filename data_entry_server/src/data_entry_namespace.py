@@ -60,6 +60,19 @@ class NewDocOperations(TokenResource):
             abort(500, description="Error creating document:" + str(e))
 
 
+@data_entry_namespace.route('/index')
+class DocOperationsAll(Resource):
+    @api.doc(description="Get the index for all documents in the database")
+    def get(self):
+        try:
+            response_data = data_entry_logic.read_index()
+            return response_data, response_data['response_status']
+
+        except Exception as e:
+            logger.warning('Error getting document ' + str(e))
+            abort(500, description="Error getting document index")
+
+
 @data_entry_namespace.route('/<anchor_ai_code>/<anchor_ai>')
 class DocOperations(TokenResource):
     @api.doc(description="Retrieve a document using its anchor")

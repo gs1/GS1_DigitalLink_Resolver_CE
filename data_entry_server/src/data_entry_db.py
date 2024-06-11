@@ -71,6 +71,25 @@ def read_document(document_id):
         return {"response_status": 500, "error": "Database error: " + str(e)}
 
 
+def read_index():
+    try:
+        resolver_coll = _init_connection()
+        document_ids = [doc['_id'] for doc in resolver_coll.find({}, {'_id': 1})]
+
+        # Document ids not found
+        if not document_ids:
+            return {"response_status": 404, "error": f"No document ids found"}
+
+        return {"response_status": 200, "data": document_ids}
+
+    except bson_errors.InvalidId as e:
+        return {"response_status": 400, "error": "Invalid ID format: " + str(e)}
+
+    except errors.PyMongoError as e:
+        # General PyMongo Error
+        return {"response_status": 500, "error": "Database error: " + str(e)}
+
+
 # Update an existing document in the 'gs1resolver' collection
 def update_document(data):
     try:
