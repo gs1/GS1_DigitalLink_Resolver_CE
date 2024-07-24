@@ -1,5 +1,8 @@
 import json
 import subprocess
+import sys
+import traceback
+
 import web_db
 
 
@@ -498,7 +501,7 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
 
         # If the digital link syntax is invalid, or a database errors / document not found occurs
         # then return the error response.
-        if dl_test_result['response_status'] != 200:
+        if not dl_test_result or wanted_db_document['response_status'] != 200:
             return dl_test_result
 
         else:
@@ -562,5 +565,11 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
 
     except Exception as e:
         # Log the exception and return a server error response.
-        print('read_document: Internal Server Error - ', str(e))
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback_details = traceback.format_exception(exc_type, exc_value, exc_traceback)
+
+        print('read_document: Internal Server Error - ', str(e) + '\n')
+        for line in traceback_details:
+            print(line)
+
         return {"response_status": 500, "error": "Internal Server Error: " + str(e)}

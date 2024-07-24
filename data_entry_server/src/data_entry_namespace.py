@@ -52,7 +52,6 @@ class NewDocOperations(TokenResource):
 
             data = request.json
             response_data, http_response_status = data_entry_logic.create_document(data)
-            print('DEBUG response_data: "{}", http_response_status: "{}"'.format(response_data, http_response_status))
             return response_data, http_response_status
 
         except Exception as e:

@@ -16,11 +16,29 @@ def _init_connection():
     return resolver_collection
 
 
-def _reformat_id(id):
-    id = id.replace('/', '_')
-    if id[:1] == '_':
-        id = id[1:]
-    return id
+# This function reformats the document id to be used in the database.
+# Example: '/01/05392000229648' -> '01_05392000229648'. The leading '/' is removed
+# and any other '/' characters are replaced with '_'. This is because some
+# document database systems do not allow '/' characters in the primary identifier.
+# This function survives keeping the correct format if called with a format that is already the internal format!
+def _reformat_id_for_db(document_id):
+    document_id = document_id.replace('/', '_')
+    if document_id[:1] == '_':
+        document_id = document_id[1:]
+    return document_id
+
+
+# This function reverses the reformatting performed by _reformat_id_for_db().
+# Example: '01_05392000229648' -> '/01/05392000229648'. The leading '_' is replaced
+# with a '/' and any other '_' characters are replaced with '/'. This is because
+# we should be consistent with external views of id'.
+# Note that, like function _reformat_id_for_db(), this function survives keeping the
+# correct format should it be called with the external format already!
+def _reformat_id_for_external_use(document_id):
+    if document_id[0:1] == '/':
+        return document_id.replace('_', '/')
+    else:
+        return '/' + document_id.replace('_', '/')
 
 
 # Create a new document in the 'gs1resolver' collection
@@ -54,12 +72,13 @@ def create_document(data):
 def read_document(document_id):
     try:
         resolver_coll = _init_connection()
-        document_id = _reformat_id(document_id)
-        document = resolver_coll.find_one({"_id": document_id})
+        internal_document_id = _reformat_id_for_db(document_id)
+        document = resolver_coll.find_one({"_id": internal_document_id})
 
         # Document not found
         if not document:
-            return {"response_status": 404, "error": f"No document found for anchor: {document_id}"}
+            return {"response_status": 404,
+                    "error": f"No document found for anchor: {_reformat_id_for_external_use(document_id)}"}
 
         return {"response_status": 200, "data": document}
 
@@ -121,7 +140,7 @@ def delete_document(document_id):
 
     try:
         resolver_coll = _init_connection()
-        document_id = _reformat_id(document_id)
+        document_id = _reformat_id_for_db(document_id)
         result = resolver_coll.delete_one({"_id": document_id})
 
         if result.deleted_count == 0:

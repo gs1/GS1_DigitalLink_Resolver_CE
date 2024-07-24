@@ -27,7 +27,6 @@ def create_app(test_config=None):
     resolver_db = mongo.cx['resolver_ce']
     print('database set up: ', resolver_db)
     resolver_coll = resolver_db['gs1resolver']
-    print('Debug - collection set up: ', resolver_coll)
     print('create_app() - collection set up: ', resolver_coll)
 
     # prints server host and port

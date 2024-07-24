@@ -413,7 +413,7 @@ def create_document(data):
             validated_doc = _validata_data(authored_linkset_doc)
 
             # Process the single 'data' entry for insertion using the helper function and get the result and status
-            create_result, status = _process_document_upsert(validated_doc)
+            create_result, status = _process_document_upsert(validated_doc['data'])
             return create_result, status  # Return the result and status
 
         # If 'data' is not a list nor a dictionary, return an error response.
