@@ -70,7 +70,8 @@ The API is available with Open API (Swagger) documentation at http://localhost:3
 
 ## What should I do next?
 1. **Try it out**: To do this, use the 'setup_test.py' script in the tests folder to add some test data to the database and test Resolver. Indeed, we recommend you read through - then step through - the heavily documented test suite which will give you examples of creating / reading / deleting entries using the API, and observing behaviour through the Resolver front-end service. 
-2. **Review the new data entry format** in the /tests folder which gives examples of the new format for data entry - although you will be pleased to know that the API will accept v2.x format data as well.
+2. **Put it to use**: You can now start using Resolver CE v3.0 in your projects. You'll be joining at least three GS1 Member Organisations who are already using Resolver CE v3.0 in various scenarios, and we are looking forward to hearing about your experiences.
+3. **Review the new data entry format** in the /tests folder which gives examples of the new format for data entry - although you will be pleased to know that the API will accept v2.x format data as well.
 3. **Look at the convertor scripts** in the useful_external_python_scripts folder. These scripts are useful for converting data between the previous versions of Resolver CE and the new format.
 4. **Try out the API yourself**: The API is available with Open API (Swagger) documentation at http://localhost:3000/api/ and, for Postman fans (complete with example data) at https://documenter.getpostman.com/view/10078469/2sA3JKeNb2
 5. **Provide feedback**: We are looking for feedback from users to help us improve the software. Please provide feedback by creating an issue on the GitHub repository.
@@ -90,3 +91,14 @@ The database is stored in a Docker volume within the composition. To back up the
 ```bash
 docker compose exec -T database-service mongorestore --host localhost:27017 --username gs1resolver --password gs1resolver --archive=- --gzip < mongobackup.tar.gz
 ```
+
+## Looking for version Resolver CE v2.6?
+We've stopped development and maintenance on version 2.6, but you can still find the code in the 'v2.6' branch of this repository:<br>
+https://github.com/gs1/GS1_DigitalLink_Resolver_CE/tree/v2.6
+
+We recommend that you upgrade to version 3.0 to take advantage of the new features, simplified services and many improvements.
+
+## Settling in with Resolver CE v3.0?
+It's now time to point your code branch back to the 'master' branch to keep up with the latest updates and improvements. We are looking forward to your feedback and contributions to the project.
+
+
