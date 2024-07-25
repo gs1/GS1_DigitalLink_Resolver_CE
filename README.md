@@ -1,5 +1,10 @@
 ## 📢 Welcome to GS1 Resolver Community Edition Version 3.0.0 Beta 3
 
+
+## IMPORTANT: Resolver V3 is now continuing development and support on the 'master' branch.
+### It's now time to point your code branch back to the 'master' branch to keep up with the latest updates and improvements. We are looking forward to your feedback and contributions to the project.
+<hr>
+
 GS1 Resolver is a free and open-source software that allows you to resolve GS1 identifiers to their corresponding web resources. This software is developed by the GS1 Resolver Community and is based on the GS1 Digital Link standard.
 
 ### 🚀 What's new in this version?
