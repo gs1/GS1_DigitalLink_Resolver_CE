@@ -1,0 +1,60 @@
+[
+  {
+    "anchor": "/01/09506000134376",
+    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg Capsules",
+    "defaultLinktype": "gs1:pip",
+    "links": [
+      {
+        "linktype": "gs1:pip",
+        "href": "https://dalgiardino.com/medicinal-compound/pil.html",
+        "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules page on dalgiardino.com",
+        "type": "text/html",
+        "hreflang": [
+          "en"
+        ],
+        "context": [
+          "sales",
+          "marketing"
+        ]
+      }
+    ]
+  },
+  {
+    "anchor": "/01/09506000134376",
+    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg Capsules (serialized)",
+    "defaultLinktype": "gs1:pip",
+    "qualifiers": [
+      {
+        "21": "{serialnumber}"
+      }
+    ],
+    "links": [
+      {
+        "linktype": "gs1:pip",
+        "href": "https://dalgiardino.com/medicinal-compound/pil.html?serial={serialnumber}",
+        "title": "Serialised Dal Giardino Medicinal Compound 50 x 200mg Capsules page on dalgiardino.com",
+        "type": "text/html",
+        "hreflang": [
+          "en"
+        ],
+        "context": [
+          "sales",
+          "marketing"
+        ]
+      },
+      {
+        "linktype": "gs1:certificationInfo",
+        "href": "https://dalgiardino.com/medicinal-compound/product.html?serial={serialnumber}&cert=1",
+        "title": "Certificate 1 for serialised Dal Giardino Medicinal Compound 50 x 200mg Capsules product page on dalgiardino.com",
+        "type": "text/html",
+        "hreflang": [
+          "en"
+        ],
+        "context": [
+          "sales",
+          "marketing"
+        ]
+      }
+    ]
+  }
+]

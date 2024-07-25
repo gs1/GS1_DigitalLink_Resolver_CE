@@ -1,0 +1,159 @@
+{
+  "anchor": "/01/09506000134352",
+  "itemDescription": "Dal Giardino Risotto Rice with Mushrooms 411 gr",
+  "defaultLinktype": "gs1:sustainabilityInfo",
+  "links": [
+    {
+      "linktype": "gs1:hasRetailers",
+      "href": "https://dalgiardino.com/where-to-buy/?test_lt=gs1:hasRetailers&test_lang=en",
+      "title": "Where to buy",
+      "type": "text/html",
+      "hreflang": [
+        "en"
+      ]
+    },
+    {
+      "linktype": "gs1:hasRetailers",
+      "href": "https://dalgiardino.com/where-to-buy/index.html.es?test_lt=gs1:hasRetailers&test_lang=es",
+      "title": "Donde comprar Dal Giardino",
+      "type": "text/html",
+      "hreflang": [
+        "es"
+      ]
+    },
+    {
+      "linktype": "gs1:hasRetailers",
+      "href": "https://dalgiardino.com/where-to-buy/index.html.vi?test_lt=gs1:hasRetailers&test_lang=vi",
+      "title": "N\u01a1i b\u00e1n",
+      "type": "text/html",
+      "hreflang": [
+        "vi"
+      ]
+    },
+        {
+      "linktype": "gs1:hasRetailers",
+      "href": "https://dalgiardino.com/risotto-rice-with-mushrooms/index.html.ja?test_lt=gs1:hasRetailers&test_lang=ja",
+      "title": "Product information",
+      "type": "text/html",
+      "hreflang": [
+        "ja"
+      ]
+    },
+    {
+      "linktype": "gs1:pip",
+      "href": "https://dalgiardino.com/risotto-rice-with-mushrooms/?test_lt=gs1:pip&test_lang=en-US",
+      "title": "Product information",
+      "type": "text/html",
+      "hreflang": [
+        "en-US"
+      ]
+    },
+    {
+      "linktype": "gs1:pip",
+      "href": "https://dalgiardino.com/risotto-rice-with-mushrooms/?test_lt=gs1:pip&test_lang=en",
+      "title": "Product information",
+      "type": "text/html",
+      "hreflang": [
+        "en"
+      ]
+    },
+    {
+      "linktype": "gs1:pip",
+      "href": "https://dalgiardino.com/risotto-rice-with-mushrooms/index.html.es?test_lt=gs1:pip&test_lang=es",
+      "title": "Informaci\u00f3n del Producto",
+      "type": "text/html",
+      "hreflang": [
+        "es"
+      ]
+    },
+    {
+      "linktype": "gs1:pip",
+      "href": "https://dalgiardino.com/risotto-rice-with-mushrooms/index.html.ja?test_lt=gs1:pip&test_lang=ja",
+      "title": "Product information",
+      "type": "text/html",
+      "hreflang": [
+        "ja"
+      ]
+    },
+    {
+      "linktype": "gs1:pip",
+      "href": "https://dalgiardino.com/risotto-rice-with-mushrooms/index.html.vi?test_lt=gs1:pip&test_lang=vi",
+      "title": "Trang th\u00f4ng tin s\u1ea3n ph\u1ea9m",
+      "type": "text/html",
+      "hreflang": [
+        "vi"
+      ]
+    },
+    {
+      "linktype": "gs1:recipeInfo",
+      "href": "https://dalgiardino.com/mushroom-squash-risotto/?test_lt=gs1:recipeInfo&test_lang=en",
+      "title": "Wild Mushroom And Butternut Squash Risotto",
+      "type": "text/html",
+      "hreflang": [
+        "en"
+      ]
+    },
+    {
+      "linktype": "gs1:recipeInfo",
+      "href": "https://dalgiardino.com/mushroom-squash-risotto/index.html.es?test_lt=gs1:recipeInfo&test_lang=es",
+      "title": "Recetas",
+      "type": "text/html",
+      "hreflang": [
+        "es"
+      ]
+    },
+    {
+      "linktype": "gs1:recipeInfo",
+      "href": "https://dalgiardino.com/mushroom-squash-risotto/index.html.es?test_lt=gs1:recipeInfo&test_lang=vi",
+      "title": "Recetas",
+      "type": "text/html",
+      "hreflang": [
+        "vi"
+      ]
+    },
+    {
+      "linktype": "gs1:recipeInfo",
+      "href": "https://dalgiardino.com/mushroom-squash-risotto/index.html.ja?test_lt=gs1:recipeInfo&test_lang=ja",
+      "title": "\u30ad\u30ce\u30b3\u3068\u7815\u3044\u305f\u30d0\u30bf\u30fc\u30ca\u30c3\u30c4\u5165\u308a\u306e\u30ea\u30be\u30c3\u30c8",
+      "type": "text/html",
+      "hreflang": [
+        "ja"
+      ]
+    },
+    {
+      "linktype": "gs1:sustainabilityInfo",
+      "href": "https://dalgiardino.com/about/?test_lt=gs1:sustainabilityInfo&test_lang=en",
+      "title": "About Dal Giardino",
+      "type": "text/html",
+      "hreflang": [
+        "en"
+      ]
+    },
+    {
+      "linktype": "gs1:sustainabilityInfo",
+      "href": "https://dalgiardino.com/about/index.html.es?test_lt=gs1:sustainabilityInfo&test_lang=es",
+      "title": "Sobre Dal Giardino",
+      "type": "text/html",
+      "hreflang": [
+        "es"
+      ]
+    },
+    {
+      "linktype": "gs1:sustainabilityInfo",
+      "href": "https://dalgiardino.com/about/index.html.es?test_lt=gs1:sustainabilityInfo&test_lang=ja",
+      "title": "Sobre Dal Giardino",
+      "type": "text/html",
+      "hreflang": [
+        "ja"
+      ]
+    },    {
+      "linktype": "gs1:sustainabilityInfo",
+      "href": "https://dalgiardino.com/about/index.html.vi?test_lt=gs1:sustainabilityInfo&test_lang=vi",
+      "title": "Ph\u00e1t tri\u1ec3n b\u1ec1n v\u1eefng v\u00e0 t",
+      "type": "text/html",
+      "hreflang": [
+        "vi"
+      ]
+    }
+  ]
+}

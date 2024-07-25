@@ -1,0 +1,143 @@
+[
+  {
+    "anchor": "/01/09506000134376",
+    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg Capsules",
+    "defaultLinktype": "gs1:pip",
+    "links": [
+      {
+        "linktype": "gs1:pip",
+        "href": "https://dalgiardino.com/medicinal-compound/pil.html",
+        "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules page on dalgiardino.com",
+        "type": "text/html",
+        "hreflang": [
+          "en"
+        ],
+        "context": [
+          "sales",
+          "marketing"
+        ]
+      },
+      {
+        "linktype": "gs1:registerProduct",
+        "href": "https://dalgiardino.com/medicinal-compound/register.html?register=en-GB",
+        "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules en-GB and en Registration Page",
+        "type": "text/html",
+        "hreflang": [
+          "en-GB",
+          "en"
+        ]
+      },
+      {
+        "linktype": "gs1:registerProduct",
+        "href": "https://dalgiardino.com/medicinal-compound/register.html?register=en-US",
+        "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules en-US Registration Page",
+        "type": "text/html",
+        "hreflang": [
+          "en-US"
+        ]
+      },
+      {
+        "linktype": "gs1:registerProduct",
+        "href": "https://dalgiardino.com/medicinal-compound/register.html?register=en-IE",
+        "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules en-IE Registration Page",
+        "type": "text/html",
+        "hreflang": [
+          "en-IE"
+        ]
+      },
+      {
+        "linktype": "gs1:registerProduct",
+        "href": "https://dalgiardino.com/medicinal-compound/register.html?register=non-English",
+        "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules en-IE Registration Page",
+        "type": "text/html",
+        "hreflang": [
+          "und"
+        ]
+      }
+    ]
+  },
+  {
+    "anchor": "/01/09506000134376",
+    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg Capsules (serialized)",
+    "defaultLinktype": "gs1:pip",
+    "qualifiers": [
+      {
+        "21": "{serialnumber}"
+      }
+    ],
+    "links": [
+      {
+        "linktype": "gs1:pip",
+        "href": "https://dalgiardino.com/medicinal-compound/pil.html?serial={serialnumber}",
+        "title": "Serialised Dal Giardino Medicinal Compound 50 x 200mg Capsules page on dalgiardino.com",
+        "type": "text/html",
+        "hreflang": [
+          "en"
+        ],
+        "context": [
+          "sales",
+          "marketing"
+        ]
+      },
+      {
+        "linktype": "gs1:certificationInfo",
+        "href": "https://dalgiardino.com/medicinal-compound/product.html?serial={serialnumber}",
+        "title": "Serialised Dal Giardino Medicinal Compound 50 x 200mg Capsules product page on dalgiardino.com",
+        "type": "text/html",
+        "hreflang": [
+          "en"
+        ],
+        "context": [
+          "sales",
+          "marketing"
+        ]
+      }
+    ]
+  },
+  {
+    "anchor": "/01/09506000134376",
+    "itemDescription": "Dal Giardino Medicinal Compound 50 x 200mg Capsules (lot numbered)",
+    "defaultLinktype": "gs1:pip",
+    "qualifiers": [
+      {
+        "10": "{lotnumber}"
+      }
+    ],
+    "links": [
+      {
+        "linktype": "gs1:pip",
+        "href": "https://dalgiardino.com/medicinal-compound/pil.html?lot={lotnumber}",
+        "title": "Lot numbered Dal Giardino Medicinal Compound 50 x 200mg Capsules page on dalgiardino.com",
+        "type": "text/html",
+        "hreflang": [
+          "en"
+        ],
+        "context": [
+          "sales",
+          "marketing"
+        ]
+      },
+      {
+        "linktype": "gs1:certificationInfo",
+        "href": "https://dalgiardino.com/medicinal-compound/certificate_1?lot={lotnumber}",
+        "title": "Lot numbered Dal Giardino Medicinal Compound - Certificate 1",
+        "type": "text/html",
+        "hreflang": ["en"]
+      },
+      {
+        "linktype": "gs1:certificationInfo",
+        "href": "https://dalgiardino.com/medicinal-compound/certificate_2?lot={lotnumber}",
+        "title": "Lot numbered Dal Giardino Medicinal Compound - Certificate 2",
+        "type": "text/html",
+        "hreflang": ["en"]
+      },      {
+        "linktype": "gs1:certificationInfo",
+        "href": "https://dalgiardino.com/medicinal-compound/certificate_3?lot={lotnumber}",
+        "title": "Lot numbered Dal Giardino Medicinal Compound - Certificate 3",
+        "type": "text/html",
+        "hreflang": ["en"]
+      }
+
+    ]
+  }
+]

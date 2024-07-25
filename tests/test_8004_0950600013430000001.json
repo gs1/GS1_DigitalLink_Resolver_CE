@@ -1,0 +1,20 @@
+{
+  "anchor": "/8004/0950600013430000001",
+  "itemDescription": "Dal Giardino Fixed Asset",
+  "defaultLinktype": "gs1:pip",
+  "links": [
+    {
+      "linktype": "gs1:pip",
+      "href": "https://dalgiardino.com/medicinal-compound/assets/8004/0950600013430000001.html",
+      "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules as fixed asset",
+      "type": "text/html",
+      "hreflang": [
+        "en"
+      ],
+      "context": [
+        "sales",
+        "marketing"
+      ]
+    }
+  ]
+}
