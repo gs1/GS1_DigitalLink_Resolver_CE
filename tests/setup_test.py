@@ -123,8 +123,9 @@ class APITestCase(unittest.TestCase):
         print('Now compress this GS1 Digital Link /01/09506000134376/10/LOT01 using the Resolver frontend web server')
         web_response = requests.get(self.resolver_url + '/01/09506000134376/10/LOT01?compress=true', allow_redirects=False)
         self.assertEqual(web_response.status_code, 200, 'Read test: Frontend server did not return 200 (OK)')
-        # we will take the resonse.content, convert from JSON to dictionary and remove the value of 'data' key
-        # then we will compare the result with the expected value
+
+        # we will take the response.content, convert from JSON to dictionary and remove the value of 'data' key
+        # then we will compare the result with the expected value:
         compressed_link = json.loads(web_response.content)['COMPRESSED_LINK']
         self.assertEqual(compressed_link, '/ARFKk4XB0CDKWcnpq', 'Link was not compressed correctly, instead returned was:' + compressed_link)
 
