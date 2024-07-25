@@ -79,3 +79,14 @@ The API is available with Open API (Swagger) documentation at http://localhost:3
 1. **Testing**: We are testing the software to ensure that it is stable and reliable - expect regular updates that will be the form of 'beta 2', 'beta 3' etc.
 2. **Documentation**: We are working on the documentation to make it easier for users to understand how to use the software.
 3. **Building the test suite**: We are building a web-based test suite to ensure that the software is fully compliant with the GS1 Digital Link standard.
+
+
+## How do I backup the database?
+The database is stored in a Docker volume within the composition. To back up the database to a backup archive file on your host computer, you can use the following command which uses 'docker compose exec' to run the 'mongodump' command within the 'database-service' container (some computers hosting docker may have 'docker-compose' rather than 'docker compose'):
+```bash
+ docker compose exec -T database-service mongodump --host localhost:27017 --username gs1resolver --password gs1resolver --archive=- --gzip > mongobackup.tar.gz
+```
+... and to restore the database from a backup archive file on your host computer, you can use the following command:
+```bash
+docker compose exec -T database-service mongorestore --host localhost:27017 --username gs1resolver --password gs1resolver --archive=- --gzip < mongobackup.tar.gz
+```

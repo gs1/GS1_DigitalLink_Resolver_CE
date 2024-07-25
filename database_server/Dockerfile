@@ -1,10 +1,7 @@
-# This dockerfile creates MongoDB v4.2 running in Ubuntu 18.04 (Bionic Beaver) LTS.
-# This minimal dockerfile is mainly used to make sure that the image being craeted is competely up to date and
-# patched. This file also sets the username and password used by both date_gs1_org and id_gs1_org so if you change it here,
-# also change it in the config files for those two projects! Chaage it here:
-#     id_gs1_org/config/gs1resolver.ini
-#     data_gs1_org/config/api.ini
-
+# Description: This file contains the Dockerfile for the Mongo 7 database server.
+# The server runs on port 27017 and is exposed by docker-compose.yml if you want to take backups.
+# The root username and password is also set in the docker-compose.yml file, both initially set to 'gs1resolver'.
+# mongodump --host localhost:27017 --username gs1resolver --password gs1resolver --archive=mongobackup.tar.gz --gzip
 FROM mongo:7-jammy
 LABEL authors="nick"
 ENV DEBIAN_FRONTEND=noninteractive
