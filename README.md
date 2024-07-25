@@ -1,4 +1,4 @@
-## 📢 Welcome to GS1 Resolver Community Edition Version 3.0.0 Beta 2
+## 📢 Welcome to GS1 Resolver Community Edition Version 3.0.0 Beta 3
 
 GS1 Resolver is a free and open-source software that allows you to resolve GS1 identifiers to their corresponding web resources. This software is developed by the GS1 Resolver Community and is based on the GS1 Digital Link standard.
 
@@ -10,6 +10,7 @@ GS1 Resolver is a free and open-source software that allows you to resolve GS1 i
 3. **Separate GTIN Qualifiers**: GTIN qualifiers are now independent, free from a fixed 'qualifier path', offering enhanced flexibility.
 4. **Unified Database**: Streamline your infrastructure as maintaining both SQL *and* Document databases is no longer necessary—only the Document database is required.
 5. **Embrace the Pythonic Way with Python 3.10**: The evolution of the Resolver CE is taking a leap forward in code readability with Python. After discussions and feedback from the dev community implementing Resolver 2.x, we've shed the many layers of Node JavaScript source files in favor of Python's elegant simplicity and fewer script files. Resolver CE v3.0 is written in Python 3.10, adopting a 'pythonic' style of coding that is much easier to read and adjust as required. This isn't just a change; it's an upgrade to high-performance processing that is easier to read, comprehend and adjust.
+6. **Introduction of compression for GS1 Digital Link URls**: The Resolver CE v3.0 now supports the compression of GS1 Digital Link URLs. This feature is particularly useful when you have a long URL that you want to compress to a shorter one. The compressed URL can be used in place of the original URL, and the Resolver CE v3.0 will automatically decompress it when resolving the GS1 identifier. 
 
 ### 📚 Simplified Architecture
 The new architecture is based on a microservices approach. In this solution the data entry service with its API can be separated from the Front-end resolving web service.
@@ -64,6 +65,8 @@ Importantly this will run whether you are using x64 (Intel / AMD) or ARM based h
 The service will then be available at http://localhost:8080
 
 The API is available with Open API (Swagger) documentation at http://localhost:3000/api/
+
+### Postman documentation for the API can be found at: https://documenter.getpostman.com/view/10078469/2sA3JKeNb2
 
 ## What should I do next?
 1. **Try it out**: To do this, use the 'setup_test.py' script in the tests folder to add some test data to the database and test Resolver. Indeed, we recommend you read through - then step through - the heavily documented test suite which will give you examples of creating / reading / deleting entries using the API, and observing behaviour through the Resolver front-end service. 

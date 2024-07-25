@@ -98,9 +98,9 @@ class APITestCase(unittest.TestCase):
         self.assertEqual(web_response.headers['Location'], 'https://dalgiardino.com/medicinal-compound/pil.html',
                          'Link was not directed correctly')
 
-        # let's do the same for the serialized entry - we should get a 307 redirect to:
+        # let's do the same for the serialised entry - we should get a 307 redirect to:
         # "https://dalgiardino.com/medicinal-compound/pil.html?serial=HELLOWORLD"
-        print('Now find the serialized entry /01/09506000134376/21/HELLOWORLD using the Resolver frontend web server')
+        print('Now find the serialised entry /01/09506000134376/21/HELLOWORLD using the Resolver frontend web server')
         web_response = requests.get(self.resolver_url + '/01/09506000134376/21/HELLOWORLD', allow_redirects=False)
         self.assertEqual(web_response.status_code, 307, 'Read test: '
                                                         'Frontend server did not return 307 (Temporary Redirect) status code')
@@ -112,6 +112,25 @@ class APITestCase(unittest.TestCase):
         # "https://dalgiardino.com/medicinal-compound/pil.html?lot=LOT01"
         print('Now find the lot numbered entry /01/09506000134376/10/LOT01 using the Resolver frontend web server')
         web_response = requests.get(self.resolver_url + '/01/09506000134376/10/LOT01', allow_redirects=False)
+        self.assertEqual(web_response.status_code, 307, 'Read test: '
+                                                        'Frontend server did not return 307 (Temporary Redirect) status code')
+        self.assertEqual(web_response.headers['Location'],
+                         'https://dalgiardino.com/medicinal-compound/pil.html?lot=LOT01',
+                         'Link was not directed correctly with lot number')
+
+        # Let's compress this GS1 Digital Link /01/09506000134376/10/LOT01
+        # ...which compressed is: /ARFKk4XB0CDKWcnpq
+        print('Now compress this GS1 Digital Link /01/09506000134376/10/LOT01 using the Resolver frontend web server')
+        web_response = requests.get(self.resolver_url + '/01/09506000134376/10/LOT01?compress=true', allow_redirects=False)
+        self.assertEqual(web_response.status_code, 200, 'Read test: Frontend server did not return 200 (OK)')
+        # we will take the resonse.content, convert from JSON to dictionary and remove the value of 'data' key
+        # then we will compare the result with the expected value
+        compressed_link = json.loads(web_response.content)['COMPRESSED_LINK']
+        self.assertEqual(compressed_link, '/ARFKk4XB0CDKWcnpq', 'Link was not compressed correctly, instead returned was:' + compressed_link)
+
+        # Now let's call the web server using the compressed version of this GS1 Digital Link:
+        print('Now find compressed entry using the Resolver frontend web server')
+        web_response = requests.get(self.resolver_url + compressed_link, allow_redirects=False)
         self.assertEqual(web_response.status_code, 307, 'Read test: '
                                                         'Frontend server did not return 307 (Temporary Redirect) status code')
         self.assertEqual(web_response.headers['Location'],

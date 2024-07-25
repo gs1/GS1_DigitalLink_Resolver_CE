@@ -13,7 +13,7 @@ def _call_gs1_toolkit(ai_data_string):
     :return:
     """
     node_path = "/usr/bin/node"
-    toolkit_path = "/app/gs1-digitallink-toolkit/calltoolkit.js"
+    toolkit_path = "/app/gs1-digitallink-toolkit/callGS1encoder.js"
 
     process = subprocess.Popen([node_path, toolkit_path, ai_data_string],
                                stdout=subprocess.PIPE,
@@ -28,13 +28,75 @@ def _call_gs1_toolkit(ai_data_string):
     return True
 
 
+def uncompress_gs1_digital_link(compressed_link):
+    """
+    This function checks if the AI data string is a compressed GS1 Digital link.
+    The only library that does this id the GS1 Digital Link Toolkit GS1DigitalLinkToolkit.js
+    :param compressed_link: The compressed link to check
+    :return: The uncompressed GS1 Digital Link if the AI data string is compressed, otherwise a failure message.
+    """
+    node_path = "/usr/bin/node"
+    toolkit_path = "/app/gs1-digitallink-toolkit/callGS1toolkit.js"
+    process = subprocess.Popen([node_path, toolkit_path, compressed_link, 'uncompress'],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+
+    stdout, stderr = process.communicate()
+
+    if process.returncode != 0:
+        # process.exit(1) was called by the Node application, so we transfer the error back here
+        print(f"uncompress_gs1_digital_link Error: {stderr.decode('utf-8')}")
+        return {'result': False, 'error': stderr.decode('utf-8')}
+
+    # Success!
+    # The uncompressed GS1 Digital Link is returned in the stdout as a set of identifiers, qualifier,
+    # dataAttributes and 'other':,
+    # For example, compressed link: http://example.org/AQnO2IRCICDKWcnpqQs6QiOu2_A?expirydate=20240724
+    # (which uncompressed, would be: https://id.gs1ie.org/01/05392000229648/10/LOT01/21/SER1234?expirydate=20240724 )
+    # would return:
+    # {
+    #   "identifiers": [{"01": "05392000229648"}],
+    #   "qualifiers": [{"10": "LOT01"}, {"21": "SER1234"}],
+    #   "dataAttributes": [],
+    #   "other": [{"expirydate": "20240724"}],
+    # }
+    #
+    # The code in callGS1toolkit.js" adds a 'SUCCESS' key to the above JSON object with true if the decompression was
+    # successful and false if it was not. We will check for this key and return the result.
+    print('DEBUG => stdout:', stdout)
+    return json.loads(stdout)
+
+
+def compress_gs1_digital_link(uncompressed_link):
+    """
+    This function compresses a GS1 Digital Link URL.
+    The only library that does this id the GS1 Digital Link Toolkit GS1DigitalLinkToolkit.js
+    :param uncompressed_link: The compressed link to check
+    :return: The compressed GS1 Digital Link URL if the AI data string is compressed, otherwise a failure message.
+    """
+    node_path = "/usr/bin/node"
+    toolkit_path = "/app/gs1-digitallink-toolkit/callGS1toolkit.js"
+
+    process = subprocess.Popen([node_path, toolkit_path, uncompressed_link, 'compress'],
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+
+    stdout, stderr = process.communicate()
+
+    if process.returncode != 0:
+        print(f"uncompress_gs1_digital_link Error: {stderr.decode('utf-8')}")
+        return {'result': False, 'error': stderr.decode('utf-8')}
+
+    return json.loads(stdout)
+
+
 def _test_gs1_digital_link_syntax(url):
     """
     This function tests the syntax of a GS1 Digital Link URL. It returns True if the URL is valid,
     and False if it is not.
 
     To do this we make a command line call to the GS1 Digital Link Validator at
-    /app/gs1-digitallink-toolkit/calltoolkit.js and pass the URL as an ai data string parameter.
+    /app/gs1-digitallink-toolkit/callGS1encoder.js and pass the URL as an ai data string parameter.
     For example /01/09521234543213/10/LOT/21/SERIAL becomes
     (01)09521234543213(10)LOT(21)SERIAL
     We then call the toolkit and return the true/false result.
@@ -346,9 +408,8 @@ def _validate_and_fetch_document(identifier, qualifier_path, doc_id):
     :param identifier: The identifier portion of the digital link (e.g., '01/09550001563533')
     :param qualifier_path: The qualifier path of the digital link, if any (e.g., '/22/455') only used to validate syntax
     :param doc_id: The document ID to look up in the database.
-    :return: A tuple where the first element is the result of the syntactic validation of the digital link,
-             and the second element is the wanted_db_document from trying to read the document with the given doc_id
-             from the database.
+    :return: the wanted_db_document from trying to read the document with the given doc_id
+             from the database - or an error message if the document is not found.
     """
     try:
         # Concatenate the identifiers and qualifier_path to form the complete digital link
@@ -359,8 +420,8 @@ def _validate_and_fetch_document(identifier, qualifier_path, doc_id):
 
         # If the link syntax is invalid, return an error dictionary along with a `None` wanted_db_document.
         if not dl_test_result:
-            print('Invalid Digital Link Syntax')
-            return {"response_status": 400, "error": "Invalid Digital Link Syntax"}, None
+            print('Invalid GS1 Digital Link Syntax')
+            return {"response_status": 400, "error": f"Invalid GS1 Digital Link syntax: {digital_link}"}
 
         # If the link syntax is valid, attempt to fetch the corresponding document from the database.
         print('identifier:', identifier)
@@ -368,7 +429,7 @@ def _validate_and_fetch_document(identifier, qualifier_path, doc_id):
 
         if wanted_db_document['response_status'] == 200:
             # document found - there is nothing more we need to do here.
-            return {"response_status": 200, "error": "Valid Digital Link Syntax"}, wanted_db_document
+            return wanted_db_document
 
         # If we are being asked to search for GIAIs (8004), GRAIs (8003) or SSCCs (00) then an exact match may not
         # be immediately available as these are serialised identifiers.
@@ -383,22 +444,24 @@ def _validate_and_fetch_document(identifier, qualifier_path, doc_id):
         if any(identifier.startswith(prefix) for prefix in ['/8003/', '/8004/', '/00/']):
             serialised_document = _process_serialised_identifier(identifier)
             if serialised_document is not None:
-                return dl_test_result, serialised_document
+                return serialised_document
 
         # We have searched and there is no partial match that has template variables {0} or {1}
-        return {"response_status": 404, "error": f"No document found for anchor: {doc_id}"}, None
+        return {"response_status": 404, "error": f"No document found for anchor: {doc_id}"}
 
     except ValueError as e:
         print(f"_validate_and_fetch_document - ValueError occurred. Details: {str(e)}")
         return {"response_status": 400,
-                "error": f"ValueError occurred. Possibly invalid identifiers or qualifier_path. Details: {str(e)}"}, None
+                "error": f"ValueError occurred. Possibly invalid identifiers or qualifier_path. Details: {str(e)}"}
+
     except TypeError as e:
         print(f"_validate_and_fetch_document - TypeError occurred. Details: {str(e)}")
         return {"response_status": 400,
-                "error": f"TypeError occurred. Expected string-like object. Details: {str(e)}"}, None
+                "error": f"TypeError occurred. Expected string-like object. Details: {str(e)}"}
+
     except Exception as e:
         print(f"_validate_and_fetch_document - Unexpected error occurred. Details: {str(e)}")
-        return {"response_status": 500, "error": f"Unexpected error occurred. Details: {str(e)}"}, None
+        return {"response_status": 500, "error": f"Unexpected error occurred. Details: {str(e)}"}
 
 
 def _replace_linkset_template_variables(linkset, template_variables_list):
@@ -480,6 +543,19 @@ def _handle_link_type(linktype, default_linktype, linkset, accept_language_list,
         return {"response_status": 500, "error": f"Unexpected error occurred. Details: {str(e)}"}
 
 
+def get_compressed_link(uncompressed_link):
+    try:
+        compressed_link = compress_gs1_digital_link(uncompressed_link)
+        if compressed_link['SUCCESS']:
+            return {'response_status': 200, 'COMPRESSED_LINK': compressed_link['COMPRESSED']}
+
+
+    except Exception as e:
+        print(f"get_compressed_link - Unexpected error occurred. Details: {str(e)}")
+        return {'response_status': 500,
+                'error': f"Unexpected error occurred. Check GS1 Sigital Link syntax is correct before compressing"}
+
+
 def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, accept_language_list=None, context=None,
                   media_types_list=None, linkset_requested=False):
     """
@@ -497,15 +573,15 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
     """
     try:
         # Validate the digital link and fetch the associated document.
-        dl_test_result, wanted_db_document = _validate_and_fetch_document(gs1dl_identifier, qualifier_path, doc_id)
+        doc_data = _validate_and_fetch_document(gs1dl_identifier, qualifier_path, doc_id)
 
         # If the digital link syntax is invalid, or a database errors / document not found occurs
-        # then return the error response.
-        if not dl_test_result or wanted_db_document['response_status'] != 200:
-            return dl_test_result
+        # then return the error response which is stored in doc_data.
+        if doc_data['response_status'] != 200:
+            return doc_data
 
         else:
-            database_doc = wanted_db_document['data']
+            database_doc = doc_data['data']
 
             # If qualifier_path is NoneType or '/', we look for an instance in the document
             # where there are no qualifiers.

@@ -1,4 +1,3 @@
-import json
 import subprocess
 import data_entry_db
 import traceback
@@ -6,7 +5,7 @@ import traceback
 
 def _call_gs1_toolkit(ai_data_string):
     node_path = "/usr/bin/node"
-    toolkit_path = "/app/gs1-digitallink-toolkit/calltoolkit.js"
+    toolkit_path = "/app/gs1-digitallink-toolkit/callGS1encoder.js"
 
     process = subprocess.Popen([node_path, toolkit_path, ai_data_string],
                                stdout=subprocess.PIPE,
@@ -23,7 +22,7 @@ def _call_gs1_toolkit(ai_data_string):
 
 def _test_gs1_digital_link_syntax(url):
     # To do this we make a command line call to the GS1 Digital Link Validator at
-    # /app/gs1-digitallink-toolkit/calltoolkit.js and pass the URL as an ai data string parameter.
+    # /app/gs1-digitallink-toolkit/callGS1encoder.js and pass the URL as an ai data string parameter.
     # For example /01/09521234543213/10/LOT/21/SERIAL becomes
     # (01)09521234543213(10)LOT(21)SERIAL
     # We then call the toolkit and return the true/false result.

@@ -4,6 +4,7 @@ from flask_restx import Namespace, Resource, Api, fields
 import logging
 import web_logic
 from werkzeug.exceptions import UnsupportedMediaType
+import subprocess
 
 data_entry_namespace = Namespace('', description='Resolver web operations')
 
@@ -48,78 +49,120 @@ class HeartBeat(Resource):
         return {'response_message': 'Server is running!'}, 200
 
 
-@data_entry_namespace.route('/<anchor_ai_code>/<anchor_ai>')
-class DocOperationsIdentifiersOnly(Resource):
-    @api.doc(description="Get a document its anchor (GS1 identifiers only)")
-    def get(self, anchor_ai_code, anchor_ai):
+@data_entry_namespace.route('/<compressed_link>')
+class DocOperationsCompressedLink(Resource):
+    @api.doc(description="Get a document from the incoming URL (compressed GS1 DL only)")
+    def get(self, compressed_link):
         try:
-            anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
-            identifiers = f'/{anchor_ai_code}/{anchor_ai}'
-            doc_id = f'{anchor_ai_code}_{anchor_ai}'
-            print('GET', doc_id)
-            # now get any query strings
+            print('COMPRESSED LINK: ', compressed_link)
+            decompress_result = web_logic.uncompress_gs1_digital_link(compressed_link)
+            print('DEBUG ==> decompress_result: ', decompress_result)
+            if decompress_result['SUCCESS']:
+                # Example of decompress_result:
+                # {
+                #   "identifiers": [{"01": "05392000229648"}],
+                #   "qualifiers": [{"10": "LOT01"}, {"21": "SER1234"}],
+                #   "dataAttributes": [],
+                #   "other": [{"expirydate": "20240724"}],
+                # }
+                anchor_ai_code = list(decompress_result['identifiers'][0].keys())[0]
+                anchor_ai = list(decompress_result['identifiers'][0].values())[0]
+                identifiers = f'/{anchor_ai_code}/{anchor_ai}'
+                doc_id = f'{anchor_ai_code}_{anchor_ai}'
+                qualifiers = ['{0}/{1}'.format(list(d.keys())[0], list(d.values())[0]) for d in decompress_result['qualifiers']]
+                qualifier_path = '/' + '/'.join(qualifiers) if qualifiers else None
 
-            return _process_response(doc_id, identifiers)
+                print('UNCOMPRESSED LINK: ', doc_id + qualifier_path)
+
+                if qualifier_path:
+                    return _process_response(doc_id, identifiers, qualifier_path)
+                else:
+                    return _process_response(doc_id, identifiers)
+
+            else:
+                return {'error': decompress_result['error']}, 400
 
         except Exception as e:
             logger.warning('Error getting document ' + str(e))
             abort(500, description="Error getting document")
 
-    @data_entry_namespace.route('/<anchor_ai_code>/<anchor_ai>/<qualifier_1_code>/<qualifier_1>')
-    class DocOperationsIdentifiersAndOneQualifier(Resource):
-        @api.doc(description="Get a document its anchor (GS1 identifiers plus one qualifier)")
-        def get(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1):
-            try:
 
-                anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
-                identifiers = f'/{anchor_ai_code}/{anchor_ai}'
-                doc_id = f'{anchor_ai_code}_{anchor_ai}'
-                print('GET', doc_id)
-                # now get any query strings
+@data_entry_namespace.route('/<anchor_ai_code>/<anchor_ai>')
+class DocOperationsIdentifiersOnly(Resource):
+    @api.doc(description="Get a document from the incoming URL (GS1 identifiers only)")
+    def get(self, anchor_ai_code, anchor_ai):
+        try:
+            anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
+            identifiers = f'/{anchor_ai_code}/{anchor_ai}'
+            doc_id = f'{anchor_ai_code}_{anchor_ai}'
+            print('GS1 identifiers only: ', identifiers)
 
-                qualifier_path = f'/{qualifier_1_code}/{qualifier_1}'
+            compress = request.args.get('compress', None)
+            return _process_response(doc_id, identifiers, compress=compress)
 
-                return _process_response(doc_id, identifiers, qualifier_path)
-
-            except Exception as e:
+        except Exception as e:
                 logger.warning('Error getting document ' + str(e))
                 abort(500, description="Error getting document")
 
-    @data_entry_namespace.route(
-        '/<anchor_ai_code>/<anchor_ai>/<qualifier_1_code>/<qualifier_1>/<qualifier_2_code>/<qualifier_2>')
-    class DocOperationsIdentifiersAndTwoQualifiers(Resource):
-        @api.doc(description="Get a document its anchor (GS1 identifiers plus two qualifiers)")
-        def get(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code, qualifier_2):
-            try:
-                anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
-                identifiers = f'/{anchor_ai_code}/{anchor_ai}'
-                doc_id = f'{anchor_ai_code}_{anchor_ai}'
-                print('GET', doc_id)
-                qualifier_path = f'/{qualifier_1_code}/{qualifier_1}/{qualifier_2_code}/{qualifier_2}'
 
-                return _process_response(doc_id, identifiers, qualifier_path)
+@data_entry_namespace.route('/<anchor_ai_code>/<anchor_ai>/<qualifier_1_code>/<qualifier_1>')
+class DocOperationsIdentifiersAndOneQualifier(Resource):
+    @api.doc(description="Get a document from the incoming URL (GS1 identifiers plus one qualifier)")
+    def get(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1):
+        try:
 
-            except Exception as e:
+            anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
+            identifiers = f'/{anchor_ai_code}/{anchor_ai}'
+            doc_id = f'{anchor_ai_code}_{anchor_ai}'
+            qualifier_path = f'/{qualifier_1_code}/{qualifier_1}'
+            print('GS1 identifiers plus one qualifier: ', identifiers + qualifier_path)
+
+            compress = request.args.get('compress', None)
+            return _process_response(doc_id, identifiers, qualifier_path=qualifier_path, compress=compress)
+
+
+        except Exception as e:
                 logger.warning('Error getting document ' + str(e))
                 abort(500, description="Error getting document")
 
-    @data_entry_namespace.route(
-        '/<anchor_ai_code>/<anchor_ai>/<qualifier_1_code>/<qualifier_1>/<qualifier_2_code>/<qualifier_2>/<qualifier_3_code>/<qualifier_3>')
-    class DocOperationsIdentifiersAndThreeQualifiers(Resource):
-        @api.doc(description="Get a document its anchor (GS1 identifiers plus three qualifiers)")
-        def get(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code, qualifier_2,
-                qualifier_3_code, qualifier_3):
-            try:
-                anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
-                identifiers = f'/{anchor_ai_code}/{anchor_ai}'
-                doc_id = f'{anchor_ai_code}/{anchor_ai}'
-                print('GET', doc_id)
 
-                qualifier_path = f'/{qualifier_1_code}/{qualifier_1}/{qualifier_2_code}/{qualifier_2}/{qualifier_3_code}/{qualifier_3}'
+@data_entry_namespace.route(
+    '/<anchor_ai_code>/<anchor_ai>/<qualifier_1_code>/<qualifier_1>/<qualifier_2_code>/<qualifier_2>')
+class DocOperationsIdentifiersAndTwoQualifiers(Resource):
+    @api.doc(description="Get a document from the incoming URL (GS1 identifiers plus two qualifiers)")
+    def get(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code, qualifier_2):
+        try:
+            anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
+            identifiers = f'/{anchor_ai_code}/{anchor_ai}'
+            doc_id = f'{anchor_ai_code}_{anchor_ai}'
+            qualifier_path = f'/{qualifier_1_code}/{qualifier_1}/{qualifier_2_code}/{qualifier_2}'
+            print('GS1 identifiers plus two qualifiers: ', identifiers + qualifier_path)
 
-                return _process_response(doc_id, identifiers, qualifier_path)
+            compress = request.args.get('compress', None)
+            return _process_response(doc_id, identifiers, qualifier_path=qualifier_path, compress=compress)
 
-            except Exception as e:
+        except Exception as e:
+            logger.warning('Error getting document ' + str(e))
+            abort(500, description="Error getting document")
+
+
+@data_entry_namespace.route(
+    '/<anchor_ai_code>/<anchor_ai>/<qualifier_1_code>/<qualifier_1>/<qualifier_2_code>/<qualifier_2>/<qualifier_3_code>/<qualifier_3>')
+class DocOperationsIdentifiersAndThreeQualifiers(Resource):
+    @api.doc(description="Get a document from the incoming URL (GS1 identifiers plus three qualifiers)")
+    def get(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code, qualifier_2,
+            qualifier_3_code, qualifier_3):
+        try:
+            anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
+            identifiers = f'/{anchor_ai_code}/{anchor_ai}'
+            doc_id = f'{anchor_ai_code}/{anchor_ai}'
+            qualifier_path = f'/{qualifier_1_code}/{qualifier_1}/{qualifier_2_code}/{qualifier_2}/{qualifier_3_code}/{qualifier_3}'
+            print('GS1 identifiers plus three qualifiers: ', identifiers + qualifier_path)
+
+            compress = request.args.get('compress', None)
+            return _process_response(doc_id, identifiers, qualifier_path=qualifier_path, compress=compress)
+
+        except Exception as e:
                 logger.warning('Error getting document ' + str(e))
                 abort(500, description="Error getting document")
 
@@ -154,7 +197,7 @@ def _get_request_parameters():
     return accept_language_list, context, linktype, media_types_list, linkset_requested
 
 
-def _confirm_gtin_14( anchor_ai, anchor_ai_code):
+def _confirm_gtin_14(anchor_ai, anchor_ai_code):
     # if the anchor_ai_code is '01' and the length of the anchor_ai is 13, add a leading zero
     # to cope with GRIN-13 entries
     if anchor_ai_code == '01' and len(anchor_ai) == 13:
@@ -162,8 +205,20 @@ def _confirm_gtin_14( anchor_ai, anchor_ai_code):
     return anchor_ai
 
 
-def _process_response(doc_id, identifiers, qualifier_path=None):
+def _process_response(doc_id, identifiers, qualifier_path=None, compress=None):
     accept_language_list, context, linktype, media_types_list, linkset_requested = _get_request_parameters()
+
+    # if compress is present and set to true, we return the compressed version of a
+    # compressed GS1 Digital Link
+    if compress:
+        uncompressed_link = identifiers
+        if qualifier_path:
+            uncompressed_link += qualifier_path
+        print(f'Compressing link {uncompressed_link}...')
+        response_data = web_logic.get_compressed_link(uncompressed_link)
+        return response_data, 200
+
+    # ... otherwise we search for and process the requested document as normal:
     response_data = web_logic.read_document(identifiers,
                                             doc_id,
                                             qualifier_path,
