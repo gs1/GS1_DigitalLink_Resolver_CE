@@ -121,13 +121,15 @@ class APITestCase(unittest.TestCase):
         # Let's compress this GS1 Digital Link /01/09506000134376/10/LOT01
         # ...which compressed is: /ARFKk4XB0CDKWcnpq
         print('Now compress this GS1 Digital Link /01/09506000134376/10/LOT01 using the Resolver frontend web server')
-        web_response = requests.get(self.resolver_url + '/01/09506000134376/10/LOT01?compress=true', allow_redirects=False)
+        web_response = requests.get(self.resolver_url + '/01/09506000134376/10/LOT01?compress=true',
+                                    allow_redirects=False)
         self.assertEqual(web_response.status_code, 200, 'Read test: Frontend server did not return 200 (OK)')
 
         # we will take the response.content, convert from JSON to dictionary and remove the value of 'data' key
         # then we will compare the result with the expected value:
         compressed_link = json.loads(web_response.content)['COMPRESSED_LINK']
-        self.assertEqual(compressed_link, '/ARFKk4XB0CDKWcnpq', 'Link was not compressed correctly, instead returned was:' + compressed_link)
+        self.assertEqual(compressed_link, '/ARFKk4XB0CDKWcnpq',
+                         'Link was not compressed correctly, instead returned was:' + compressed_link)
 
         # Now let's call the web server using the compressed version of this GS1 Digital Link:
         print('Now find compressed entry using the Resolver frontend web server')
@@ -187,13 +189,16 @@ class APITestCase(unittest.TestCase):
         # instead it includes 'fr-??' and so the Resolver frontend server should return the 'en-GB' link because it
         # is the first link in the list of links for gs1:registerProduct. This is an example of the Resolver
         # frontend server returning the default language link when the requested language is not available.
+        # UPDATE: Not the en-IE test which has 'q' values in every entry. Resolver should be removing these
+        #         as otherwise matching will fail, as no language entries should have 'q' values.
+        #         See: https://github.com/gs1/GS1_DigitalLink_Resolver_CE/issues/97
 
         language_tests = [
             {'accept-language': 'en-GB,en;q=0.9,en-US;q=0.8,en-IE;q=0.7', 'expected': 'en-GB'},
             {'accept-language': 'en,en-US;q=0.8,en-IE;q=0.7', 'expected': 'en-GB'},
             {'accept-language': 'en-US,en;q=0.9,en-GB;q=0.8,en-IE;q=0.7', 'expected': 'en-US'},
-            {'accept-language': 'en-IE,en;q=0.9,en-GB;q=0.8,en-US;q=0.7', 'expected': 'en-IE'},
-            {'accept-language': 'fr-BE,fr-FR;q=0.8,fr;q-0.7', 'expected': 'non-English'}
+            {'accept-language': 'en-IE;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6', 'expected': 'en-IE'},
+            {'accept-language': 'fr-BE,fr-FR;q=0.8,fr;q=0.7', 'expected': 'non-English'}
         ]
 
         for test in language_tests:
@@ -208,10 +213,17 @@ class APITestCase(unittest.TestCase):
 
             web_response = requests.get(self.resolver_url + '/01/09506000134376?linktype=gs1:registerProduct',
                                         allow_redirects=False, headers=headers)
+
             self.assertEqual(web_response.status_code, 307, 'Read test: '
-                                                            'Frontend server did not return 307 (Temporary Redirect) status code')
+                                                            'Frontend server did not return 307 ' +
+                                                            '(Temporary Redirect) status code for header: ' +
+                                                            test['accept-language'] + ' instead returned ' +
+                                                            str(web_response.status_code) + ' status code' +
+                                                            ' with content: ' + json.dumps(json.loads(web_response.content.decode('utf-8')), indent=2))
+
             self.assertEqual(web_response.headers['Location'], expected_href,
-                             f'Location link "{web_response.headers["Location"]}" is not "{expected_href}"')
+                             f'Location link "{web_response.headers["Location"]}" is not "{expected_href}"'
+                             f' for request header: {test["accept-language"]}')
 
         # This next test is a change to Resolver's behaviour compared to previous versions. If a request asks for a
         # linktype that is not available in the linkset, the Resolver frontend server should return a 404 status code.
@@ -230,7 +242,8 @@ class APITestCase(unittest.TestCase):
         # The Resolver frontend server should return a 300 status.
 
         # But let's test it works and returns an HTTP 300 (Multiple Links) status code.
-        print('HTTP 300 test - Request linktype gs1:certificationInfo /01/09506000134376/10/LOT01 using the Resolver frontend web server')
+        print(
+            'HTTP 300 test - Request linktype gs1:certificationInfo /01/09506000134376/10/LOT01 using the Resolver frontend web server')
         web_response = requests.get(self.resolver_url + '/01/09506000134376/10/LOT01?linktype=gs1:certificationInfo',
                                     allow_redirects=False)
         self.assertEqual(300, web_response.status_code, 'Read test: '

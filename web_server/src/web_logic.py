@@ -121,15 +121,19 @@ def _test_gs1_digital_link_syntax(url):
 def _match_all_three_contexts(linktype_doc_list, accept_language_list, context, media_types_list):
     wanted_doc_list = []
     print('DEBUG Can we match on all three contexts?:', accept_language_list, context, media_types_list)
-    for linktype_doc in linktype_doc_list:
-        if 'hreflang' in linktype_doc and \
-                'context' in linktype_doc and \
-                'type' in linktype_doc and \
-                any(value in linktype_doc['hreflang'] for value in accept_language_list) and \
-                context in linktype_doc['context'] and \
-                linktype_doc['type'] in media_types_list:
-            print('DEBUG Found a match on all three contexts')
-            wanted_doc_list.append(linktype_doc)
+    for value in accept_language_list:  # iterate accept_language_list first
+        for linktype_doc in linktype_doc_list:
+            if 'hreflang' in linktype_doc and 'context' in linktype_doc and 'type' in linktype_doc and \
+                    context in linktype_doc['context'] and \
+                    linktype_doc['type'] in media_types_list and \
+                    value in linktype_doc['hreflang']:
+                # found a match, append it
+                print('DEBUG Found a match on all three contexts', value)
+                wanted_doc_list.append(linktype_doc)
+                break
+        else:
+            continue
+        break
 
     # If list is not empty, return it. Otherwise, return None
     return wanted_doc_list if wanted_doc_list else None
@@ -138,13 +142,17 @@ def _match_all_three_contexts(linktype_doc_list, accept_language_list, context, 
 def _match_accept_language_and_context(linktype_doc_list, accept_language_list, context):
     wanted_doc_list = []
     print('DEBUG Can we match on accept_language_list and context?:', accept_language_list, context)
-    for linktype_doc in linktype_doc_list:
-        if 'hreflang' in linktype_doc and \
-                'context' in linktype_doc and \
-                any(value in linktype_doc['hreflang'] for value in accept_language_list) and \
-                context in linktype_doc['context']:
-            print('DEBUG Found a match on accept_language_list and context')
-            wanted_doc_list.append(linktype_doc)
+    for value in accept_language_list:  # iterate accept_language_list first
+        for linktype_doc in linktype_doc_list:
+            if 'hreflang' in linktype_doc and 'context' in linktype_doc and \
+                    context in linktype_doc['context'] and \
+                    value in linktype_doc['hreflang']:
+                print('DEBUG Found a match on accept_language_list and context', value)
+                wanted_doc_list.append(linktype_doc)
+                break
+        else:
+            continue
+        break
 
     # If list is not empty, return it. Otherwise, return None
     return wanted_doc_list if wanted_doc_list else None
@@ -153,13 +161,17 @@ def _match_accept_language_and_context(linktype_doc_list, accept_language_list, 
 def _match_accept_language_and_media_types(linktype_doc_list, accept_language_list, media_types_list):
     wanted_doc_list = []
     print('DEBUG Can we match on accept_language_list and media_types_list?:', accept_language_list, media_types_list)
-    for linktype_doc in linktype_doc_list:
-        if 'hreflang' in linktype_doc and \
-                'type' in linktype_doc and \
-                any(value in linktype_doc['hreflang'] for value in accept_language_list) and \
-                linktype_doc['type'] in media_types_list:
-            print('DEBUG Found a match on accept_language_list and media_types_list')
-            wanted_doc_list.append(linktype_doc)
+    for value in accept_language_list:  # iterate accept_language_list first
+        for linktype_doc in linktype_doc_list:
+            if 'hreflang' in linktype_doc and 'type' in linktype_doc and \
+                    linktype_doc['type'] in media_types_list and \
+                    value in linktype_doc['hreflang']:
+                print('DEBUG Found a match on accept_language_list and media_types_list', value)
+                wanted_doc_list.append(linktype_doc)
+                break
+        else:
+            continue
+        break
 
     # If list is not empty, return it. Otherwise, return None
     return wanted_doc_list if wanted_doc_list else None
@@ -182,12 +194,14 @@ def _match_context_and_media_types(linktype_doc_list, context, media_types_list)
 
 def _match_accept_language(linktype_doc_list, accept_language_list):
     wanted_doc_list = []
-    print('DEBUG Can we match on accept_language_list?:', accept_language_list)
-    for linktype_doc in linktype_doc_list:
-        if 'hreflang' in linktype_doc and \
-                any(value in linktype_doc['hreflang'] for value in accept_language_list):
-            print('DEBUG Found a match on accept_language_list')
-            wanted_doc_list.append(linktype_doc)
+    for value in accept_language_list:
+        for linktype_doc in linktype_doc_list:
+            if 'hreflang' in linktype_doc and value in linktype_doc['hreflang']:
+                wanted_doc_list.append(linktype_doc)
+                break  # This breaks the inner linktype_doc_list loop
+        else:
+            continue  # Continue if the inner loop wasn't broken.
+        break  # Break the outer loop if the inner one was broken
 
     # If list is not empty, return it. Otherwise, return None
     return wanted_doc_list if wanted_doc_list else None
@@ -549,11 +563,25 @@ def get_compressed_link(uncompressed_link):
         if compressed_link['SUCCESS']:
             return {'response_status': 200, 'COMPRESSED_LINK': compressed_link['COMPRESSED']}
 
-
     except Exception as e:
         print(f"get_compressed_link - Unexpected error occurred. Details: {str(e)}")
         return {'response_status': 500,
                 'error': f"Unexpected error occurred. Check GS1 Sigital Link syntax is correct before compressing"}
+
+
+def _clean_q_values_from_header_entries(header_values_list):
+    """
+    This function cleans the accept_language_list by removing any additional information including and after
+    the ';' symbol often sent by web browsers, usually the 'q=' value - e.g.: 'en-US;q=0.8', 'application/xml;q=0.9'
+    which is not needed for the comparison and would stop accurate matching.
+    :param header_values_list:
+    :return header_values_list:
+    """
+    for i in range(len(header_values_list)):
+        if ';' in header_values_list[i]:
+            header_values_list[i] = header_values_list[i].split(';')[0]
+
+    return header_values_list
 
 
 def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, accept_language_list=None, context=None,
@@ -582,6 +610,12 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
 
         else:
             database_doc = doc_data['data']
+
+            accept_language_list = _clean_q_values_from_header_entries(accept_language_list)
+            media_types_list = _clean_q_values_from_header_entries(media_types_list)
+
+            print('DEBUG => accept_language_list:', accept_language_list)
+            print('DEBUG => media_types_list:', media_types_list)
 
             # If qualifier_path is NoneType or '/', we look for an instance in the document
             # where there are no qualifiers.
