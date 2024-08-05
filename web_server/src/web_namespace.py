@@ -70,11 +70,11 @@ class DocOperationsCompressedLink(Resource):
                 identifiers = f'/{anchor_ai_code}/{anchor_ai}'
                 doc_id = f'{anchor_ai_code}_{anchor_ai}'
                 qualifiers = ['{0}/{1}'.format(list(d.keys())[0], list(d.values())[0]) for d in decompress_result['qualifiers']]
-                qualifier_path = '/' + '/'.join(qualifiers) if qualifiers else None
+                qualifier_path = '/' + '/'.join(qualifiers) if qualifiers else ""
 
                 print('UNCOMPRESSED LINK: ', doc_id + qualifier_path)
 
-                if qualifier_path:
+                if not qualifier_path:
                     return _process_response(doc_id, identifiers, qualifier_path)
                 else:
                     return _process_response(doc_id, identifiers)
