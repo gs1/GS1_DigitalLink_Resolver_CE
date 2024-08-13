@@ -74,10 +74,7 @@ class DocOperationsCompressedLink(Resource):
 
                 print('UNCOMPRESSED LINK: ', doc_id + qualifier_path)
 
-                if qualifier_path:
-                    return _process_response(doc_id, identifiers, qualifier_path)
-                else:
-                    return _process_response(doc_id, identifiers)
+                return _process_response(doc_id, identifiers, qualifier_path or None)
 
             else:
                 return {'error': decompress_result['error']}, 400
