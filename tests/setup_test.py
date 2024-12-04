@@ -26,7 +26,7 @@ class APITestCase(unittest.TestCase):
         # Welcome to this test script. Its aim is to test the CRUD cycle of a data entry in the Resolver database.
         # It will also walk you through the features and behaviours of the Resolver API and its frontend server.
         # if you want to keep the data entries in Mongo DB at the wnd of the test, set this flag to False:
-        DELETE_ENTRIES_ON_COMPLETION = True
+        DELETE_ENTRIES_ON_COMPLETION = False
 
         #### INITIAL DELETES TO START THE TEST ####
         for entry in self.data_entries:

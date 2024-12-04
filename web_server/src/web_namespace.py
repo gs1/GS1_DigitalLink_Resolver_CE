@@ -1,4 +1,4 @@
-from flask import request, abort, Response, send_from_directory
+from flask import request, abort, Response, send_from_directory, jsonify, make_response
 from flask_restx import Namespace, Resource, Api
 import json
 import logging
@@ -12,10 +12,36 @@ logger = logging.getLogger(__name__)
 
 api = Api()
 
+
 @data_entry_namespace.route('/<non_gs1dl_request>')
 class DocOperationsNonGS1DigitalLinkRequest(Resource):
     @api.doc(description="Process non GS1 Digital Link requests (which can include compressed GS1 DLs)")
     def get(self, non_gs1dl_request):
+        response = self._handle_request(non_gs1dl_request)
+        return response
+
+    def head(self, non_gs1dl_request):
+        response_tuple = self._handle_request(non_gs1dl_request)
+
+        # If the response from GET is a tuple, unpack it
+        if isinstance(response_tuple, tuple):
+            response_data, status_code = response_tuple
+            response = make_response(response_data, status_code)
+        else:
+            response = make_response(response_tuple)
+        return response
+
+    def options(self, non_gs1dl_request=None):
+        """
+        Handle HTTP OPTIONS requests. Returns allowed methods
+        """
+        # Constructs a response indicating available methods
+        response = Response()
+        response.headers['Allow'] = 'GET, HEAD, OPTIONS'
+        return response
+
+    def _handle_request(self, non_gs1dl_request):
+        # Existing processing logic as outlined previously
         try:
             print('NON GS1DL REQUEST: ', non_gs1dl_request)
 
@@ -26,32 +52,22 @@ class DocOperationsNonGS1DigitalLinkRequest(Resource):
                 return send_from_directory(static_folder_path, 'robots.txt')
 
             if non_gs1dl_request == 'heartbeat':
-                return {'response_message': f'Server is running!'}, 200
+                return jsonify({'response_message': f'Server is running!'}), 200
 
-            # if it's not any of those then let's try and see if it's a compressed GS1 DL
+            # other logic...
             decompress_result = web_logic.uncompress_gs1_digital_link(non_gs1dl_request)
             print('DEBUG ==> decompress_result: ', decompress_result)
             if decompress_result['SUCCESS']:
-                # Example of decompress_result:
-                # {
-                #   "identifiers": [{"01": "05392000229648"}],
-                #   "qualifiers": [{"10": "LOT01"}, {"21": "SER1234"}],
-                #   "dataAttributes": [],
-                #   "other": [{"expirydate": "20240724"}],
-                # }
+                # Process decompressed result
                 anchor_ai_code = list(decompress_result['identifiers'][0].keys())[0]
                 anchor_ai = list(decompress_result['identifiers'][0].values())[0]
                 identifiers = f'/{anchor_ai_code}/{anchor_ai}'
                 doc_id = f'{anchor_ai_code}_{anchor_ai}'
                 qualifiers = ['{0}/{1}'.format(list(d.keys())[0], list(d.values())[0]) for d in decompress_result['qualifiers']]
                 qualifier_path = '/' + '/'.join(qualifiers) if qualifiers else None
-
-                print('UNCOMPRESSED LINK: ', doc_id + qualifier_path)
-
                 return _process_response(doc_id, identifiers, qualifier_path or None)
-
             else:
-                return {'error': decompress_result['error']}, 400
+                return jsonify({'error': decompress_result['error']}), 400
 
         except Exception as e:
             logger.warning('Error getting document ' + str(e))
@@ -63,8 +79,7 @@ class DocOperationsIdentifiersOnly(Resource):
     @api.doc(description="Get a document from the incoming URL (GS1 identifiers only)")
     def get(self, anchor_ai_code, anchor_ai):
         try:
-
-            # this code is specific to ensuring that a Resolver Description File is returned
+            # Ensure that a Resolver Description File is returned
             if anchor_ai_code == '.well-known' and anchor_ai == 'gs1resolver':
                 return send_from_directory(static_folder_path, 'gs1resolver.json')
 
@@ -77,8 +92,29 @@ class DocOperationsIdentifiersOnly(Resource):
             return _process_response(doc_id, identifiers, compress=compress)
 
         except Exception as e:
-                logger.warning('Error getting document ' + str(e))
-                abort(500, description="Error getting document")
+            logger.warning('Error getting document ' + str(e))
+            abort(500, description="Error getting document")
+
+    def head(self, anchor_ai_code, anchor_ai):
+        # Reuse the get logic to construct a proper Response object
+        response_tuple = self.get(anchor_ai_code, anchor_ai)
+
+        # If the response from GET is a tuple, unpack it
+        if isinstance(response_tuple, tuple):
+            response_data, status_code = response_tuple
+            response = make_response(response_data, status_code)
+        else:
+            response = make_response(response_tuple)
+
+        # Clear the body for the HEAD request
+        response.data = ''
+        return response
+
+    def options(self, anchor_ai_code=None, anchor_ai=None):
+        # Response with allowed methods
+        response = Response()
+        response.headers['Allow'] = 'GET, HEAD, OPTIONS'
+        return response
 
 
 @data_entry_namespace.route('/<anchor_ai_code>/<anchor_ai>/<qualifier_1_code>/<qualifier_1>')
@@ -98,8 +134,28 @@ class DocOperationsIdentifiersAndOneQualifier(Resource):
 
 
         except Exception as e:
-                logger.warning('Error getting document ' + str(e))
-                abort(500, description="Error getting document")
+            logger.warning('Error getting document ' + str(e))
+            abort(500, description="Error getting document")
+
+    def head(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1):
+        # Reuse the get logic, but suppress the response body
+        response_tuple = self.get(anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1)
+        # If the response from GET is a tuple, unpack it
+        if isinstance(response_tuple, tuple):
+            response_data, status_code = response_tuple
+            response = make_response(response_data, status_code)
+        else:
+            response = make_response(response_tuple)
+
+        # Clear the body for the HEAD request
+        response.data = ''
+        return response
+
+    def options(self, anchor_ai_code=None, anchor_ai=None, qualifier_1_code=None, qualifier_1=None):
+        # Response with allowed methods
+        response = Response()
+        response.headers['Allow'] = 'GET, HEAD, OPTIONS'
+        return response
 
 
 @data_entry_namespace.route(
@@ -121,6 +177,28 @@ class DocOperationsIdentifiersAndTwoQualifiers(Resource):
             logger.warning('Error getting document ' + str(e))
             abort(500, description="Error getting document")
 
+    def head(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code, qualifier_2):
+        # Reuse the get logic, but suppress the response body
+        response_tuple = self.get(anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code,
+                                  qualifier_2)
+        # If the response from GET is a tuple, unpack it
+        if isinstance(response_tuple, tuple):
+            response_data, status_code = response_tuple
+            response = make_response(response_data, status_code)
+        else:
+            response = make_response(response_tuple)
+
+        # Clear the body for the HEAD request
+        response.data = ''
+        return response
+
+    def options(self, anchor_ai_code=None, anchor_ai=None, qualifier_1_code=None, qualifier_1=None,
+                qualifier_2_code=None, qualifier_2=None):
+        # Response with allowed methods
+        response = Response()
+        response.headers['Allow'] = 'GET, HEAD, OPTIONS'
+        return response
+
 
 @data_entry_namespace.route(
     '/<anchor_ai_code>/<anchor_ai>/<qualifier_1_code>/<qualifier_1>/<qualifier_2_code>/<qualifier_2>/<qualifier_3_code>/<qualifier_3>')
@@ -139,8 +217,31 @@ class DocOperationsIdentifiersAndThreeQualifiers(Resource):
             return _process_response(doc_id, identifiers, qualifier_path=qualifier_path, compress=compress)
 
         except Exception as e:
-                logger.warning('Error getting document ' + str(e))
-                abort(500, description="Error getting document")
+            logger.warning('Error getting document ' + str(e))
+            abort(500, description="Error getting document")
+
+    def head(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code, qualifier_2,
+             qualifier_3_code, qualifier_3):
+        # Reuse the get logic, but suppress the response body
+        response_tuple = self.get(anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code,
+                                  qualifier_2, qualifier_3_code, qualifier_3)
+        # If the response from GET is a tuple, unpack it
+        if isinstance(response_tuple, tuple):
+            response_data, status_code = response_tuple
+            response = make_response(response_data, status_code)
+        else:
+            response = make_response(response_tuple)
+
+        # Clear the body for the HEAD request
+        response.data = ''
+        return response
+
+    def options(self, anchor_ai_code=None, anchor_ai=None, qualifier_1_code=None, qualifier_1=None,
+                qualifier_2_code=None, qualifier_2=None, qualifier_3_code=None, qualifier_3=None):
+        # Response with allowed methods
+        response = Response()
+        response.headers['Allow'] = 'GET, HEAD, OPTIONS'
+        return response
 
 
 # This function is used to extract the query strings from the request and return them as a list of parameters

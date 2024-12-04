@@ -1,12 +1,9 @@
-import time
-
 from flask_restx import Api
-from flask import Flask, url_for
+from flask import Flask
 from flask import Blueprint
 from flask_cors import CORS  # new
 import logging
 import os
-from dotenv import load_dotenv
 from web_namespace import data_entry_namespace
 from mongo_db_init import mongo, init_mongo
 
@@ -14,7 +11,13 @@ from mongo_db_init import mongo, init_mongo
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True, static_folder='public')
-    CORS(app)  # enable CORS
+
+    # turn off requiring different routes if the URL ends with a '/'.
+    # This will affect all routes, ensuring that any request URL with a trailing slash is matched to its non-slash counterpart.
+    app.url_map.strict_slashes = False
+
+    # Enable CORS (cross-site scripting allowed)
+    CORS(app)
 
     mongo_url = os.getenv('MONGO_URI', "mongodb://gs1resolver:gs1resolver@database-server:27017")
     logging.info(f"Connecting to MongoDB at {mongo_url}")

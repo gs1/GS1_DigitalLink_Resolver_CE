@@ -2,7 +2,7 @@
 <module type="WEB_MODULE" version="4">
   <component name="FacetManager">
     <facet type="Python" name="Python">
-      <configuration sdkName="Python 3.9" />
+      <configuration sdkName="Python 3.10 (GS1_DigitalLink_Resolver_CE)" />
     </facet>
   </component>
   <component name="NewModuleRootManager" inherit-compiler-output="true">
@@ -13,6 +13,6 @@
     </content>
     <orderEntry type="jdk" jdkName="Python 3.10 (GS1_DigitalLink_Resolver_CE)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Python 3.9 interpreter library" level="application" />
+    <orderEntry type="library" name="Python 3.10 (GS1_DigitalLink_Resolver_CE) interpreter library" level="application" />
   </component>
 </module>

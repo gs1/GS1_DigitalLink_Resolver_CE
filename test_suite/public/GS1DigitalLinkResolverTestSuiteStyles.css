@@ -1,0 +1,57 @@
+body {
+  font-family: "Gotham SSm A", "Gotham SSm B", Verdana, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #002c6c;
+}
+
+#corporateHead {
+  background-color:#eee;
+  color: #454545;
+  height:100px;
+  padding: 0 2em;
+}
+
+
+
+dl#testResults {
+  max-width: 30em;
+  float:left;
+  margin-right: 1em;
+}
+
+dl#testResults dt, dl#testResults dd {
+  margin-bottom:0.5em;
+  padding: 0.1em 0 0.1em 1em;
+}
+
+dl#testResults dt {
+  background-color: #ddd;
+}
+
+.pass {
+  background-color: #6f6;
+}
+
+.warn {
+  background-color: orange;
+}
+
+.fail {
+  background-color: #f66;
+}
+
+p#resultsGrid {
+  max-width: 80px;
+  float:left;
+}
+
+p#resultsGrid a {
+  display:block;
+  width:10px;
+  height:10px;
+  margin: 2px;
+  float:left;
+  border: 1px solid black;
+}
