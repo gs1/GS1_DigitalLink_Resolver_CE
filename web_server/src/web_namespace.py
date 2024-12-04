@@ -1,61 +1,35 @@
-from flask import request, jsonify, abort, Response
+from flask import request, abort, Response, send_from_directory
+from flask_restx import Namespace, Resource, Api
 import json
-from flask_restx import Namespace, Resource, Api, fields
 import logging
+import os
 import web_logic
-from werkzeug.exceptions import UnsupportedMediaType
-import subprocess
 
 data_entry_namespace = Namespace('', description='Resolver web operations')
+static_folder_path = os.path.join(os.getcwd(), 'public')
 
 logger = logging.getLogger(__name__)
 
 api = Api()
 
-
-# This route serves anything from the root of the server which is stored in src/public
-@api.route('/')
-class Home(Resource):
-    @api.doc(description="Serve the home page")
-    def get(self):
-        return api.send_static_file('index.html')
-
-
-@api.route('/<path:path>')
-class StaticFiles(Resource):
-    @api.doc(description="Serve static files")
-    def get(self, path):
-        return api.send_static_file(path)
-
-
-@api.route('/favicon.ico')
-class Favicon(Resource):
-    @api.doc(description="Serve the favicon")
-    def get(self):
-        return api.send_static_file('favicon.ico')
-
-
-@api.route('/robots.txt')
-class Robots(Resource):
-    @api.doc(description="Serve the robots.txt")
-    def get(self):
-        return api.send_static_file('robots.txt')
-
-
-@data_entry_namespace.route('/heartbeat')
-class HeartBeat(Resource):
-    @api.doc(description="Check if the server is running")
-    def get(self):
-        return {'response_message': 'Server is running!'}, 200
-
-
-@data_entry_namespace.route('/<compressed_link>')
-class DocOperationsCompressedLink(Resource):
-    @api.doc(description="Get a document from the incoming URL (compressed GS1 DL only)")
-    def get(self, compressed_link):
+@data_entry_namespace.route('/<non_gs1dl_request>')
+class DocOperationsNonGS1DigitalLinkRequest(Resource):
+    @api.doc(description="Process non GS1 Digital Link requests (which can include compressed GS1 DLs)")
+    def get(self, non_gs1dl_request):
         try:
-            print('COMPRESSED LINK: ', compressed_link)
-            decompress_result = web_logic.uncompress_gs1_digital_link(compressed_link)
+            print('NON GS1DL REQUEST: ', non_gs1dl_request)
+
+            if non_gs1dl_request == 'favicon.ico':
+                return send_from_directory(static_folder_path, 'favicon.ico')
+
+            if non_gs1dl_request == 'robots.txt':
+                return send_from_directory(static_folder_path, 'robots.txt')
+
+            if non_gs1dl_request == 'heartbeat':
+                return {'response_message': f'Server is running!'}, 200
+
+            # if it's not any of those then let's try and see if it's a compressed GS1 DL
+            decompress_result = web_logic.uncompress_gs1_digital_link(non_gs1dl_request)
             print('DEBUG ==> decompress_result: ', decompress_result)
             if decompress_result['SUCCESS']:
                 # Example of decompress_result:
@@ -89,6 +63,11 @@ class DocOperationsIdentifiersOnly(Resource):
     @api.doc(description="Get a document from the incoming URL (GS1 identifiers only)")
     def get(self, anchor_ai_code, anchor_ai):
         try:
+
+            # this code is specific to ensuring that a Resolver Description File is returned
+            if anchor_ai_code == '.well-known' and anchor_ai == 'gs1resolver':
+                return send_from_directory(static_folder_path, 'gs1resolver.json')
+
             anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
             identifiers = f'/{anchor_ai_code}/{anchor_ai}'
             doc_id = f'{anchor_ai_code}_{anchor_ai}'

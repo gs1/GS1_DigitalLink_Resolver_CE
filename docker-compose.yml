@@ -48,6 +48,14 @@ services:
     networks:
       - resolver-internal-network
 
+  test-service:
+    build: './test_suite'
+    container_name: test-service
+    restart: always
+    ports:
+      - "4001:5000"
+    networks:
+      - resolver-internal-network
 
 volumes:
   resolver-database-volume: {}
