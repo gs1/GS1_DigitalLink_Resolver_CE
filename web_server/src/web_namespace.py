@@ -296,7 +296,7 @@ def _process_response(doc_id, identifiers, qualifier_path=None, compress=None):
         return response_data, 200
 
     # ... otherwise we search for and process the requested document as normal:
-    response_data = web_logic.read_document(identifiers,
+    response_data, link_header = web_logic.read_document(identifiers,
                                             doc_id,
                                             qualifier_path,
                                             linktype,
@@ -305,10 +305,19 @@ def _process_response(doc_id, identifiers, qualifier_path=None, compress=None):
                                             media_types_list,
                                             linkset_requested)
 
+    print('response_data = ', response_data)
     response = Response(
         response=json.dumps(response_data),  # Set response data
         status=response_data['response_status'],  # Set status code
     )
+
+    # add the link header, ensuring will survive over an HTTP 1.0 or 1.1 which allows latin-1 characters only.
+    if link_header is not None:
+        try:
+            response.headers['Link'] = link_header.encode('latin-1').decode('ascii')
+        except UnicodeEncodeError:
+            response.headers['Link'] = link_header.encode('unicode_escape').decode('ascii')
+
     # if the accept header is application/json or application/linkset+json, return the response header
     # 'Content-Type with the SAME value as the request 'Accept' header,
     print('Accept header:', request.headers['Accept'])

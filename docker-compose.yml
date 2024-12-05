@@ -30,6 +30,8 @@ services:
   web-service:
     build: './web_server'
     container_name: resolver-web-server
+    environment:
+      - FQDN=put-your-fully-qualified-domain-name-here.com
     depends_on:
       - database-service
     restart: always

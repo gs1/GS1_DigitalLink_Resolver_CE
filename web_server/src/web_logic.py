@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 import traceback
@@ -363,6 +364,58 @@ def _do_qualifiers_match(qualifier_path, doc_qualifiers):
         return False, [f"Unexpected error occurred. Details: {str(e)}"]
 
 
+def _author_compact_links_for_link_header(linkset):
+    """
+    Convert GS1  linkset to a compact link format for use with the Link header
+
+    Args:
+        linkset (list): The input JSON data - one entry.
+
+    Returns:
+        str: The compact link format.
+    """
+    links = []
+    same_as_link = None
+
+    # Extract owl:sameAs link
+    anchor = 'https://' + os.getenv('FQDN', 'set-domain-name-in-env-variable-FQDN.com') + linkset[0].get("anchor")
+    if anchor:
+        same_as_link = f"<{anchor}>; rel=\"owl:sameAs\""
+
+    #As linkset is always a single list entry let's just make it syntactically easier to code!
+    linkset = linkset[0]
+
+    # Iterate over the linkset
+    for entry in linkset:
+        # Iterate over the links
+        if isinstance(linkset[entry], list):
+            # Handle special cases
+            link_type = "gs1:" + entry.rsplit('/', 1)[-1]
+
+            # Extract link information
+            for link in linkset[entry]:
+                href = link.get("href")
+                title = link.get("title", "")
+                type_ = link.get("type", "")
+                hreflang = ", ".join(link.get("hreflang", []))
+
+                # Create the compact link format
+                link_str = f"<{href}>;rel=\"{link_type}\""
+                if type_:
+                    link_str += f";type=\"{type_}\""
+                if hreflang:
+                    link_str += f";hreflang=\"{hreflang}\""
+                if title:
+                    link_str += f";title=\"{title}\""
+
+                links.append(link_str)
+
+    # Add owl:sameAs link to the end of the list, if present
+    if same_as_link:
+        links.append(same_as_link)
+
+    return ",".join(links)
+
 def _process_serialised_identifier(identifier):
     """
     Processes the serialised component of the identifier and returns the wanted_db_document. It works by
@@ -597,7 +650,8 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
     :param context: Context information passed in from the caller.
     :param media_types_list: List of acceptable media links which influences the selection of the linktype document.
     :param linkset_requested: if true, the entire linkset for the entry is returned
-    :return: A response dictionary which includes the response status and either the link data or error message.
+    :return: Two elements: A response dictionary which includes the response status and either the link data or error message (all of which will be showin the body of the response
+                           A string to be placed into the 'Link' header of the response.
     """
     try:
         # Validate the digital link and fetch the associated document.
@@ -617,7 +671,7 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
             print('DEBUG => accept_language_list:', accept_language_list)
             print('DEBUG => media_types_list:', media_types_list)
 
-            # If qualifier_path is NoneType or '/', we look for an instance in the document
+            # If qualifier_path is NoneType or '/', we look for an instance in database_doc
             # where there are no qualifiers.
             if qualifier_path is None or qualifier_path == '/':
                 for entry in database_doc['data']:
@@ -630,11 +684,12 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
                                                  context,
                                                  media_types_list,
                                                  linkset_requested
-                                                 )
+                                                 ), _author_compact_links_for_link_header(entry['linkset'])
 
             # If we are here then there are qualifiers to process.
             # Iterate through each data item in the document.
             response_links_list = []
+            link_header_list = []
             for entry in database_doc['data']:
                 # Iterate through each data item in the document and check if any qualifiers
                 # in the data item match the qualifier path.
@@ -657,6 +712,7 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
                                                                  media_types_list,
                                                                  linkset_requested
                                                                  ))
+                    link_header_list.append(_author_compact_links_for_link_header(entry['linkset']))
 
             if not response_links_list:
                 # If execution arrives here, a necessary linkset was not found, return a 404 Not Found.
@@ -664,14 +720,14 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
 
             # If a single valid response is prepared, return it.
             if len(response_links_list) == 1 and response_links_list[0]['response_status'] == 307:
-                return response_links_list[0]
+                return response_links_list[0], link_header_list[0]
 
             # If multiple valid responses are prepared, return a 300 response with the linkset data.
             if len(response_links_list) == 1 and response_links_list[0]['response_status'] == 300:
-                return response_links_list[0]
+                return response_links_list[0], link_header_list[0]
 
             # If multiple valid responses are prepared, return a 200 response with the linkset data.
-            return {"response_status": 200, "data": response_links_list}
+            return {"response_status": 200, "data": response_links_list}, ','.join(link_header_list)
 
     except Exception as e:
         # Log the exception and return a server error response.

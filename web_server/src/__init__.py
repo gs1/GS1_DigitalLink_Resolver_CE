@@ -19,6 +19,9 @@ def create_app(test_config=None):
     # Enable CORS (cross-site scripting allowed)
     CORS(app)
 
+    server_description = f"The web server is running at https://{os.getenv('FQDN', 'set-domain-name-in-env-variable-FQDN.com')}"
+    print(server_description)
+
     mongo_url = os.getenv('MONGO_URI', "mongodb://gs1resolver:gs1resolver@database-server:27017")
     logging.info(f"Connecting to MongoDB at {mongo_url}")
     print("Connecting to MongoDB at", mongo_url)
@@ -48,6 +51,7 @@ def create_app(test_config=None):
     resolver_coll.delete_one({"web_test": "web_test"})
     print("Document deleted")
 
+    server_description = f"The web server is running at https://{os.getenv('FQDN', 'set-domain-name-in-env-variable-FQDN.com')}"
 
     with app.app_context():
         # setting up a blueprint for your API routes
@@ -56,10 +60,20 @@ def create_app(test_config=None):
         # setting up restx API and binding it with blueprint
         api = Api(api_blueprint, version='1.0', title='GS1 Resolver Community Edition API', description='')
 
+        api.doc(
+            description=f"{server_description}.\n\n"
+
+        )
+
         # adding namespace (which contains routes) to api
         api.add_namespace(data_entry_namespace)
 
         # registering api blueprint to app
         app.register_blueprint(api_blueprint)
+
+    @app.after_request
+    def add_headers(response):
+        response.headers['Access-Control-Allow-Methods'] = 'GET, HEAD, OPTIONS'
+        return response
 
     return app
