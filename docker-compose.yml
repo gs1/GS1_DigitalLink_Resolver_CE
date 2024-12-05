@@ -31,7 +31,7 @@ services:
     build: './web_server'
     container_name: resolver-web-server
     environment:
-      - FQDN=put-your-fully-qualified-domain-name-here.com
+      - FQDN=set-your-fully-qualified-domain-name-in-docker-compose-yml.com
     depends_on:
       - database-service
     restart: always

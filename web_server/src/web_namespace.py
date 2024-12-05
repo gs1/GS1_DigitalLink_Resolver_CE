@@ -117,128 +117,44 @@ class DocOperationsIdentifiersOnly(Resource):
         return response
 
 
-@data_entry_namespace.route('/<anchor_ai_code>/<anchor_ai>/<qualifier_1_code>/<qualifier_1>')
-class DocOperationsIdentifiersAndOneQualifier(Resource):
-    @api.doc(description="Get a document from the incoming URL (GS1 identifiers plus one qualifier)")
-    def get(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1):
+@data_entry_namespace.route('/<anchor_ai_code>/<anchor_ai>/<path:extra_segments>')
+class DocOperationsResource(Resource):
+    def get(self, anchor_ai_code, anchor_ai, extra_segments=None):
         try:
+            # Process the extra segments
+            # This will include everything after the anchor_ai, such as 'foo', qualifiers, etc.
+            print("Extra segments:", extra_segments)
 
             anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
             identifiers = f'/{anchor_ai_code}/{anchor_ai}'
             doc_id = f'{anchor_ai_code}_{anchor_ai}'
-            qualifier_path = f'/{qualifier_1_code}/{qualifier_1}'
-            print('GS1 identifiers plus one qualifier: ', identifiers + qualifier_path)
+
+            if extra_segments:
+                qualifier_path = f'/{extra_segments}'
+            else:
+                qualifier_path = ''
+
+            print('Processed identifiers and qualifiers:', identifiers + qualifier_path)
 
             compress = request.args.get('compress', None)
             return _process_response(doc_id, identifiers, qualifier_path=qualifier_path, compress=compress)
 
-
         except Exception as e:
-            logger.warning('Error getting document ' + str(e))
+            logger.warning('Error getting document: ' + str(e))
             abort(500, description="Error getting document")
 
-    def head(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1):
-        # Reuse the get logic, but suppress the response body
-        response_tuple = self.get(anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1)
-        # If the response from GET is a tuple, unpack it
+    def head(self, anchor_ai_code, anchor_ai, extra_segments=None):
+        response_tuple = self.get(anchor_ai_code, anchor_ai, extra_segments)
         if isinstance(response_tuple, tuple):
             response_data, status_code = response_tuple
             response = make_response(response_data, status_code)
         else:
             response = make_response(response_tuple)
 
-        # Clear the body for the HEAD request
         response.data = ''
         return response
 
-    def options(self, anchor_ai_code=None, anchor_ai=None, qualifier_1_code=None, qualifier_1=None):
-        # Response with allowed methods
-        response = Response()
-        response.headers['Allow'] = 'GET, HEAD, OPTIONS'
-        return response
-
-
-@data_entry_namespace.route(
-    '/<anchor_ai_code>/<anchor_ai>/<qualifier_1_code>/<qualifier_1>/<qualifier_2_code>/<qualifier_2>')
-class DocOperationsIdentifiersAndTwoQualifiers(Resource):
-    @api.doc(description="Get a document from the incoming URL (GS1 identifiers plus two qualifiers)")
-    def get(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code, qualifier_2):
-        try:
-            anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
-            identifiers = f'/{anchor_ai_code}/{anchor_ai}'
-            doc_id = f'{anchor_ai_code}_{anchor_ai}'
-            qualifier_path = f'/{qualifier_1_code}/{qualifier_1}/{qualifier_2_code}/{qualifier_2}'
-            print('GS1 identifiers plus two qualifiers: ', identifiers + qualifier_path)
-
-            compress = request.args.get('compress', None)
-            return _process_response(doc_id, identifiers, qualifier_path=qualifier_path, compress=compress)
-
-        except Exception as e:
-            logger.warning('Error getting document ' + str(e))
-            abort(500, description="Error getting document")
-
-    def head(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code, qualifier_2):
-        # Reuse the get logic, but suppress the response body
-        response_tuple = self.get(anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code,
-                                  qualifier_2)
-        # If the response from GET is a tuple, unpack it
-        if isinstance(response_tuple, tuple):
-            response_data, status_code = response_tuple
-            response = make_response(response_data, status_code)
-        else:
-            response = make_response(response_tuple)
-
-        # Clear the body for the HEAD request
-        response.data = ''
-        return response
-
-    def options(self, anchor_ai_code=None, anchor_ai=None, qualifier_1_code=None, qualifier_1=None,
-                qualifier_2_code=None, qualifier_2=None):
-        # Response with allowed methods
-        response = Response()
-        response.headers['Allow'] = 'GET, HEAD, OPTIONS'
-        return response
-
-
-@data_entry_namespace.route(
-    '/<anchor_ai_code>/<anchor_ai>/<qualifier_1_code>/<qualifier_1>/<qualifier_2_code>/<qualifier_2>/<qualifier_3_code>/<qualifier_3>')
-class DocOperationsIdentifiersAndThreeQualifiers(Resource):
-    @api.doc(description="Get a document from the incoming URL (GS1 identifiers plus three qualifiers)")
-    def get(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code, qualifier_2,
-            qualifier_3_code, qualifier_3):
-        try:
-            anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
-            identifiers = f'/{anchor_ai_code}/{anchor_ai}'
-            doc_id = f'{anchor_ai_code}/{anchor_ai}'
-            qualifier_path = f'/{qualifier_1_code}/{qualifier_1}/{qualifier_2_code}/{qualifier_2}/{qualifier_3_code}/{qualifier_3}'
-            print('GS1 identifiers plus three qualifiers: ', identifiers + qualifier_path)
-
-            compress = request.args.get('compress', None)
-            return _process_response(doc_id, identifiers, qualifier_path=qualifier_path, compress=compress)
-
-        except Exception as e:
-            logger.warning('Error getting document ' + str(e))
-            abort(500, description="Error getting document")
-
-    def head(self, anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code, qualifier_2,
-             qualifier_3_code, qualifier_3):
-        # Reuse the get logic, but suppress the response body
-        response_tuple = self.get(anchor_ai_code, anchor_ai, qualifier_1_code, qualifier_1, qualifier_2_code,
-                                  qualifier_2, qualifier_3_code, qualifier_3)
-        # If the response from GET is a tuple, unpack it
-        if isinstance(response_tuple, tuple):
-            response_data, status_code = response_tuple
-            response = make_response(response_data, status_code)
-        else:
-            response = make_response(response_tuple)
-
-        # Clear the body for the HEAD request
-        response.data = ''
-        return response
-
-    def options(self, anchor_ai_code=None, anchor_ai=None, qualifier_1_code=None, qualifier_1=None,
-                qualifier_2_code=None, qualifier_2=None, qualifier_3_code=None, qualifier_3=None):
-        # Response with allowed methods
+    def options(self, anchor_ai_code=None, anchor_ai=None, extra_segments=None):
         response = Response()
         response.headers['Allow'] = 'GET, HEAD, OPTIONS'
         return response
@@ -305,7 +221,6 @@ def _process_response(doc_id, identifiers, qualifier_path=None, compress=None):
                                             media_types_list,
                                             linkset_requested)
 
-    print('response_data = ', response_data)
     response = Response(
         response=json.dumps(response_data),  # Set response data
         status=response_data['response_status'],  # Set status code

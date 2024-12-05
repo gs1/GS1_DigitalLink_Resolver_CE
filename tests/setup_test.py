@@ -225,6 +225,15 @@ class APITestCase(unittest.TestCase):
                              f'Location link "{web_response.headers["Location"]}" is not "{expected_href}"'
                              f' for request header: {test["accept-language"]}')
 
+
+        # At this point we should take a moment to send a request that is not in GS1 Digital Link format just to check
+        # that the server returns an HTTP 400 Bad Request. To do this we'll send '/01/09506000134376/badrequest' which
+        # is clearly not in GS1 Digital Link format!
+        print('BAD GS1 Digital Link Request /01/09506000134376/badrequest using the Resolver frontend web server')
+        web_response = requests.get(self.resolver_url + '/01/09506000134376/badrequest', allow_redirects=False)
+        self.assertEqual(web_response.status_code, 400, 'Bad GS1 Digital Link test: Server should have responded with Bad Request status code')
+
+
         # This next test is a change to Resolver's behaviour compared to previous versions. If a request asks for a
         # linktype that is not available in the linkset, the Resolver frontend server should return a 404 status code.
         # In previous versions, the Resolver frontend server would return the default Link in the linkset. It is now

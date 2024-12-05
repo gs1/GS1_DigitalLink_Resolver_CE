@@ -95,28 +95,30 @@ def _test_gs1_digital_link_syntax(url):
     """
     This function tests the syntax of a GS1 Digital Link URL. It returns True if the URL is valid,
     and False if it is not.
-
-    To do this we make a command line call to the GS1 Digital Link Validator at
-    /app/gs1-digitallink-toolkit/callGS1encoder.js and pass the URL as an ai data string parameter.
-    For example /01/09521234543213/10/LOT/21/SERIAL becomes
-    (01)09521234543213(10)LOT(21)SERIAL
-    We then call the toolkit and return the true/false result.
-    :param url:
-    :return:
     """
 
-    url_parts = url.split('/')
+    try:
+        url_parts = url.split('/')
+        # Add the identifier
+        ai_data_string = f"({url_parts[1]}){url_parts[2]}"
 
-    # add the identifier
-    ai_data_string = f"({url_parts[1]}){url_parts[2]}"
+        # Add the qualifiers (up to three - CPV, LOT and SERIAL for GTINs, or GLNX for GLNs)
+        if len(url_parts) > 3:
+            for i in range(3, len(url_parts), 2):
+                ai_data_string += f"({url_parts[i]}){url_parts[i + 1]}"
 
-    # add the qualifiers (up to three - CPV, LOT and SERIAL for GTINs, or GLNX for GLNs)
-    if len(url_parts) > 3:
-        for i in range(3, len(url_parts), 2):
-            ai_data_string += f"({url_parts[i]}){url_parts[i + 1]}"
+        # Call the toolkit
+        return _call_gs1_toolkit(ai_data_string)
 
-    # call the toolkit
-    return _call_gs1_toolkit(ai_data_string)
+    except IndexError as e:
+        print("Error: URL is missing expected segments:", e)
+        return False
+    except KeyError as e:
+        print("KeyError occurred in _call_gs1_toolkit:", e)
+        return False
+    except Exception as e:
+        print("An unexpected error occurred:", e)
+        return False
 
 
 def _match_all_three_contexts(linktype_doc_list, accept_language_list, context, media_types_list):
@@ -660,7 +662,7 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
         # If the digital link syntax is invalid, or a database errors / document not found occurs
         # then return the error response which is stored in doc_data.
         if doc_data['response_status'] != 200:
-            return doc_data
+            return doc_data, None
 
         else:
             database_doc = doc_data['data']
