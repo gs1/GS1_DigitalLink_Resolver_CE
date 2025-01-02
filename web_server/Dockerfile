@@ -5,6 +5,10 @@ LABEL authors="nick"
 # to the terminal without buffering it first
 ENV PYTHONUNBUFFERED 1
 
+ # This Environment variable is used to set the fully qualified domain name (FQDN) of the host machine which will be
+ # Used when outputing linkset information
+ ENV FQDN='id.mydomainname_currently_set_in_dockerfile.com'
+
 # Install Node for GS1 Digital Link Toolikit
 RUN apt-get update && apt-get install -y curl && curl -sL https://deb.nodesource.com/setup_18.x | bash -
 RUN apt-get install -y nodejs nano

@@ -1,8 +1,10 @@
-from flask import request, abort, Response, send_from_directory, jsonify, make_response
-from flask_restx import Namespace, Resource, Api
 import json
 import logging
 import os
+
+from flask import request, abort, Response, send_from_directory, jsonify, make_response
+from flask_restx import Namespace, Resource, Api
+
 import web_logic
 
 data_entry_namespace = Namespace('', description='Resolver web operations')
@@ -173,11 +175,12 @@ class DocOperationsResource(Resource):
 def _get_request_parameters():
     query_strings = request.args
 
-    # do we have a 'linktype' query string?
-    linktype = query_strings.get('linktype', None)
+    # do we have a 'linktype' query string? Bear in mind it might be in mixed case such as 'linkType'
+    # so we will need to parse the list looking for a match where we compare lowercase values
+    linktype = next((value for key, value in query_strings.items() if key.lower() == 'linktype'), None)
 
-    # is 'context' in the query string?
-    context = query_strings.get('context', None)
+    # is 'context' in the query string? Do the same as for linkype to avoid case mismatch.
+    context = next((value for key, value in query_strings.items() if key.lower() == 'context'), None)
 
     # construct the response_query_string
     response_query_string = '&'.join(f'{key}={value}' for key, value in query_strings.items())
@@ -188,7 +191,7 @@ def _get_request_parameters():
     # do we have an 'accept' header?
     if request.headers.get('Accept'):
         media_types_list = request.headers['Accept'].split(',')
-        linkset_requested = 'application/linkset+json' in media_types_list or 'application/json' in media_types_list
+        linkset_requested = 'application/linkset+json' in media_types_list or 'application/json' in media_types_list or linktype == 'all' or linktype == 'linkset'
     else:
         media_types_list = None
         linkset_requested = False
@@ -237,10 +240,86 @@ def _process_response(doc_id, identifiers, qualifier_path=None, compress=None, q
                                             media_types_list,
                                             linkset_requested)
 
-    response = Response(
-        response=json.dumps(response_data),  # Set response data
-        status=response_data['response_status'],  # Set status code
-    )
+    print('DEBUG ===> identifiers:', identifiers)
+    print('DEBUG ===> Was linkset requested? ', linkset_requested)
+
+    aiCode = identifiers.split('/')[1]
+    aiValue = identifiers.split('/')[2]
+
+    # if the linkset is requested, we need to format thw response to include json-ld
+    # and add our document to a 'linkset' property.
+    if linkset_requested:
+        # We need to include JSON-LD to add context to the response
+        response_linkset = {
+            "@context": {
+                "schema": "https://schema.org/",
+                "gs1": "http://gs1.org/voc/",
+                "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+                "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+                "owl": "http://www.w3.org/2002/07/owl#",
+                "dcterms": "http://purl.org/dc/terms/",
+                "xsd": "http://www.w3.org/2001/XMLSchema#",
+                "skos": "http://www.w3.org/2004/02/skos/core#",
+                "gs1:value": {
+                    "@type": "xsd:float"
+                },
+                "@protected": True,
+                "href": "@id",
+                "hreflang": {
+                    "@id": "dcterms:language",
+                    "@container": "@set"
+                },
+                "title": {
+                    "@id": "dcterms:title"
+                },
+                "title*": {
+                    "@id": "dcterms:title",
+                    "@container": "@set"
+                },
+                "type": {
+                    "@id": "dcterms:format"
+                },
+                "modified": {
+                    "@id": "dcterms:modified"
+                },
+                "itemDescription": {
+                    "@id": "rdfs:comment"
+                },
+                "linkset": "@nest"
+            },
+            "@id": f"/{aiCode}/{aiValue}",
+            "@type": [
+                "rdfs:Class",
+                "owl:Class",
+                "gs1:Product",
+                "schema:Product"
+            ],
+            "gs1:elementStrings": f"({aiCode}){aiValue}",
+        }
+
+        if aiCode == '01':
+            response_linkset['@context']['gs1:gtin'] = aiValue
+            response_linkset['@context']['schema:gtin'] = aiValue
+
+        #  add the linkset to the response
+        response_linkset['linkset'] = response_data['data']
+
+        # adjust the anchor value to include the fully qualified domain name 'FQDN' (specified in Dockerfile but can be
+        # moved to other environment varaible lists dpednidng on your installation needs)
+        response_linkset['linkset'][0]['anchor'] = f"https://{os.getenv('FQDN', 'replace_with_environment_variable_FQDN_see_README.com')}{response_linkset['linkset'][0]['anchor']}"
+
+        response = Response(
+            response=json.dumps(response_linkset),  # Set response data
+            status=response_data['response_status'],  # Set status code
+        )
+
+    else: # linkset was not requested
+        response = Response(
+            response=json.dumps(response_data),  # Set response data
+            status=response_data['response_status'],  # Set status code
+        )
+
+
 
     # add the link header, ensuring will survive over an HTTP 1.0 or 1.1 which allows latin-1 characters only.
     if link_header is not None:

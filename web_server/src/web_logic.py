@@ -642,7 +642,8 @@ def _clean_q_values_from_header_entries(header_values_list):
 def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, accept_language_list=None, context=None,
                   media_types_list=None, linkset_requested=False):
     """
-    Reads a document from the data source and returns the most appropriate link data.
+    Reads a document from the data source and returns the most appropriate link data based on the linktype, accept_language_list, context, and media_types_list.
+    If the linkset_requested is True, the entire linkset for the entry is returned.
 
     :param gs1dl_identifier: Identifier portion of the digital link.
     :param doc_id: Unique document ID used to fetch the document from the database.

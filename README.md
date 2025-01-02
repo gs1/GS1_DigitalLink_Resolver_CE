@@ -2,6 +2,16 @@
 
 GS1 Resolver is a free and open-source software that allows you to resolve GS1 identifiers to their corresponding web resources. This software is developed by the GS1 Resolver Community and is based on the GS1 Digital Link standard.
 
+### <i>From the official 'GS1-Conformant Resolver Standard' document (link further down this README):
+
+A GS1-Conformant Resolver connects a GS1-identified object or entity to one or more online
+resources that are directly related to it. The object or entity may be identified at any level of
+granularity, and the resources may be either human- or machine-readable. Examples include
+product information pages, instruction manuals, patient leaflets and clinical data, product data,
+service APIs, marketing experiences and more. By adhering to a common protocol based on existing
+GS1 identifiers and existing Web technologies, each GS1-Conformant Resolver is part of a coherent,
+yet distributed, network of links to information resources.</i>
+
 ### 🚀 What's new in this version?
 1. **Completely revised and simplified architecture** for better performance and scalability.
 2. **Improved support for GS1 Digital Link and GS1 Web URI** according to the standard published at https://ref.gs1.org/standards/resolver/
@@ -75,6 +85,12 @@ The API is available with Open API (Swagger) documentation at http://localhost:3
 3. **Look at the convertor scripts** in the useful_external_python_scripts folder. These scripts are useful for converting data between the previous versions of Resolver CE and the new format.
 4. **Try out the API yourself**: The API is available with Open API (Swagger) documentation at http://localhost:3000/api/ and, for Postman fans (complete with example data) at https://documenter.getpostman.com/view/10078469/2sA3JKeNb2
 5. **Provide feedback**: We are looking for feedback from users to help us improve the software. Please provide feedback by creating an issue on the GitHub repository.
+
+## Can I put this GS1 Resolver live?
+YES! Just remember that this is a beta version and we are still working on the software. We recommend that you test the software thoroughly before putting it live. We are looking for feedback from users to help us improve the software. Please provide feedback by creating an issue on the GitHub repository.
+Your code review to ensure security and GDPR compliance will also be a key consideration.
+The only thing left is to decide on a Fully Qualified Domain Name (FQDN) for your Resolver service (we recommend a FQDN starting 'id' - e.g. 'https://id.mycompany.org' so it can sit alongside, but not disturb, your other web services) and set up the appropriate DNS records to point to your server.
+Before you spin up the service, make sure you set environment variable 'FQDN' (currently in web_server/Dockerfile) to your chosen name.
 
 ## What are the GS1 Dev team doing next?
 1. **Testing**: We are testing the software to ensure that it is stable and reliable - expect regular updates that will be the form of 'beta 2', 'beta 3' etc.
