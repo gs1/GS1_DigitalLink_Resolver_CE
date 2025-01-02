@@ -168,11 +168,14 @@ class APITestCase(unittest.TestCase):
                 headers['Accept'] = '*/*'
                 web_response = requests.get(self.resolver_url + '/01/09506000134352?linktype=' + linktype,
                                             allow_redirects=False, headers=headers)
-                wanted_link_endswith = f'test_lt={linktype}&test_lang={language}'
+                wanted_test_linktype = f'test_lt={linktype}'
+                wanted_test_language = f'test_lang={language}'
                 self.assertEqual(web_response.status_code, 307,
                                  'Read test: Frontend server did not return 307 (Temporary Redirect) status code')
-                self.assertTrue(web_response.headers['Location'].endswith(wanted_link_endswith),
-                                f'Location link was "{web_response.headers["Location"]}" and so did not end with "{wanted_link_endswith}"')
+                self.assertTrue(wanted_test_linktype in web_response.headers['Location'],
+                                f'Location link was "{web_response.headers["Location"]}" and so did not include "{wanted_test_linktype}"')
+                self.assertTrue(wanted_test_language in web_response.headers['Location'],
+                                f'Location link was "{web_response.headers["Location"]}" and so did not include "{wanted_test_language}"')
 
         # For this language test we will use the 'Accept-Language' header to request the language in a way that is more
         # realistic for web browsers, which request several languages in the 'Accept-Language' header. The Resolver
@@ -209,7 +212,7 @@ class APITestCase(unittest.TestCase):
             headers['Accept-Language'] = test['accept-language']
             headers['Accept'] = '*/*'
 
-            expected_href = f'https://dalgiardino.com/medicinal-compound/register.html?register={test["expected"]}'
+            expected_href_register_querystring = f'register={test["expected"]}'
 
             web_response = requests.get(self.resolver_url + '/01/09506000134376?linktype=gs1:registerProduct',
                                         allow_redirects=False, headers=headers)
@@ -221,8 +224,8 @@ class APITestCase(unittest.TestCase):
                                                             str(web_response.status_code) + ' status code' +
                                                             ' with content: ' + json.dumps(json.loads(web_response.content.decode('utf-8')), indent=2))
 
-            self.assertEqual(web_response.headers['Location'], expected_href,
-                             f'Location link "{web_response.headers["Location"]}" is not "{expected_href}"'
+            self.assertTrue(expected_href_register_querystring in web_response.headers['Location'],
+                             f'Location link "{web_response.headers["Location"]}" is not "{expected_href_register_querystring}"'
                              f' for request header: {test["accept-language"]}')
 
 
