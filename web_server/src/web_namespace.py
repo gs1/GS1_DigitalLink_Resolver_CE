@@ -240,84 +240,16 @@ def _process_response(doc_id, identifiers, qualifier_path=None, compress=None, q
                                             media_types_list,
                                             linkset_requested)
 
-    print('DEBUG ===> identifiers:', identifiers)
-    print('DEBUG ===> Was linkset requested? ', linkset_requested)
 
-    aiCode = identifiers.split('/')[1]
-    aiValue = identifiers.split('/')[2]
+    # The final link header entry should be to the JSON-LD context source as requested by the GS1 Resolver
+    # Standard document. This is a mandatory requirement.
+    link_header += '; rel=http://www.w3.org/ns/json-ld#context'
 
     # if the linkset is requested, we need to format thw response to include json-ld
     # and add our document to a 'linkset' property.
     if linkset_requested:
         # We need to include JSON-LD to add context to the response
-        response_linkset = {
-            "@context": {
-                "schema": "https://schema.org/",
-                "gs1": "http://gs1.org/voc/",
-                "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-                "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
-                "owl": "http://www.w3.org/2002/07/owl#",
-                "dcterms": "http://purl.org/dc/terms/",
-                "xsd": "http://www.w3.org/2001/XMLSchema#",
-                "skos": "http://www.w3.org/2004/02/skos/core#",
-                "gs1:value": {
-                    "@type": "xsd:float"
-                },
-                "@protected": True,
-                "href": "@id",
-                "hreflang": {
-                    "@id": "dcterms:language",
-                    "@container": "@set"
-                },
-                "title": {
-                    "@id": "dcterms:title"
-                },
-                "title*": {
-                    "@id": "dcterms:title",
-                    "@container": "@set"
-                },
-                "type": {
-                    "@id": "dcterms:format"
-                },
-                "modified": {
-                    "@id": "dcterms:modified"
-                },
-                "itemDescription": {
-                    "@id": "rdfs:comment"
-                },
-                "linkset": "@nest"
-            },
-            "@id": f"/{aiCode}/{aiValue}",
-            "@type": [
-                "rdfs:Class",
-                "owl:Class",
-                "gs1:Product",
-                "schema:Product"
-            ],
-            "gs1:elementStrings": f"({aiCode}){aiValue}",
-        }
-
-        if aiCode == '01':
-            response_linkset['@context']['gs1:gtin'] = aiValue
-            response_linkset['@context']['schema:gtin'] = aiValue
-
-        #  add the linkset to the response
-        response_linkset['linkset'] = response_data['data']
-
-        # adjust the anchor value to include the fully qualified domain name 'FQDN' (specified in Dockerfile but can be
-        # moved to other environment variable lists depending on your installation needs)
-        response_linkset['linkset'][0]['anchor'] = f"https://{os.getenv('FQDN', 'replace_with_environment_variable_FQDN_see_README.com')}{response_linkset['linkset'][0]['anchor']}"
-
-        # Iterate through the linkset and remove "und" from hreflang lists, Although 'und' (for 'undefined') is a valid
-        # value for the 'hreflang' attribute for internal processing, it is not allowed in the linkset response.
-        for link in response_linkset['linkset']:
-            # Recursively check keys in the link objects
-            for key, value in link.items():
-                if isinstance(value, list):  # Check if the value is a list
-                    for entry in value:
-                        if isinstance(entry, dict) and 'hreflang' in entry:  # Check for `hreflang` in a dictionary entry
-                            if 'und' in entry['hreflang']:
-                                entry['hreflang'].remove('und')  # Remove "und" if it exists
+        response_linkset = web_logic.format_linkset_for_external_use(response_data, identifiers)
 
         response = Response(
             response=json.dumps(response_linkset),  # Set response data

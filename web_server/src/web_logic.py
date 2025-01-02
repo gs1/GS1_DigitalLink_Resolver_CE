@@ -639,6 +639,92 @@ def _clean_q_values_from_header_entries(header_values_list):
     return header_values_list
 
 
+def format_linkset_for_external_use(response_data, identifiers):
+    ai_code = identifiers.split('/')[1]
+    ai_value = identifiers.split('/')[2]
+
+    response_linkset = {
+        "@context": {
+            "schema": "https://schema.org/",
+            "gs1": "http://gs1.org/voc/",
+            "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+            "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+            "owl": "http://www.w3.org/2002/07/owl#",
+            "dcterms": "http://purl.org/dc/terms/",
+            "xsd": "http://www.w3.org/2001/XMLSchema#",
+            "skos": "http://www.w3.org/2004/02/skos/core#",
+            "gs1:value": {
+                "@type": "xsd:float"
+            },
+            "@protected": True,
+            "href": "@id",
+            "hreflang": {
+                "@id": "dcterms:language",
+                "@container": "@set"
+            },
+            "title": {
+                "@id": "dcterms:title"
+            },
+            "title*": {
+                "@id": "dcterms:title",
+                "@container": "@set"
+            },
+            "type": {
+                "@id": "dcterms:format"
+            },
+            "modified": {
+                "@id": "dcterms:modified"
+            },
+            "itemDescription": {
+                "@id": "rdfs:comment"
+            },
+            "linkset": "@nest"
+        },
+        "@id": f"/{ai_code}/{ai_value}",
+        "@type": [
+            "rdfs:Class",
+            "owl:Class",
+            "gs1:Product",
+            "schema:Product"
+        ],
+        "gs1:elementStrings": f"({ai_code}){ai_value}",
+    }
+
+    if ai_code == '01':
+        response_linkset['@context']['gs1:gtin'] = ai_value
+        response_linkset['@context']['schema:gtin'] = ai_value
+
+    #  add the linkset to the response
+    response_linkset['linkset'] = response_data['data']
+
+    # adjust the anchor value to include the fully qualified domain name 'FQDN' (specified in Dockerfile but can be
+    # moved to other environment variable lists depending on your installation needs)
+    response_linkset['linkset'][0]['anchor'] = f"https://{os.getenv('FQDN', 'replace_with_environment_variable_FQDN_see_README.com')}{response_linkset['linkset'][0]['anchor']}"
+
+    # Iterate through the linkset and remove "und" from hreflang lists, Although 'und' (for 'undefined') is a valid
+    # value for the 'hreflang' attribute for internal processing, it is not allowed in the linkset response.
+    for link in response_linkset['linkset']:
+        # Recursively check keys in the link objects
+        for key, value in link.items():
+            if isinstance(value, list):  # Check if the value is a list
+                for entry in value:
+                    if isinstance(entry, dict) and 'hreflang' in entry:  # Check for `hreflang` in a dictionary entry
+                        if 'und' in entry['hreflang']:
+                            entry['hreflang'].remove('und')  # Remove "und" if it exists
+                        # check if the list is now empty and remove the key if it is
+                        if not entry['hreflang']:
+                            del entry['hreflang']
+
+
+    # Internally, default_link does not have to be an array for ease of processing, but for external use, it must be
+    # an array (list). Standards conformant!
+    if type(response_linkset['linkset'][0]['https://gs1.org/voc/defaultLink']) is not list:
+        response_linkset['linkset'][0]['https://gs1.org/voc/defaultLink'] = [response_linkset['linkset'][0]['https://gs1.org/voc/defaultLink']]
+
+
+    return response_linkset
+
+
 def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, accept_language_list=None, context=None,
                   media_types_list=None, linkset_requested=False):
     """
@@ -716,6 +802,7 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
                                                                  linkset_requested
                                                                  ))
                     link_header_list.append(_author_compact_links_for_link_header(entry['linkset']))
+
 
             if not response_links_list:
                 # If execution arrives here, a necessary linkset was not found, return a 404 Not Found.
