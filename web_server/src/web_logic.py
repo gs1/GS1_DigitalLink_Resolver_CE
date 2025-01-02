@@ -620,8 +620,8 @@ def get_compressed_link(uncompressed_link):
 
     except Exception as e:
         print(f"get_compressed_link - Unexpected error occurred. Details: {str(e)}")
-        return {'response_status': 500,
-                'error': f"Unexpected error occurred. Check GS1 Sigital Link syntax is correct before compressing"}
+        return {'response_status': 400,
+                'error': f"Unexpected error occurred. Check GS1 Digital Link syntax is correct before compressing"}
 
 
 def _clean_q_values_from_header_entries(header_values_list):
@@ -756,9 +756,6 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
 
             accept_language_list = _clean_q_values_from_header_entries(accept_language_list)
             media_types_list = _clean_q_values_from_header_entries(media_types_list)
-
-            print('DEBUG => accept_language_list:', accept_language_list)
-            print('DEBUG => media_types_list:', media_types_list)
 
             # If qualifier_path is NoneType or '/', we look for an instance in database_doc
             # where there are no qualifiers.

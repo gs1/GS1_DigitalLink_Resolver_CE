@@ -1,6 +1,20 @@
-## 📢 Welcome to GS1 Resolver Community Edition Version 3.0.0 Beta 3
+## 📢 Welcome to GS1 Resolver Community Edition Version 3.0.0
 
-GS1 Resolver is a free and open-source software that allows you to resolve GS1 identifiers to their corresponding web resources. This software is developed by the GS1 Resolver Community and is based on the GS1 Digital Link standard.
+GS1 Resolver is a free and open-source web-server application that allows you to resolve GS1 identifiers to their corresponding web resources. 
+
+This is really useful for products, services, and other entities that have a GS1 identifier stored in a GS1 Digital Link QR Code.
+
+In simple terms, a consumer scans the GS1 Digital Link QR Code on your product, and GS1 Resolver will redirect them to the correct page on your website,
+all without having to change your existing web applications or databases. You simply add the GS1 identifier and the corresponding target URL to the Resolver database.
+
+Even more useful is the fact that the same consumer could scan the QR Code before they purchase the product to check for nutritional red flags, and
+after they have purchased to the product to look at recipes! GS1 Resolver signposts people to the appropriate information based on <i>why</i> they scanned
+the QR Code.
+
+It means that that consumers, supply chain workers and others can see contextually important information about a product that is
+relevant to their needs. One QR Code, infinite possibilities!
+
+This software is developed by the GS1 Resolver Community and aims to be fully conformant with the GS1 Digital Link standard.
 
 ### <i>From the official 'GS1-Conformant Resolver Standard' document (link further down this README):
 
@@ -45,7 +59,7 @@ You could use a Mongo-cloud based solution such as MongoDB Atlas or Cosmos DB wi
 **What about the Proxy server?**
 This container is just there to route incoming requests to data-entry and resolving (web) containers via a single endpoint through Docker or Kubernetes. Most of you have your own "front-door" routing services to your network applications, so you would just use that with appropriate rules.
 
-
+<hr>
 ### What has been simplified compared to previous versions?
 
 #### Two containers are dropped:
@@ -55,14 +69,7 @@ This container is just there to route incoming requests to data-entry and resolv
 1. Originally resolver v1/v2 of needed to be self-standing with independent logins. No more! 
 2. There is an authentication key that can be set as a secret and provided by the calling client when acting on the Resolver CE data entry API. Alternatively, you can easily replace our simple 'Bearer' authentication with your own authentication mechanism. You would likely run the data entry service on your internal network and accessed by your existing applications, with only the Resolving web server facing the internet - although they are both accessible via the provided proxy server 'out of the box'.
 
-
-## What does it mean to be in 'beta'?
-Resolver CE v3.0 is in beta because we are still working on the following:
-1. **Testing**: We are still testing the software to ensure that it is stable and reliable.
-2. **Documentation**: We are still working on the documentation to make it easier for users to understand how to use the software.
-3. **Feedback**: We are looking for feedback from users to help us improve the software.
-4. **Standards Compliance** : We are working on ensuring that the software is fully compliant with the GS1 Digital Link standard. Alongside this project, a test suite is being built. We **cannot** bring Resolver CE v3.0 out of beta until it has passed the test suite.
-
+<hr>
 
 ### 📦 Installation
 The GS1 Resolver Community Edition is available as a Docker composition. Make sure you have Docker Desktop running, then you can run the software using the following command from the root directory of the project:
@@ -87,17 +94,14 @@ The API is available with Open API (Swagger) documentation at http://localhost:3
 5. **Provide feedback**: We are looking for feedback from users to help us improve the software. Please provide feedback by creating an issue on the GitHub repository.
 
 ## Can I put this GS1 Resolver live?
-YES! Just remember that this is a beta version and we are still working on the software. We recommend that you test the software thoroughly before putting it live. We are looking for feedback from users to help us improve the software. Please provide feedback by creating an issue on the GitHub repository.
+YES! We recommend that you test the software thoroughly before putting it live. We are looking for feedback from users to help us improve the software. Please provide feedback by creating an issue on the GitHub repository.
 Your code review to ensure security and GDPR compliance will also be a key consideration.
 The only thing left is to decide on a Fully Qualified Domain Name (FQDN) for your Resolver service (we recommend a FQDN starting 'id' - e.g. 'https://id.mycompany.org' so it can sit alongside, but not disturb, your other web services) and set up the appropriate DNS records to point to your server.
 Before you spin up the service, make sure you set environment variable 'FQDN' (currently in web_server/Dockerfile) to your chosen name.
+You should also fill in your organisation contact information in web_server/src/public/gs1resolver.json which will be published as part
+of the GS1 Resolver standard from https://your-fully-qualified-doman-name/.well-knowsn/gs1resolver
 
-## What are the GS1 Dev team doing next?
-1. **Testing**: We are testing the software to ensure that it is stable and reliable - expect regular updates that will be the form of 'beta 2', 'beta 3' etc.
-2. **Documentation**: We are working on the documentation to make it easier for users to understand how to use the software.
-3. **Building the test suite**: We are building a web-based test suite to ensure that the software is fully compliant with the GS1 Digital Link standard.
-
-
+<hr>
 ## How do I backup the database?
 The database is stored in a Docker volume within the composition. To back up the database to a backup archive file on your host computer, you can use the following command which uses 'docker compose exec' to run the 'mongodump' command within the 'database-service' container (some computers hosting docker may have 'docker-compose' rather than 'docker compose'):
 ```bash

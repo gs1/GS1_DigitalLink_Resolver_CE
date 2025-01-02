@@ -241,9 +241,14 @@ def _process_response(doc_id, identifiers, qualifier_path=None, compress=None, q
                                             linkset_requested)
 
 
+    # if the response status is 400 or greater, we need to return the response_data and the response status
+    if response_data['response_status'] >= 400:
+        return response_data, response_data['response_status']
+
+
     # The final link header entry should be to the JSON-LD context source as requested by the GS1 Resolver
     # Standard document. This is a mandatory requirement.
-    link_header += '; rel=http://www.w3.org/ns/json-ld#context'
+    link_header += ',rel=http://www.w3.org/ns/json-ld#context;type="application/ld+json"'
 
     # if the linkset is requested, we need to format thw response to include json-ld
     # and add our document to a 'linkset' property.
