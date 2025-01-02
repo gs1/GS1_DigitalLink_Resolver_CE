@@ -102,6 +102,7 @@ You should also fill in your organisation contact information in web_server/src/
 of the GS1 Resolver standard from https://your-fully-qualified-doman-name/.well-knowsn/gs1resolver
 
 <hr>
+
 ## How do I backup the database?
 The database is stored in a Docker volume within the composition. To back up the database to a backup archive file on your host computer, you can use the following command which uses 'docker compose exec' to run the 'mongodump' command within the 'database-service' container (some computers hosting docker may have 'docker-compose' rather than 'docker compose'):
 ```bash
