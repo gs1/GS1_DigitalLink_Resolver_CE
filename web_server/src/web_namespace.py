@@ -88,8 +88,11 @@ class DocOperationsIdentifiersOnly(Resource):
             doc_id = f'{anchor_ai_code}_{anchor_ai}'
             print('GS1 identifiers only: ', identifiers)
 
+            # Extract all query strings into a URL-compatible string
+            query_strings = _extract_query_strings(request)
+
             compress = request.args.get('compress', None)
-            return _process_response(doc_id, identifiers, compress=compress)
+            return _process_response(doc_id, identifiers, compress=compress, query_strings=query_strings)
 
         except Exception as e:
             logger.warning('Error getting document ' + str(e))
@@ -136,8 +139,11 @@ class DocOperationsResource(Resource):
 
             print('Processed identifiers and qualifiers:', identifiers + qualifier_path)
 
+            # Extract all query strings into a URL-compatible string
+            query_strings = _extract_query_strings(request)
+
             compress = request.args.get('compress', None)
-            return _process_response(doc_id, identifiers, qualifier_path=qualifier_path, compress=compress)
+            return _process_response(doc_id, identifiers, qualifier_path=qualifier_path, compress=compress, query_strings=query_strings)
 
         except Exception as e:
             logger.warning('Error getting document: ' + str(e))
@@ -198,7 +204,17 @@ def _confirm_gtin_14(anchor_ai, anchor_ai_code):
     return anchor_ai
 
 
-def _process_response(doc_id, identifiers, qualifier_path=None, compress=None):
+def _extract_query_strings(request):
+    # Extract all query strings into a URL-compatible string
+    query_strings = ''
+    for key, value in request.args.items():
+        query_strings += f"{key}={value}&"
+    # Remove the trailing '&' character
+    query_strings = query_strings[:-1]
+    return query_strings
+
+
+def _process_response(doc_id, identifiers, qualifier_path=None, compress=None, query_strings=''):
     accept_language_list, context, linktype, media_types_list, linkset_requested = _get_request_parameters()
 
     # if compress is present and set to true, we return the compressed version of a
@@ -240,9 +256,14 @@ def _process_response(doc_id, identifiers, qualifier_path=None, compress=None):
         response.headers['Content-Type'] = request.headers['Accept']
         return response
 
+
     # If response_data['status'] is 307, we need to return a redirect response
     if response_data['response_status'] == 307:
         response.headers['Location'] = response_data['data']['href']
+        # if we have any query_strings then we need to append them to response.headers['Location']:
+        if query_strings:
+            response.headers['Location'] += '?' + query_strings
+
         return response
 
     elif response_data['response_status'] == 300:
