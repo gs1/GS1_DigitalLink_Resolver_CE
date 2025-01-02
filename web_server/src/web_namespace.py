@@ -305,8 +305,19 @@ def _process_response(doc_id, identifiers, qualifier_path=None, compress=None, q
         response_linkset['linkset'] = response_data['data']
 
         # adjust the anchor value to include the fully qualified domain name 'FQDN' (specified in Dockerfile but can be
-        # moved to other environment varaible lists dpednidng on your installation needs)
+        # moved to other environment variable lists depending on your installation needs)
         response_linkset['linkset'][0]['anchor'] = f"https://{os.getenv('FQDN', 'replace_with_environment_variable_FQDN_see_README.com')}{response_linkset['linkset'][0]['anchor']}"
+
+        # Iterate through the linkset and remove "und" from hreflang lists, Although 'und' (for 'undefined') is a valid
+        # value for the 'hreflang' attribute for internal processing, it is not allowed in the linkset response.
+        for link in response_linkset['linkset']:
+            # Recursively check keys in the link objects
+            for key, value in link.items():
+                if isinstance(value, list):  # Check if the value is a list
+                    for entry in value:
+                        if isinstance(entry, dict) and 'hreflang' in entry:  # Check for `hreflang` in a dictionary entry
+                            if 'und' in entry['hreflang']:
+                                entry['hreflang'].remove('und')  # Remove "und" if it exists
 
         response = Response(
             response=json.dumps(response_linkset),  # Set response data
