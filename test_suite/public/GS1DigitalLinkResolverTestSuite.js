@@ -156,7 +156,8 @@ const testDL = async (dl, dlVersion) =>
         {
             await runTest(jsonTests(dl));
             await runTest(jsonLdTests(dl));
-        } else
+        }
+        else
         {
             await runTest(testLinkset(dl));
             await runTest(testJldContext(dl));
@@ -327,7 +328,8 @@ const headerBasedChecks = (dl, dlVersion) =>
                 if (relRE.test(allLinks[link]))
                 {
                     linkObj.rel = relRE.exec(allLinks[link])[1]
-                } else
+                }
+                else
                 {
                     linkMetadata.status = 'fail';
                     console.log('No link type (rel) declared for ' + linkObj.href + ' (link ' + link + ')')
@@ -335,7 +337,8 @@ const headerBasedChecks = (dl, dlVersion) =>
                 if (titleRE.test(allLinks[link]))
                 {   // owl:sameAs doesn't need a title
                     linkObj.title = titleRE.exec(allLinks[link])[1]
-                } else if (linkObj.rel !== 'owl:sameAs')
+                }
+                else if (linkObj.rel !== 'owl:sameAs')
                 {
                     linkMetadata.status = 'fail';
                     console.log('No title given for ' + linkObj.href + ' (link ' + allLinks[link] + ')')
@@ -426,7 +429,8 @@ const headerBasedChecks = (dl, dlVersion) =>
                         linkOnRedirect.msg = 'Link headers present when redirecting';
                         linkOnRedirect.status = 'pass';
                     }
-                } else
+                }
+                else
                 {
                     defaultLinkSet.msg = 'Default response is not to redirect so can\'t test that a given linkType is the default';
                     defaultLinkSet.status = 'warn';
@@ -434,7 +438,8 @@ const headerBasedChecks = (dl, dlVersion) =>
                     linkOnRedirect.msg = u + ' does not redirect so cannot test';
                 }
                 recordResult(defaultLinkSet)
-            } else
+            }
+            else
             {    // We have problems with the links, can't continue testing them
                 linkMetadata.msg = 'Target URL and/or required metadata not found for all links';
             }
@@ -469,7 +474,8 @@ const errorCodeChecks = (dl) =>
         {
             reportWith400.msg = 'Non-conformant GS1 Digital Link URI reported with 400 error';
             reportWith400.status = 'pass';
-        } else
+        }
+        else
         {
             reportWith400.msg = 'Non-conformant GS1 Digital Link URI reported with ' + data.result.httpCode + ' error';
         }
@@ -593,7 +599,8 @@ const compressionChecks = (dl, domain, gs1dlt) =>
                     exposeDecompressedLink.status = 'pass';
                     exposeDecompressedLink.msg = 'Uncompressed URI present in compressed URI response link header with @rel of owl:sameAs';
                     recordResult(exposeDecompressedLink);
-                } else
+                }
+                else
                 {
                     exposeDecompressedLink.status = 'warn';
                     exposeDecompressedLink.msg = 'Uncompressed URI present in compressed URI response link header but without @rel of owl:sameAs';
@@ -649,7 +656,8 @@ const jsonTests = (dl) =>
                         varyAccept.status = 'pass';
                     }
                 }
-            } else if (data.result.vary === 'Accept')
+            }
+            else if (data.result.vary === 'Accept')
             {
                 varyAccept.status = 'pass';
             }
@@ -738,7 +746,8 @@ const rdFileCheck = async (domain) =>
         {
             rdFile.msg = 'Resolver description file found with at least minimum required data';
             rdFile.status = 'pass';
-        } else
+        }
+        else
         {
             rdFile.msg = 'Resolver description file found but minimum required data not found';
         }
@@ -771,7 +780,8 @@ const testQuery = (dl) =>
                 qsPassedOn.status = 'pass';
                 qsPassedOn.msg = 'Query passed on when redirecting';
             }
-        } else
+        }
+        else
         {
             qsPassedOn.msg = 'GS1 Digital Link URI not redirected so cannot test this feature';
         }
@@ -849,7 +859,8 @@ const testLinkset = (dl) =>
                 if (contextObject.status === 'fail')
                 {
                     validLinkset = false;
-                } else
+                }
+                else
                 {
                     // This means we almost certainly have a linkset with a valid anchor
                     // Now we want to work through the linkset looking for link relation types
@@ -915,7 +926,8 @@ const testLinkset = (dl) =>
                                 defaultLinkObject.status = 'pass';
                                 defaultLinkObject.msg = 'Default link found';
                                 recordResult(defaultLinkObject);
-                            } else if ((i === 'https://gs1.org/voc/defaultLink') && (defaultLinkOK))
+                            }
+                            else if ((i === 'https://gs1.org/voc/defaultLink') && (defaultLinkOK))
                             {
                                 // Multiple default links found, which is an error
                                 defaultLinkObject.status = 'fail';
@@ -934,7 +946,8 @@ const testLinkset = (dl) =>
                                 {
                                     arrayOfTargetObjects.status = 'pass';
                                     arrayOfTargetObjects.msg = 'Array of target objects found for ' + i;
-                                } else
+                                }
+                                else
                                 {
                                     validLinkset = false;
                                 }
@@ -1018,7 +1031,8 @@ function checkTargetObjects(lt, a)
                             targetObj.msg += ' ' + a[target].hreflang[lang] + ' is not a valid language tag';
                         }
                     }
-                } else
+                }
+                else
                 {
                     targetObj.msg = 'Value of hreflang for ' + a[target].href + ' is present but is not an array';
                     returnValue = false;
@@ -1118,7 +1132,8 @@ const authorLinkSetLanguageTests = (ls, dl, linkArray) =>
                 if ((typeof targetObject.type === 'string') && (targetObject.type !== ''))
                 {
                     loCheck.headers.Accept = targetObject.type;
-                } else
+                }
+                else
                 {
                     loCheck.headers.Accept = '*/*';    // try as I might I cannot persuade JS not to need this in
                                                        // this loop
@@ -1130,7 +1145,8 @@ const authorLinkSetLanguageTests = (ls, dl, linkArray) =>
                 {
                     // We have at least one language
                     loCheck.headers['Accept-language'] = targetObject.hreflang[0];
-                } else
+                }
+                else
                 {
                     // console.log('NOT setting language here to for ' + loCheck.id);
                     loCheck.headers['Accept-language'] = 'en'; // Default language. Would love not to have to do
@@ -1202,7 +1218,8 @@ const testLinksInLinkset = async (dl, ls) =>
         { // There is a redirection to the default link
             defaultResponseCheck.status = 'pass';
             defaultResponseCheck.msg = 'Redirection to default link of ' + ls["https://gs1.org/voc/defaultLink"][0].href + ' confirmed';
-        } else
+        }
+        else
         {
             defaultResponseCheck.msg += ' which is ' + ls["https://gs1.org/voc/defaultLink"][0].href;
         }
@@ -1515,7 +1532,8 @@ function sendOutput(o)
         // It exists
         dd.innerHTML = o.msg;
         dd.className = o.status;
-    } else
+    }
+    else
     {
         // It doesn't exist so we need to create everything
         let dt = document.createElement('dt');
@@ -1541,7 +1559,8 @@ function sendOutput(o)
     {
         // It exists - this will just be a status change
         a.className = o.status;
-    } else
+    }
+    else
     {
         // It doesn't exist and needs to be created
         let sq = document.createElement('a');
