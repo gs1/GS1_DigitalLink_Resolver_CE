@@ -322,24 +322,31 @@ const headerBasedChecks = (dl, dlVersion) =>
                     linkMetadata.status = 'fail';
                     console.log('Link ' + link + ' failed on url which is ' + linkObj.href)
                 }
-                if (relRE.test(allLinks[link]))
+
+                // We put to one side the JSON-LD context link, but test everything else:
+                if(!linkObj.href.includes('http://www.w3.org/ns/json-ld#context'))
                 {
-                    linkObj.rel = relRE.exec(allLinks[link])[1]
+                    if (relRE.test(allLinks[link]))
+                    {
+                        linkObj.rel = relRE.exec(allLinks[link])[1]
+                    }
+                    else
+                    {
+                        linkMetadata.status = 'fail';
+                        console.log('No link type (rel) declared for ' + linkObj.href + ' (link ' + link + ')')
+                    }
+
+                    if (titleRE.test(allLinks[link]))
+                    {   // owl:sameAs doesn't need a title
+                        linkObj.title = titleRE.exec(allLinks[link])[1]
+                    }
+                    else if (linkObj.rel !== 'owl:sameAs' && linkObj.rel !== 'http://www.w3.org/ns/json-ld#context')
+                    {
+                        linkMetadata.status = 'fail';
+                        console.log('No title given for ' + linkObj.href + ' (link ' + allLinks[link] + ')')
+                    }
                 }
-                else
-                {
-                    linkMetadata.status = 'fail';
-                    console.log('No link type (rel) declared for ' + linkObj.href + ' (link ' + link + ')')
-                }
-                if (titleRE.test(allLinks[link]))
-                {   // owl:sameAs doesn't need a title
-                    linkObj.title = titleRE.exec(allLinks[link])[1]
-                }
-                else if (linkObj.rel !== 'owl:sameAs' && linkObj.rel !== 'http://www.w3.org/ns/json-ld#context')
-                {
-                    linkMetadata.status = 'fail';
-                    console.log('No title given for ' + linkObj.href + ' (link ' + allLinks[link] + ')')
-                }
+
                 //Those are the SHALLs, now we'll record the others for future use
                 let hreflangMatch = hreflangRE.exec(allLinks[link]);
                 if (hreflangMatch)
@@ -422,6 +429,7 @@ const headerBasedChecks = (dl, dlVersion) =>
                 }
 
             }
+
             if (linkMetadata.status === 'pass')
             {
                 linkMetadata.msg = 'Target URL and required metadata found for all links';
