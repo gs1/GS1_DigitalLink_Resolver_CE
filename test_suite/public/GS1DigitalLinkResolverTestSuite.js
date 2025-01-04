@@ -341,8 +341,25 @@ const headerBasedChecks = (dl, dlVersion) =>
                     console.log('No title given for ' + linkObj.href + ' (link ' + allLinks[link] + ')')
                 }
                 //Those are the SHALLs, now we'll record the others for future use
-                linkObj.hreflang = hreflangRE.exec(allLinks[link]) ? '' : hreflangRE.exec(allLinks[link])[1];
-                linkObj.type = typeRE.exec(allLinks[link]) ? '' : typeRE.exec(allLinks[link])[1];
+                let hreflangMatch = hreflangRE.exec(allLinks[link]);
+                if (hreflangMatch)
+                {
+                    linkObj.hreflang = hreflangMatch[1];
+                }
+                else
+                {
+                    linkObj.hreflang = '';
+                }
+
+                let typeMatch = typeRE.exec(allLinks[link]);
+                if (typeMatch)
+                {
+                    linkObj.type = typeMatch[1];
+                }
+                else
+                {
+                    linkObj.type = '';
+                }
 
                 // If we still have linkMetadata.status = 'pass' at this point, then we can go ahead and test that
                 // link in more detail
