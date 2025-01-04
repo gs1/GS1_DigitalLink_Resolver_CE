@@ -258,7 +258,7 @@ const headerBasedChecks = (dl, dlVersion) =>
 
     // We'll use the corsCheck object as the primary one here but will process the headers to look at the ones about
     // the links too We need to get rid of any query string in the dl so we'll do that first
-    let u = stripQuery(dl);
+    let u = stripQueryStringFromURL(dl);
     corsCheck.url = testUri + '?test=getAllHeaders&testVal=' + encodeURIComponent(u);
     corsCheck.process = async (data) =>
     {
@@ -341,10 +341,10 @@ const headerBasedChecks = (dl, dlVersion) =>
                     console.log('No title given for ' + linkObj.href + ' (link ' + allLinks[link] + ')')
                 }
                 //Those are the SHALLs, now we'll record the others for future use
-                linkObj.hreflang = hreflangRE.exec(allLinks[link]) == null ? '' : hreflangRE.exec(allLinks[link])[1];
-                linkObj.type = typeRE.exec(allLinks[link]) == null ? '' : typeRE.exec(allLinks[link])[1];
+                linkObj.hreflang = hreflangRE.exec(allLinks[link]) ? '' : hreflangRE.exec(allLinks[link])[1];
+                linkObj.type = typeRE.exec(allLinks[link]) ? '' : typeRE.exec(allLinks[link])[1];
 
-                // If we still have linkMetadata.status == 'pass' at this point, then we can go ahead and test that
+                // If we still have linkMetadata.status = 'pass' at this point, then we can go ahead and test that
                 // link in more detail
                 if ((linkMetadata.status === 'pass') && (linkObj.rel !== 'owl:sameAs'))
                 {
@@ -377,8 +377,8 @@ const headerBasedChecks = (dl, dlVersion) =>
                     {
                         // Strip the query strings before matching (should probably be more precise about this. Might be
                         // important info in target URL that we're missing)
-                        let l = stripQuery(data.result.location);
-                        let k = stripQuery(linkArray[i].href);
+                        let l = stripQueryStringFromURL(data.result.location);
+                        let k = stripQueryStringFromURL(linkArray[i].href);
                         if (l === k)
                         {  // redirection target is correct
                             linkArray[i].msg = 'Requesting link type of ' + linkArray[i].rel;
@@ -409,7 +409,7 @@ const headerBasedChecks = (dl, dlVersion) =>
             {
                 linkMetadata.msg = 'Target URL and required metadata found for all links';
                 // Looking for redirect link
-                if (data.result.location != null)
+                if (!data.result.location)
                 { // We have a redirect
                     for (let i = 0;
                          i < linkArray.length;
@@ -421,7 +421,7 @@ const headerBasedChecks = (dl, dlVersion) =>
                             defaultLinkSet.status = 'pass';
                         }
                     }
-                    if (data.result.link != null)
+                    if (data.result['link'])
                     { // We have a link header present when redirecting
                         linkOnRedirect.msg = 'Link headers present when redirecting';
                         linkOnRedirect.status = 'pass';
@@ -464,22 +464,23 @@ const errorCodeChecks = (dl) =>
     recordResult(noErrorWith200);
 
     // Let's create an error - we know we have a valid DL
-    reportWith400.url = testUri + '?test=getAllHeaders&testVal=' + encodeURIComponent(stripQuery(dl) + '/foo');
+    reportWith400.url = testUri + '?test=getAllHeaders&testVal=' + encodeURIComponent(stripQueryStringFromURL(dl) + '/foo');
     reportWith400.process = async (data) =>
     {
-        if (data.result.httpCode === '400')
+        const httpResponseCode = data.result['httpCode'].toString();
+        if (httpResponseCode === '400')
         {
-            reportWith400.msg = 'Non-conformant GS1 Digital Link URI reported with 400 error';
+            reportWith400.msg = 'Non-conformant GS1 Digital Link URI correctly reported with 400 error';
             reportWith400.status = 'pass';
         }
         else
         {
-            reportWith400.msg = 'Non-conformant GS1 Digital Link URI reported with ' + data.result.httpCode + ' error';
+            reportWith400.msg = `Non-conformant GS1 Digital Link URI wrongly reported with HTTP ${httpResponseCode} error`;
         }
         recordResult(reportWith400);
-        if (data.result.httpCode !== '200')
+        if (httpResponseCode !== '200')
         {
-            noErrorWith200.msg = 'Error not reported with 200 OK';
+            noErrorWith200.msg = `Error was correctly reported with a non-200 OK response code of HTTP ${httpResponseCode}`;
             noErrorWith200.status = 'pass';
             recordResult(noErrorWith200);
         }
@@ -492,7 +493,7 @@ const trailingSlashCheck = (dl) =>
     // Need to create a URI with and without a trailing slash
     // We can dispense with any query string and create version with no trailing slash, then append slash to make the
     // other
-    let noSlash = stripQuery(dl);
+    let noSlash = stripQueryStringFromURL(dl);
     if (noSlash.lastIndexOf('/') + 1 === noSlash.length)
     {
         noSlash = noSlash.substring(0, noSlash.lastIndexOf('/'));
@@ -630,15 +631,15 @@ const jsonTests = (dl) =>
     listAsJSON.msg = 'List of links does not appear to be available as JSON';
     recordResult(listAsJSON);
 
-    varyAccept.url = testUri + '?test=getAllHeaders&testVal=' + encodeURIComponent(stripQuery(dl) + '?linkType=all');
+    varyAccept.url = testUri + '?test=getAllHeaders&testVal=' + encodeURIComponent(stripQueryStringFromURL(dl) + '?linkType=all');
     varyAccept.headers = {'Accept': 'application/json'};
     varyAccept.process = async (data) =>
     {
-        if (data.result.vary != null)
+        if (data.result['vary'])
         {
             // We have a vary header
             // might be an array or a single value
-            if (data.result.vary[0] != null)
+            if (Array.isArray(data.result['vary']))
             {    // We have an array
                 varyAccept.msg = 'Vary header detected, but does not include Accept suggesting no content negotiation for media type';
                 for (let k in data.result.vary)
@@ -654,7 +655,7 @@ const jsonTests = (dl) =>
                     }
                 }
             }
-            else if (data.result.vary === 'Accept')
+            else if (data.result['vary'] === 'Accept')
             {
                 varyAccept.status = 'pass';
             }
@@ -675,7 +676,7 @@ const jsonTests = (dl) =>
             // Media type says it's JSON, but is it? We need to test that directly
             try
             {
-                let response = await fetch(stripQuery(dl) + '?linkType=all', {headers: {'Accept': 'application/json'}});
+                let response = await fetch(stripQueryStringFromURL(dl) + '?linkType=all', {headers: {'Accept': 'application/json'}});
                 let receivedJSON = await response.json();
                 listAsJSON.msg = 'JSON received with linkType=all';
                 listAsJSON.status = 'pass';
@@ -703,7 +704,7 @@ const jsonLdTests = (dl) =>
     listAsJSONLD.status = 'warn';   // This is a SHOULD so default is warn, not fail
     recordResult(listAsJSONLD);
 
-    listAsJSONLD.url = testUri + '?test=getAllHeaders&accept=jld&testVal=' + encodeURIComponent(stripQuery(dl) + '?linkType=all');
+    listAsJSONLD.url = testUri + '?test=getAllHeaders&accept=jld&testVal=' + encodeURIComponent(stripQueryStringFromURL(dl) + '?linkType=all');
     listAsJSONLD.process = (data) =>
     {
         // Let's see if the content-type reported from that HEAD request is JSON-LD
@@ -739,7 +740,10 @@ const rdFileCheck = async (domain) =>
         });
         let response = await fetch(testRequest);
         let data = await response.json();
-        if (data['resolverRoot'].match(/^((https?):)(\/\/((([^\/?#]*)@)?([^\/?#:]*)(:([^\/?#]*))?))?([^?#]*)(\?([^#]*))?(#(.*))?/) && (data.supportedPrimaryKeys != null))
+        if (
+            data['supportedPrimaryKeys'] &&
+            data['resolverRoot'].match(/^((https?):)(\/\/((([^\/?#]*)@)?([^\/?#:]*)(:([^\/?#]*))?))?([^?#]*)(\?([^#]*))?(#(.*))?/)
+        )
         {
             rdFile.msg = 'Resolver description file found with at least minimum required data';
             rdFile.status = 'pass';
@@ -765,12 +769,12 @@ const testQuery = (dl) =>
     qsPassedOn.msg = 'Query string not passed on. If the query string is deliberately suppressed for this Digital Link URI, test another one where the default behaviour of passing on the query string applies';
     qsPassedOn.status = 'warn';
     recordResult(qsPassedOn);
-    let u = stripQuery(dl);
+    let u = stripQueryStringFromURL(dl);
     let query = 'foo=bar';
     qsPassedOn.url = testUri + '?test=getAllHeaders&testVal=' + encodeURIComponent(u + '?' + query);
     qsPassedOn.process = async (data) =>
     {
-        if (data.result.location !== undefined)
+        if (data.result.location)
         {          // There is a redirection
             if (data.result.location.indexOf(query) > -1)
             { // Our query is being passed on
@@ -799,7 +803,7 @@ const testLinkset = (dl) =>
     soleMember.id = 'soleMember';
     soleMember.test = 'A set of links MUST be represented as a JSON object which MUST have "linkset" as its sole member.';
     soleMember.msg = 'No linkset found or multiple members found';
-    soleMember.url = stripQuery(dl) + '?linkType=all';
+    soleMember.url = stripQueryStringFromURL(dl) + '?linkType=all';
     soleMember.headers = {'Accept': 'application/linkset+json'};
     recordResult(soleMember);
 
@@ -1036,7 +1040,7 @@ function checkTargetObjects(lt, a)
                 }
             }
 
-            if (a[target].type !== undefined)
+            if (a[target].type)
             { // We have something for the type
                 if (!typeRegEx.test(a[target].type))
                 {
@@ -1049,14 +1053,14 @@ function checkTargetObjects(lt, a)
                 targetObj.status = 'pass';
                 // Worth creating a friendly message here so that links can be distinguished
                 targetObj.msg = 'Target link minimum requirements met for ' + a[target].href + ' (' + lt.replace('https://gs1.org/voc/', 'gs1:') + ', ' + myTitle;
-                if (a[target].hreflang !== undefined)
+                if (a[target].hreflang)
                 {
                     for (let lang of a[target].hreflang)
                     {
                         targetObj.msg += ', ' + lang;
                     }
                 }
-                if (a[target].type !== undefined)
+                if (a[target].type)
                 {
                     targetObj.msg += ', ' + a[target].type;
                 }
@@ -1102,7 +1106,7 @@ const authorLinkSetLanguageTests = (ls, dl, linkArray) =>
             for (let targetObject of ls[r])
             {
                 linkCount += 1;
-                let u = stripQuery(dl) + '?linkType=' + linkType; // Creates basic request URI for that link type
+                let u = stripQueryStringFromURL(dl) + '?linkType=' + linkType; // Creates basic request URI for that link type
                 let loCheck = {
                     "id": "", //An id for the test
                     "test": "", // conformance statement from spec
@@ -1159,9 +1163,9 @@ const authorLinkSetLanguageTests = (ls, dl, linkArray) =>
 
                 loCheck.process = async (data) =>
                 {
-                    // console.log('We want to match location header ' + stripQuery(data.result.location) + ' with
-                    // linkset href of ' + stripQuery(targetObject.href));
-                    if (stripQuery(data.result.location) === stripQuery(loCheck.href))
+                    // console.log('We want to match location header ' + stripQueryStringFromURL(data.result.location) + ' with
+                    // linkset href of ' + stripQueryStringFromURL(targetObject.href));
+                    if (stripQueryStringFromURL(data.result.location) === stripQueryStringFromURL(loCheck.href))
                     { // There is a redirection to the correct link
                         loCheck.status = 'pass';
                         loCheck.msg = loCheck.msg.replace('failed to redirect to ', 'redirected to ');
@@ -1200,7 +1204,7 @@ const testLinksInLinkset = async (dl, ls) =>
     let defaultResponseCheck = Object.create(resultProps);
     defaultResponseCheck.id = 'defaultResponseCheck';
     defaultResponseCheck.test = 'Resolvers SHALL redirect to the default link unless there is information in the request that can be matched against available link metadata to provide a better response.';
-    let u = stripQuery(dl);
+    let u = stripQueryStringFromURL(dl);
     defaultResponseCheck.msg = 'Request to ' + u + ' without any extra information did not redirect to default link';
     defaultResponseCheck.url = testUri + '?test=getAllHeaders&testVal=' + encodeURIComponent(u);
     defaultResponseCheck.headers = {};
@@ -1265,7 +1269,7 @@ const testLinksInLinkset = async (dl, ls) =>
             defLinkMultiCheck.id = `defLinkMulti${defLinkMultiCount++}`;
 //      defLinkMultiCheck.test = 'Resolvers SHALL redirect to the default link unless there is information in the request that can be matched against available link metadata to provide a better response.';
             defLinkMultiCheck.test = "A set of 'default links' that may be differentiated by information in the HTTP request headers sent to a resolver to enable a better match than the single default link.";
-            let u = stripQuery(dl);
+            let u = stripQueryStringFromURL(dl);
             defLinkMultiCheck.msg = `Request to ${u} `;
             if ((typeof dlElement.type === 'string') && (dlElement.type !== ''))
             { // So we have a media type to specify
@@ -1308,7 +1312,7 @@ const testLinksInLinkset = async (dl, ls) =>
             if (Array.isArray(dlElement.hreflang))
             {
                 let extraLang = 1;
-                while (dlElement.hreflang[extraLang] !== undefined)
+                while (dlElement.hreflang[extraLang])
                 {
                     let o = Object.assign(Object.create(resultProps), defLinkMultiCheck);
                     // give this cloned test object a new id and update the language header
@@ -1334,15 +1338,6 @@ const testLinksInLinkset = async (dl, ls) =>
     {
         console.log('There has been a problem with your fetch operation for: ', error.message);
     }
-
-    /* Was:
-    linkArray.reduce(
-        (chain, d) => chain.then(() => runTest(d))
-            .catch((error) => console.log('There has been a problem with your fetch operation for: ', error.message)),
-        Promise.resolve()
-    );
-    </
-     */
 }
 
 
@@ -1354,7 +1349,7 @@ const rotatingCircle = (showFlag) =>
 
 const describeRequest = (dl, linkType, targetObject, testObject) =>
 {
-    let msg = 'Request for ' + stripQuery(dl) + '?linkType=' + linkType + ' failed to redirect to expected target URL:' + targetObject.href;
+    let msg = 'Request for ' + stripQueryStringFromURL(dl) + '?linkType=' + linkType + ' failed to redirect to expected target URL:' + targetObject.href;
     msg += ' Additional request parameters used: ';
     if ((typeof targetObject.context === 'string') && (targetObject.context !== ''))
     {
@@ -1368,8 +1363,6 @@ const describeRequest = (dl, linkType, targetObject, testObject) =>
     {
         msg += 'Accept: ' + testObject.headers.Accept + '.';
     }
-
-    // msg += ' Request url is ' + testObject.url;
     return msg;
 }
 
@@ -1382,12 +1375,13 @@ function testJldContext(dl)
     jldContext.test = 'SHALL respond to a query parameter of linkType set to all by returning a list of links available to the client application. The list SHALL be available as per Linkset: Media Types and a Link Relation Type for Link Sets.';
     jldContext.msg = 'No HTTP Link Header detected pointing to JSON-LD Context';
     jldContext.status = 'warn';
-    jldContext.url = testUri + '?test=getAllHeaders&testVal=' + encodeURIComponent(stripQuery(dl) + '?linkType=all');
+    jldContext.url = testUri + '?test=getAllHeaders&testVal=' + encodeURIComponent(stripQueryStringFromURL(dl) + '?linkType=all');
     jldContext.headers = {'Accept': 'application/linkset+json'};
     recordResult(jldContext);
     jldContext.process = async (data) =>
     {
-        if ((data.result.link != null) && (regex.test(data.result.link)))
+        const link = data.result['link'].toString();
+        if (link && regex.test(link))
         {
             jldContext.status = 'pass';
             jldContext.msg = 'HTTP Link Header detected pointing to JSON-LD Context';
@@ -1400,39 +1394,42 @@ function testJldContext(dl)
 
 // ********************* Processing functions ******************************
 
-// A little function I find handy
-
-function stripQuery(u)
+function stripQueryStringFromURL(url)
 {
-    return u.indexOf('?') > -1 ? u.substring(0, u.indexOf('?')) : u;
+    return url.indexOf('?') > -1 ? url.substring(0, url.indexOf('?')) : url;
 }
 
-function numericOnly(dl)
-{    // Bound to be a better way of doing this but this is nice and simple
-    let rv = dl.replace('gtin', '01');
-    rv = rv.replace('itip', '8006');
-    rv = rv.replace('gmn', '8013');
-    rv = rv.replace('cpid', '8010');
-    rv = rv.replace('shipTo', '410');
-    rv = rv.replace('billTo', '411');
-    rv = rv.replace('purchasedFrom', '412');
-    rv = rv.replace('shipFor', '413');
-    rv = rv.replace('gln', '414');
-    rv = rv.replace('payTo', '415');
-    rv = rv.replace('glnProd', '416');
-    rv = rv.replace('party', '417');
-    rv = rv.replace('gsrnp', '8017');
-    rv = rv.replace('gsrn', '8018');
-    rv = rv.replace('gcn', '255');
-    rv = rv.replace('sscc', '00');
-    rv = rv.replace('gdti', '253');
-    rv = rv.replace('ginc', '401');
-    rv = rv.replace('gsin', '402');
-    rv = rv.replace('grai', '8003');
-    rv = rv.replace('giai', '8004');
-    return rv;
-}
+function numericOnly(dl) {
+    const replacements = {
+        gtin: '01',
+        itip: '8006',
+        gmn: '8013',
+        cpid: '8010',
+        shipTo: '410',
+        billTo: '411',
+        purchasedFrom: '412',
+        shipFor: '413',
+        gln: '414',
+        payTo: '415',
+        glnProd: '416',
+        party: '417',
+        gsrnp: '8017',
+        gsrn: '8018',
+        gcn: '255',
+        sscc: '00',
+        gdti: '253',
+        ginc: '401',
+        gsin: '402',
+        grai: '8003',
+        giai: '8004'
+    };
 
+    for (const [key, value] of Object.entries(replacements)) {
+        dl = dl.replace(key, value);
+    }
+
+    return dl;
+}
 
 /**
  * runTest() executes the .process() method in the supplied test.
@@ -1564,78 +1561,4 @@ function sendOutput(o)
         sq.title = o.test;
         grid.appendChild(sq);
     }
-}
-
-
-let dummy = {
-    "linkset": [
-        {
-            "anchor": "https://example.com/01/614141123452",
-            "itemDescription": "Example product",
-            "https://gs1.org/voc/defaultLink": [
-                {
-                    "href": "https://dalgiardino.com/risotto-rice-with-mushrooms/",
-                    "title": "foo"
-                }
-            ],
-            "https://gs1.org/voc/defaultLinkMulti": [
-                {
-                    "href": "https://dalgiardino.com/risotto-rice-with-mushrooms/index.html.vi",
-                    "hreflang": ["vi"],
-                    "type": "text/html",
-                    "title": "Product information"
-                },
-                {
-                    "href": "https://example.com/fr/defaultPage",
-                    "hreflang": ["fr"],
-                    "type": "application/json",
-                    "title": "Information produit"
-                }
-            ],
-            "https://gs1.org/voc/pip": [
-                {
-                    "href": "https://example.com/en/defaultPage",
-                    "hreflang": ["en"],
-                    "type": "text/html",
-                    "title": "Product information"
-                },
-                {
-                    "href": "https://example.com/fr/defaultPage",
-                    "hreflang": ["fr"],
-                    "title": "Information produit"
-                }
-            ],
-            "https://gs1.org/voc/whatsInTheBox": [
-                {
-                    "href": "https://example.com/en/packContents/GB",
-                    "hreflang": ["en"],
-                    "title": "What's in the box?",
-                    "context": "GB"
-                },
-                {
-                    "href": "https://example.com/fr/packContents/FR",
-                    "hreflang": ["fr"],
-                    "title": "Qu'y a-t-il dans la boite?",
-                    "context": "FR"
-                },
-                {
-                    "href": "https://example.com/fr/packContents/CH",
-                    "hreflang": ["fr"],
-                    "title": "Qu'y a-t-il dans la boite?",
-                    "context": "CH"
-                }
-            ],
-            "https://gs1.org/voc/relatedVideo": [
-                {
-                    "href": "https://video.example",
-                    "hreflang": ["en", "fr"],
-                    "title": "See it in action!",
-                    "title*": [{"value": "See it in action!", "language": "en"}, {
-                        "value": "Voyez-le en action!",
-                        "language": "fr"
-                    }]
-                }
-            ]
-        }
-    ]
 }
