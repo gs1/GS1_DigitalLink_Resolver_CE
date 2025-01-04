@@ -335,7 +335,7 @@ const headerBasedChecks = (dl, dlVersion) =>
                 {   // owl:sameAs doesn't need a title
                     linkObj.title = titleRE.exec(allLinks[link])[1]
                 }
-                else if (linkObj.rel !== 'owl:sameAs')
+                else if (linkObj.rel !== 'owl:sameAs' && linkObj.rel !== 'http://www.w3.org/ns/json-ld#context')
                 {
                     linkMetadata.status = 'fail';
                     console.log('No title given for ' + linkObj.href + ' (link ' + allLinks[link] + ')')
@@ -363,7 +363,7 @@ const headerBasedChecks = (dl, dlVersion) =>
 
                 // If we still have linkMetadata.status = 'pass' at this point, then we can go ahead and test that
                 // link in more detail
-                if ((linkMetadata.status === 'pass') && (linkObj.rel !== 'owl:sameAs'))
+                if (linkMetadata.status === 'pass' && linkObj.rel !== 'owl:sameAs' && linkObj.rel !== 'http://www.w3.org/ns/json-ld#context')
                 {
                     linkArray.push(linkObj)
                 }
