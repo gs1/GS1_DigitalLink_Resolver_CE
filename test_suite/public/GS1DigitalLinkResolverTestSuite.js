@@ -192,7 +192,7 @@ const TLSCheck = async (domain) =>
     }
     catch (error)
     {
-        console.log('There has been a problem with your fetch operation when checking for TLS support: ', error.message);
+        console.log('TLSCheck() Error: There has been a problem with your fetch operation when checking for TLS support: ', error.message);
     }
     return tlsOK;
 }
@@ -418,7 +418,7 @@ const headerBasedChecks = (dl, dlVersion) =>
                 }
                 catch (error)
                 {
-                    console.log('There has been a problem with your fetch operation for: ', error.message);
+                    console.log('headerBasedChecks() Error: There has been a problem with your fetch operation for: ', error.message);
                 }
 
             }
@@ -544,7 +544,7 @@ const trailingSlashCheck = (dl) =>
         }
         catch (error)
         {
-            console.log('There has been a problem with your fetch operation for ' + trailingSlash.url + ': ', error.message);
+            console.log('trailingSlashCheck() Error: There has been a problem with your fetch operation for ' + trailingSlash.url + ': ', error.message);
         }
 
     }
@@ -625,7 +625,7 @@ const compressionChecks = (dl, domain, gs1dlt) =>
         }
         catch (error)
         {
-            console.log('There has been a problem with your fetch operation for ' + compressedRequest.url + ' ( testing ' + compDL + '): ', error.message)
+            console.log('compressionChecks() Error: There has been a problem with your fetch operation for ' + compressedRequest.url + ' ( testing ' + compDL + '): ', error.message)
         }
     }
     return validDecompressCheck;
@@ -773,7 +773,7 @@ const rdFileCheck = async (domain) =>
     }
     catch (error)
     {
-        console.log('There has been a problem with your fetch operation: ', error.message);
+        console.log('rdFileCheck() Error: There has been a problem with your fetch operation: ', error.message);
     }
 }
 
@@ -987,7 +987,8 @@ const testLinkset = (dl) =>
         } // End if soleMember.status === 'pass', i.e. we probably have some sort of linkset
         catch (error)
         {
-            console.log('There has been a problem with your fetch operation: ', error.message);
+            console.log('testLinkset() Error: There has been a problem with your fetch operation: ', error.message);
+            console.log('Stack trace: ', error.stack);
         }
     }
     return soleMember;
@@ -1124,87 +1125,93 @@ const authorLinkSetLanguageTests = (ls, dl, linkArray) =>
             {
                 linkCount += 1;
                 let u = stripQueryStringFromURL(dl) + '?linkType=' + linkType; // Creates basic request URI for that link type
-                let loCheck = {
-                    "id": "", //An id for the test
-                    "test": "", // conformance statement from spec
-                    "status": "fail", // (pass|fail|warn), default is fail
-                    "msg": "", // Displayed to the end user
-                    "url": "", // The URL we're going to fetch
-                    "headers": {}  // Ready for any headers we want to set
-                }
 
-
-                loCheck.test = 'Resolvers SHALL redirect to the default link unless there is information in the request that can be matched against available link metadata to provide a better response.';
-                if ((typeof targetObject.context === 'string') && (targetObject.context !== ''))
+                if(!Array.isArray(targetObject.hreflang))
                 {
-                    // So we have a GS1 context variable as well as a link type
-                    u += '&context=' + targetObject.context;
-                }
-                loCheck.url = testUri + '?test=getAllHeaders&testVal=' + encodeURIComponent(u); // This is the
-                // complete test
-                // URL to send to
-                // the helper
-                // application
-                // Now we need to construct the HTTP request. Does this target object specify a media type? If so,
-                // we'll be explicit in what we want
-                if ((typeof targetObject.type === 'string') && (targetObject.type !== ''))
-                {
-                    loCheck.headers.Accept = targetObject.type;
-                }
-                else
-                {
-                    loCheck.headers.Accept = '*/*';    // try as I might I cannot persuade JS not to need this in
-                                                       // this loop
-                }
-                // So far we haven't take account of language, which we need to do.
-                // There might be multiple languages (even a single one will be in an array)
-
-                if (Array.isArray(targetObject.hreflang) && typeof targetObject.hreflang[0] === 'string' && (targetObject.hreflang[0] !== ''))
-                {
-                    // We have at least one language
-                    loCheck.headers['Accept-language'] = targetObject.hreflang[0];
-                }
-                else
-                {
-                    // console.log('NOT setting language here to for ' + loCheck.id);
-                    loCheck.headers['Accept-language'] = 'en'; // Default language. Would love not to have to do
-                                                               // this.
-                }
-                loCheck.id = `LOTEST_${linkType}_${linkCount}_${loCheck.headers['Accept-language']}_${loCheck.headers.Accept}`;
-
-                loCheck.msg = describeRequest(dl, linkType, targetObject, loCheck);
-                loCheck.href = targetObject.href; // This is the URL we should be directed to. We pass it to the
-                                                  // process function within loCheck
-
-                recordResult(loCheck);
-
-                loCheck.process = async (data) =>
-                {
-                    // console.log('We want to match location header ' + stripQueryStringFromURL(data.result.location) + ' with
-                    // linkset href of ' + stripQueryStringFromURL(targetObject.href));
-                    if (stripQueryStringFromURL(data.result.location) === stripQueryStringFromURL(loCheck.href))
-                    { // There is a redirection to the correct link
-                        loCheck.status = 'pass';
-                        loCheck.msg = loCheck.msg.replace('failed to redirect to ', 'redirected to ');
-                        recordResult(loCheck);
+                    if(targetObject.hreflang)
+                    {
+                        targetObject.hreflang = [targetObject.hreflang];
+                    }
+                    else
+                    {
+                        // emergency fallback - invent a language called 'en' (!)
+                        targetObject.hreflang = ['en'];
                     }
                 }
 
-                linkArray.push(loCheck);
-
-                // If there are more languages, we can clone the loCheck object and just change a few things before
-                // pushing it to the linkArray
-
-                let langNo = 1;
-                while (Array.isArray(targetObject.hreflang) && (typeof targetObject.hreflang[langNo] === 'string' && targetObject.hreflang[langNo] !== ''))
+                // So now we have a language array!
+                for(let lang of targetObject.hreflang)
                 {
-                    let clone = loCheck;
-                    clone.id += targetObject.hreflang[langNo];
-                    clone.headers['Accept-language'] = targetObject.hreflang[langNo];
-                    clone.msg = describeRequest(dl, linkType, targetObject, clone);
-                    recordResult(clone);
-                    linkArray.push(clone);
-                    langNo++;
+                    const loCheck = {
+                        "id": "", //An id for the test
+                        "test": "", // conformance statement from spec
+                        "status": "fail", // (pass|fail|warn), default is fail
+                        "msg": "", // Displayed to the end user
+                        "url": "", // The URL we're going to fetch
+                        "headers": {}  // Ready for any headers we want to set
+                    }
+
+
+                    loCheck.test = 'Resolvers SHALL redirect to the default link unless there is information in the request that can be matched against available link metadata to provide a better response.';
+                    if ((typeof targetObject.context === 'string') && (targetObject.context !== ''))
+                    {
+                        // So we have a GS1 context variable as well as a link type
+                        u += '&context=' + targetObject.context;
+                    }
+                    loCheck.url = testUri + '?test=getAllHeaders&testVal=' + encodeURIComponent(u); // This is the
+                    // complete test
+                    // URL to send to
+                    // the helper
+                    // application
+                    // Now we need to construct the HTTP request. Does this target object specify a media type? If so,
+                    // we'll be explicit in what we want
+                    if ((typeof targetObject.type === 'string') && (targetObject.type !== ''))
+                    {
+                        loCheck.headers.Accept = targetObject.type;
+                    }
+                    else
+                    {
+                        loCheck.headers.Accept = '*/*';    // try as I might I cannot persuade JS not to need this in
+                                                           // this loop
+                    }
+                    // So far we haven't take account of language, which we need to do.
+                    // There might be multiple languages (even a single one will be in an array)
+                    if (!Array.isArray(targetObject.hreflang))
+                    {
+                        if(targetObject.hreflang)
+                        {
+                            targetObject.hreflang = [targetObject.hreflang];
+                        }
+                        else
+                        {
+                            // emergency fallback - invent a language called 'en (!)
+                            targetObject.hreflang = ['en'];
+                        }
+                    }
+
+
+                    loCheck.headers['Accept-language'] = lang;
+                    loCheck.id = `LOTEST_${linkType}_${linkCount}_${lang}_${loCheck.headers.Accept}`;
+                    loCheck.msg = describeRequest(dl, linkType, targetObject, loCheck);
+                    loCheck.process = async (data) =>
+                    {
+                        const testLocation = stripQueryStringFromURL(data.result.location);
+                        const targetHref = stripQueryStringFromURL(targetObject.href);
+                        if (testLocation === targetHref)
+                        { // There is a redirection to the correct link
+                            console.log(`${testLocation} === ${targetHref} - PASS`);
+                            console.log(`Id to update is ${loCheck.id}`);
+                            loCheck.status = 'pass';
+                            loCheck.msg = loCheck.msg.replace('failed to redirect to ', 'redirected to ');
+                            recordResult(loCheck);
+                        }
+                        else
+                        {
+                            console.log(`${testLocation} !== ${targetHref} - FAIL`);
+                        }
+                    }
+                    recordResult(loCheck);
+                    linkArray.push(loCheck);
                 }
             }
         }
@@ -1344,6 +1351,7 @@ const testLinksInLinkset = async (dl, ls) =>
     }
     authorLinkSetLanguageTests(ls, dl, linkArray);
     // OK, run the tests!
+    console.log('Link Array = ', linkArray)
     try
     {
         for (let linkTest of linkArray)
@@ -1353,7 +1361,7 @@ const testLinksInLinkset = async (dl, ls) =>
     }
     catch (error)
     {
-        console.log('There has been a problem with your fetch operation for: ', error.message);
+        console.log('testLinksInLinkset() Error: There has been a problem with your fetch operation for: ', error.message);
     }
 }
 
