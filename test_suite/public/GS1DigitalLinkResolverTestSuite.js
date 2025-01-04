@@ -426,7 +426,7 @@ const headerBasedChecks = (dl, dlVersion) =>
             {
                 linkMetadata.msg = 'Target URL and required metadata found for all links';
                 // Looking for redirect link
-                if (!data.result.location)
+                if (data.result.location)
                 { // We have a redirect
                     for (let i = 0;
                          i < linkArray.length;
