@@ -248,7 +248,7 @@ def _process_response(doc_id, identifiers, qualifier_path=None, compress=None, q
 
     # The final link header entry should be to the JSON-LD context source as requested by the GS1 Resolver
     # Standard document. This is a mandatory requirement.
-    link_header += ',rel=http://www.w3.org/ns/json-ld#context;type="application/ld+json"'
+    link_header += ',<http://www.w3.org/ns/json-ld#context;type=application/ld+json>; rel="http://www.w3.org/ns/json-ld#context"; type="text/html"'
 
     # if the linkset is requested, we need to format thw response to include json-ld
     # and add our document to a 'linkset' property.

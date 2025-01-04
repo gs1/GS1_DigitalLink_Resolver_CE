@@ -179,9 +179,6 @@ const TLSCheck = async (domain) =>
     tlsOK.msg = 'Resolver does not support HTTP over TLS';
     recordResult(tlsOK);
 
-    //  fetch('https://hintleshamandchattisham.onesuffolk.net/', {  // Used for debugging, this is one of the few sites
-    // I know that doesn't support https!
-
     try
     {
         let response = await fetch('https://' + domain, {method: 'HEAD', mode: 'no-cors'});
@@ -1180,7 +1177,6 @@ const authorLinkSetLanguageTests = (ls, dl, linkArray) =>
                 let langNo = 1;
                 while (Array.isArray(targetObject.hreflang) && (typeof targetObject.hreflang[langNo] === 'string' && targetObject.hreflang[langNo] !== ''))
                 {
-                    console.error("WAS I HERE?!", targetObject.hreflang[langNo]);
                     let clone = loCheck;
                     clone.id += targetObject.hreflang[langNo];
                     clone.headers['Accept-language'] = targetObject.hreflang[langNo];
@@ -1189,8 +1185,6 @@ const authorLinkSetLanguageTests = (ls, dl, linkArray) =>
                     linkArray.push(clone);
                     langNo++;
                 }
-
-
             }
         }
     }
