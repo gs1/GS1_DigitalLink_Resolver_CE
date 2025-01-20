@@ -7,7 +7,7 @@ from flask_restx import Namespace, Resource, Api
 
 import web_logic
 
-data_entry_namespace = Namespace('', description='Resolver web operations')
+web_namespace = Namespace('', description='Resolver web operations')
 static_folder_path = os.path.join(os.getcwd(), 'public')
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,58 @@ logger = logging.getLogger(__name__)
 api = Api()
 
 
-@data_entry_namespace.route('/<non_gs1dl_request>')
+@web_namespace.route('/favicon.ico')
+class Favicon(Resource):
+    def get(self):
+        """
+        Serve the favicon.ico file.
+        """
+        return send_from_directory(static_folder_path, 'favicon.ico')
+
+    def options(self):
+        """
+        Handle unsupported HTTP methods gracefully for /favicon.ico.
+        """
+        return {'error': 'Method not allowed'}, 405
+
+
+@web_namespace.route('/robots.txt')
+class RobotsTxt(Resource):
+    def get(self):
+        """
+        Serve the robots.txt file.
+        """
+        return send_from_directory(static_folder_path, 'robots.txt')
+
+    def options(self):
+        """
+        Handle unsupported HTTP methods gracefully for /robots.txt.
+        """
+        return {'error': 'Method not allowed'}, 405
+
+
+@web_namespace.route('/heartbeat')
+class Heartbeat(Resource):
+    def get(self):
+        """
+        Return a simple heartbeat response to indicate the application is running.
+        """
+        return jsonify({'response_message': 'Server is running!'}), 200
+
+    def head(self):
+        """
+        Handle HEAD requests for /heartbeat. Return headers without a body.
+        """
+        response = make_response('', 200)  # Empty body with status code 200
+        return response
+
+    def options(self):
+        """
+        Handle unsupported HTTP methods gracefully for /heartbeat.
+        """
+        return {'error': 'Method not allowed'}, 405
+
+@web_namespace.route('/<non_gs1dl_request>')
 class DocOperationsNonGS1DigitalLinkRequest(Resource):
     @api.doc(description="Process non GS1 Digital Link requests (which can include compressed GS1 DLs)")
     def get(self, non_gs1dl_request):
@@ -46,17 +97,6 @@ class DocOperationsNonGS1DigitalLinkRequest(Resource):
         # Existing processing logic as outlined previously
         try:
             print('NON GS1DL REQUEST: ', non_gs1dl_request)
-
-            if non_gs1dl_request == 'favicon.ico':
-                return send_from_directory(static_folder_path, 'favicon.ico')
-
-            if non_gs1dl_request == 'robots.txt':
-                return send_from_directory(static_folder_path, 'robots.txt')
-
-            if non_gs1dl_request == 'heartbeat':
-                return jsonify({'response_message': f'Server is running!'}), 200
-
-            # other logic...
             decompress_result = web_logic.uncompress_gs1_digital_link(non_gs1dl_request)
             print('DEBUG ==> decompress_result: ', decompress_result)
             if decompress_result['SUCCESS']:
@@ -76,7 +116,7 @@ class DocOperationsNonGS1DigitalLinkRequest(Resource):
             abort(500, description="Error getting document")
 
 
-@data_entry_namespace.route('/<anchor_ai_code>/<anchor_ai>')
+@web_namespace.route('/<anchor_ai_code>/<anchor_ai>')
 class DocOperationsIdentifiersOnly(Resource):
     @api.doc(description="Get a document from the incoming URL (GS1 identifiers only)")
     def get(self, anchor_ai_code, anchor_ai):
@@ -122,7 +162,7 @@ class DocOperationsIdentifiersOnly(Resource):
         return response
 
 
-@data_entry_namespace.route('/<anchor_ai_code>/<anchor_ai>/<path:extra_segments>')
+@web_namespace.route('/<anchor_ai_code>/<anchor_ai>/<path:extra_segments>')
 class DocOperationsResource(Resource):
     def get(self, anchor_ai_code, anchor_ai, extra_segments=None):
         try:

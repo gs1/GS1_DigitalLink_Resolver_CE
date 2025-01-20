@@ -4,7 +4,7 @@ from flask import Blueprint
 from flask_cors import CORS  # new
 import logging
 import os
-from web_namespace import data_entry_namespace
+from web_namespace import web_namespace
 from mongo_db_init import mongo, init_mongo
 
 
@@ -55,6 +55,16 @@ def create_app(test_config=None):
 
     with app.app_context():
         # setting up a blueprint for your API routes
+        # If this server is going to run standalone and not by proxied the NGINX proxy server in this project,
+        # then you can change your url_prefix to '/', otherwise your GS1 Digital Link URLs would have to be prefixed
+        # with '/api' which is not the standard way to use GS1 Digital Link URLs. The reason for '/api' is for use
+        # with the NGINX proxy server in this project with this setting:
+        #   location / {
+        #                  proxy_pass http://web-service:4000/api/; <-- this is the /api prefix in use
+        #                  proxy_buffer_size 16k;
+        #                  proxy_buffers 4 16k;
+        #                  proxy_busy_buffers_size 16k;
+        #              }
         api_blueprint = Blueprint('api', __name__, url_prefix='/api')
 
         # setting up restx API and binding it with blueprint
@@ -66,7 +76,7 @@ def create_app(test_config=None):
         )
 
         # adding namespace (which contains routes) to api
-        api.add_namespace(data_entry_namespace)
+        api.add_namespace(web_namespace)
 
         # registering api blueprint to app
         app.register_blueprint(api_blueprint)
