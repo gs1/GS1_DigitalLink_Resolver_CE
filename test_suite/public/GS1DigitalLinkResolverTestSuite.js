@@ -18,7 +18,7 @@ const linkProps = { // We'll need to test lots of links so it's good to have al 
 }
 
 
-const testUri = '/test/api';
+const testUri = '/test-suites/resolver/1.0.0/index.php';
 
 // const RabinRegEx = /^(([^:\/?#]+):)?(\/\/((([^\/?#]*)@)?([^\/?#:]*)(:([^\/?#]*))?))?([^?#]*)(\?([^#]*))?(#(.*))?/;
 const RabinRegEx = /^((https?):)(\/\/((([^\/?#]*)@)?([^\/?#:]*)(:([^\/?#]*))?))?([^?#]*)(\?([^#]*))?(#(.*))?/;  // As above but specifically for HTTP(s) URIs
@@ -324,7 +324,7 @@ const headerBasedChecks = (dl, dlVersion) =>
                 }
 
                 // We put to one side the JSON-LD context link, but test everything else:
-                if(!linkObj.href.includes('http://www.w3.org/ns/json-ld#context'))
+                if (!linkObj.href.includes('http://www.w3.org/ns/json-ld#context'))
                 {
                     if (relRE.test(allLinks[link]))
                     {
@@ -765,13 +765,19 @@ const rdFileCheck = async (domain) =>
         });
         let response = await fetch(testRequest);
         let data = await response.json();
+        const schemaTestResult = await doesJSONSchemaPass(data);
         if (
             data['supportedPrimaryKeys'] &&
-            data['resolverRoot'].match(/^((https?):)(\/\/((([^\/?#]*)@)?([^\/?#:]*)(:([^\/?#]*))?))?([^?#]*)(\?([^#]*))?(#(.*))?/)
+            data['resolverRoot'].match(/^((https?):)(\/\/((([^\/?#]*)@)?([^\/?#:]*)(:([^\/?#]*))?))?([^?#]*)(\?([^#]*))?(#(.*))?/) &&
+            schemaTestResult.testResult
         )
         {
-            rdFile.msg = 'Resolver description file found with at least minimum required data';
+            rdFile.msg = 'Resolver description file found with at least minimum required data and is valid against the official GS1 schema';
             rdFile.status = 'pass';
+        }
+        else if (!schemaTestResult.testResult)
+        {
+            rdFile.msg = 'Resolver description file found but does not validate against the official GS1 schema. Error(s): ' + schemaTestResult.errors.join(', ');
         }
         else
         {
@@ -785,6 +791,94 @@ const rdFileCheck = async (domain) =>
     }
 }
 
+
+
+const doesJSONSchemaPass = async (data) =>
+{
+    try
+    {
+        // Initialize Ajv w
+        const ajv = new window.ajv7();
+
+        // Fetch schema from URL
+        const fetchSchema = async () => {
+            try {
+                const schemaUrl = 'https://ref.gs1.org/standards/resolver/description-file-schema';
+                const response = await fetch(schemaUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch schema: ${response.statusText}`);
+                }
+
+                const schema = await response.json();
+
+                // If the schema specifies Draft-04, replace it with Draft-07
+                if (schema.$schema === 'http://json-schema.org/draft-04/schema#') {
+                    schema.$schema = 'http://json-schema.org/draft-07/schema#';
+                }
+
+                return schema;
+            } catch (error) {
+                console.error('Error fetching schema:', error.message);
+                throw new Error('Unable to fetch schema');
+            }
+        };
+
+        // Fetch the schema
+        let schema;
+        try
+        {
+            schema = await fetchSchema();
+        }
+        catch (error)
+        {
+            return {
+                testResult: false,
+                errors: [error.message]
+            };
+        }
+
+        // Compile schema and validate data
+        try
+        {
+            const validate = ajv.compile(schema);
+            const valid = validate(data);
+
+            if (valid)
+            {
+                return {testResult: true}; // Success
+            }
+            else
+            {
+                return {
+                    testResult: false,
+                    errors: validate.errors.map(err => `${err.instancePath} ${err.message}`)
+                };
+            }
+        }
+        catch (error)
+        {
+            console.error('Validation error:', error.message);
+            return {
+                testResult: false,
+                errors: [error.message]
+            };
+        }
+    }
+    catch (error)
+    {
+        console.error('Unexpected error:', error.message);
+        return {
+            testResult: false,
+            errors: ['Unexpected error occurred during schema validation']
+        };
+    }
+};
 
 const testQuery = (dl) =>
 {
@@ -1134,9 +1228,9 @@ const authorLinkSetLanguageTests = (ls, dl, linkArray) =>
                 linkCount += 1;
                 let u = stripQueryStringFromURL(dl) + '?linkType=' + linkType; // Creates basic request URI for that link type
 
-                if(!Array.isArray(targetObject.hreflang))
+                if (!Array.isArray(targetObject.hreflang))
                 {
-                    if(targetObject.hreflang)
+                    if (targetObject.hreflang)
                     {
                         targetObject.hreflang = [targetObject.hreflang];
                     }
@@ -1148,7 +1242,7 @@ const authorLinkSetLanguageTests = (ls, dl, linkArray) =>
                 }
 
                 // So now we have a language array!
-                for(let lang of targetObject.hreflang)
+                for (let lang of targetObject.hreflang)
                 {
                     const loCheck = {
                         "id": "", //An id for the test
@@ -1186,7 +1280,7 @@ const authorLinkSetLanguageTests = (ls, dl, linkArray) =>
                     // There might be multiple languages (even a single one will be in an array)
                     if (!Array.isArray(targetObject.hreflang))
                     {
-                        if(targetObject.hreflang)
+                        if (targetObject.hreflang)
                         {
                             targetObject.hreflang = [targetObject.hreflang];
                         }
@@ -1203,7 +1297,8 @@ const authorLinkSetLanguageTests = (ls, dl, linkArray) =>
                     loCheck.msg = describeRequest(dl, linkType, targetObject, loCheck);
                     loCheck.process = async (data) =>
                     {
-                        const testLocation = stripQueryStringFromURL(data.result.location);
+                        const locationHeader = data.result['location'] ? data.result['location'] : data.result['Location'] ? data.result['Location'] : '';
+                        const testLocation = stripQueryStringFromURL(locationHeader);
                         const targetHref = stripQueryStringFromURL(targetObject.href);
                         if (testLocation === targetHref)
                         { // There is a redirection to the correct link
@@ -1413,7 +1508,7 @@ function testJldContext(dl)
     recordResult(jldContext);
     jldContext.process = async (data) =>
     {
-        const link = data.result['link'].toString();
+        const link = (data.result['link'] ? data.result['link'] : data.result['Link'] ? data.result['Link'] : '').toString();
         if (link && regex.test(link))
         {
             jldContext.status = 'pass';
@@ -1429,10 +1524,20 @@ function testJldContext(dl)
 
 function stripQueryStringFromURL(url)
 {
-    return url.indexOf('?') > -1 ? url.substring(0, url.indexOf('?')) : url;
+    try
+    {
+        return url.indexOf('?') > -1 ? url.substring(0, url.indexOf('?')) : url;
+    }
+    catch (e)
+    {
+        console.log(`stripQueryStringFromURL() URL: '${url}',  Error: ${e.message}`);
+        // print stacktrace
+        console.log(e.stack);
+    }
 }
 
-function numericOnly(dl) {
+function numericOnly(dl)
+{
     const replacements = {
         gtin: '01',
         itip: '8006',
@@ -1457,7 +1562,8 @@ function numericOnly(dl) {
         giai: '8004'
     };
 
-    for (const [key, value] of Object.entries(replacements)) {
+    for (const [key, value] of Object.entries(replacements))
+    {
         dl = dl.replace(key, value);
     }
 
@@ -1482,6 +1588,8 @@ const runTest = async (test) =>
     catch (error)
     {
         console.log(`"Error from test id: '${test.id}' on '${test.url}' has error: ${error}`);
+        // print stacktrace
+        console.log(error.stack);
     }
 }
 
@@ -1531,17 +1639,25 @@ function getGrid()
 
 function recordResult(result)
 {
-    // See if result is already in the array
-    let i = 0;
-    while ((i < resultsArray.length) && (resultsArray[i].id !== result.id))
+    try
     {
-        i++;
+        // See if result is already in the array
+        let i = 0;
+        while ((i < resultsArray.length) && (resultsArray[i].id !== result.id))
+        {
+            i++;
+        }
+        // i now either points to the existing record or the next available index, either way we can now push the result
+        // into the array
+        resultsArray[i] = result;
+        sendOutput(result);
+        return 1;
     }
-    // i now either points to the existing record or the next available index, either way we can now push the result
-    // into the array
-    resultsArray[i] = result;
-    sendOutput(result);
-    return 1;
+    catch (e)
+    {
+        console.log('recordResult() Error: ' + e.message);
+        return 0;
+    }
 }
 
 function sendOutput(o)
@@ -1550,48 +1666,55 @@ function sendOutput(o)
     // If the dt/dd pair exist we need to update them, otherwise we need to create them
     // So begin by testing for existence
 
-    let dd = document.getElementById(o.id + 'dd');
-    if (dd)
+    try
     {
-        // It exists
-        dd.innerHTML = o.msg;
-        dd.className = o.status;
-    }
-    else
-    {
-        // It doesn't exist so we need to create everything
-        let dt = document.createElement('dt');
-        dt.id = o.id;
-        let t = document.createTextNode(o.test);
-        dt.appendChild(t);
-        dd = document.createElement('dd');
-        dd.id = o.id + 'dd';
-        dd.className = o.status;
-        t = document.createTextNode(o.msg);
-        dd.appendChild(t);
+        let dd = document.getElementById(o.id + 'dd');
+        if (dd)
+        {
+            // It exists
+            dd.innerHTML = o.msg;
+            dd.className = o.status;
+        }
+        else
+        {
+            // It doesn't exist so we need to create everything
+            let dt = document.createElement('dt');
+            dt.id = o.id;
+            let t = document.createTextNode(o.test);
+            dt.appendChild(t);
+            dd = document.createElement('dd');
+            dd.id = o.id + 'dd';
+            dd.className = o.status;
+            t = document.createTextNode(o.msg);
+            dd.appendChild(t);
 
-        let dl = getDL();
-        dl.appendChild(dt);
-        dl.appendChild(dd);
-    }
+            let dl = getDL();
+            dl.appendChild(dt);
+            dl.appendChild(dd);
+        }
 
-    // Now we want to do the same for the grid
-    let grid = getGrid();
-    // Does the grid square exist?
-    let a = document.getElementById(o.id + 'a');
-    if (a)
-    {
-        // It exists - this will just be a status change
-        a.className = o.status;
+        // Now we want to do the same for the grid
+        let grid = getGrid();
+        // Does the grid square exist?
+        let a = document.getElementById(o.id + 'a');
+        if (a)
+        {
+            // It exists - this will just be a status change
+            a.className = o.status;
+        }
+        else
+        {
+            // It doesn't exist and needs to be created
+            let sq = document.createElement('a');
+            sq.id = o.id + 'a';
+            sq.href = '#' + o.id;
+            sq.className = o.status;
+            sq.title = o.test;
+            grid.appendChild(sq);
+        }
     }
-    else
+    catch (e)
     {
-        // It doesn't exist and needs to be created
-        let sq = document.createElement('a');
-        sq.id = o.id + 'a';
-        sq.href = '#' + o.id;
-        sq.className = o.status;
-        sq.title = o.test;
-        grid.appendChild(sq);
+        console.log('sendOutput() Error: ' + e.message);
     }
 }
