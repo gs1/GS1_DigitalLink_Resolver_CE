@@ -3,6 +3,8 @@ import os
 import subprocess
 import sys
 import traceback
+import warnings
+
 
 import web_db
 
@@ -366,9 +368,24 @@ def _do_qualifiers_match(qualifier_path, doc_qualifiers):
         return False, [f"Unexpected error occurred. Details: {str(e)}"]
 
 
+def _author_link_header_with_pointer_to_linkset(linkset):
+    """
+    This function creates a Link header with a pointer to the linkset.
+    This a change from previous versions of the GS1 Resolver Standard that tries to out all relevant links from
+    the linkset into the Link header. This is not practical for large linksets and can overwhelm some web clients
+    with the header size! This function replaces _author_compact_links_for_link_header(linkset) which did this.
+    Example: Link: <{current URL, minus query string, + linkType=linkset>; rel="application/linkset"; type="application/linkset"; title="Linkset for {identifiers}"
+    :param linkset (list): The input JSON data - to make this function backwards-compatible with _author_compact_links_for_link_header()
+    :return: The Link header with a pointer to the linkset.
+    """
+    identifiers = linkset[0].get("anchor")
+    return f'<https://{os.getenv("FQDN", "set-domain-name-in-env-variable-FQDN.com")}{identifiers}?linkType=linkset>; rel="application/linkset"; type="application/linkset"; title="Linkset for {identifiers}"'
+
+
+
 def _author_compact_links_for_link_header(linkset):
     """
-    Convert GS1  linkset to a compact link format for use with the Link header
+    Convert GS1 linkset to a compact link format for use with the Link header.
 
     Args:
         linkset (list): The input JSON data - one entry.
@@ -376,6 +393,12 @@ def _author_compact_links_for_link_header(linkset):
     Returns:
         str: The compact link format.
     """
+    warnings.warn(
+        "_author_compact_links_for_link_header is deprecated and will be removed in a future release. Use the _author_link_header_with_pointer_to_linkset(linkset) instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+
     links = []
     same_as_link = None
 
@@ -384,7 +407,7 @@ def _author_compact_links_for_link_header(linkset):
     if anchor:
         same_as_link = f"<{anchor}>; rel=\"owl:sameAs\""
 
-    #As linkset is always a single list entry let's just make it syntactically easier to code!
+    # As linkset is always a single list entry, let's just make it syntactically easier to code!
     linkset = linkset[0]
 
     # Iterate over the linkset
@@ -770,7 +793,7 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
                                                  context,
                                                  media_types_list,
                                                  linkset_requested
-                                                 ), _author_compact_links_for_link_header(entry['linkset'])
+                                                 ), _author_link_header_with_pointer_to_linkset(entry['linkset'])
 
             # If we are here then there are qualifiers to process.
             # Iterate through each data item in the document.
@@ -798,7 +821,7 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
                                                                  media_types_list,
                                                                  linkset_requested
                                                                  ))
-                    link_header_list.append(_author_compact_links_for_link_header(entry['linkset']))
+                    link_header_list.append(_author_link_header_with_pointer_to_linkset(entry['linkset']))
 
 
             if not response_links_list:
