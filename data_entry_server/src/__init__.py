@@ -50,7 +50,13 @@ def create_app(test_config=None):
         api_blueprint = Blueprint('api', __name__, url_prefix='/api')
 
         # setting up restx API and binding it with blueprint
-        api = Api(api_blueprint, version='1.0', title='GS1 Resolver Community Edition API', description='')
+        api = Api(api_blueprint,
+                  version='1.0',
+                  title='GS1 Resolver Community Edition API',
+                  description='This data entry API enables editing of links made available by Resolver',
+                  doc='/docs',  # This enables Swagger UI at /api/docs
+                  prefix='')
+
 
         # adding namespace (which contains routes) to api
         api.add_namespace(data_entry_namespace)
