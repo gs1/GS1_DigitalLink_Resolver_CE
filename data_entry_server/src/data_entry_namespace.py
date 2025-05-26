@@ -131,3 +131,23 @@ class DocOperations(TokenResource):
         except Exception as e:
             logger.warning('Error deleting document: ' + str(e))
             abort(450, description="Error deleting document")
+
+
+@data_entry_namespace.route('/<anchor_ai_code>/<anchor_ai>/<path:extra_segments>')
+class DocOperations(TokenResource):
+    @api.doc(description="Retrieve a document using its anchor")
+    def get(self, anchor_ai_code, anchor_ai, extra_segments):
+        try:
+            token_result = self.is_auth_token_ok()
+            if not token_result['result'] and token_result['message'] == "Missing Authorization Header":
+                return token_result['message'], 401
+            elif not token_result['result']:
+                return token_result['message'], 403
+        
+            document_id = data_entry_logic.convert_path_to_document_id(f"/{anchor_ai_code}/{anchor_ai}/{extra_segments}")
+            response_data = data_entry_logic.read_document(document_id)
+            return response_data, response_data['response_status']
+
+        except Exception as e:
+            logger.warning('Error getting document ' + str(e))
+            abort(500, description="Error getting document")

@@ -180,9 +180,11 @@ def _author_db_linkset_document(data_entry_format):
             return {"response_status": 400, "error": "Invalid data format: " + str(data_entry_format)}
 
         default_linktype = data_entry_format['defaultLinktype']
+        
+        doc_id = convert_path_to_document_id( data_entry_format["anchor"])
 
         database_doc = {
-            "_id": data_entry_format["anchor"].split('/')[-2] + '_' + data_entry_format["anchor"].split('/')[-1],
+            "_id": doc_id,
             "defaultLinktype": default_linktype,
             "data": []
         }
@@ -366,6 +368,16 @@ def _author_db_linkset_list(data_list):
         # If there's any exception during processing, return a server error response
         print('_author_mongo_linkset_list: Error processing document: ', str(e))
         return {"response_status": 500, "error": "Internal Server Error - " + str(e)}
+
+def convert_path_to_document_id(path: str):
+    if path.count('/') < 2:
+        print("Error: path fomrant error")
+        raise ValueError("Error: path fomrant error")
+    
+    parts = path.strip().split('/')
+    parts = [p for p in parts if p != '']
+
+    return '_'.join(parts)
 
 
 def create_document(data):
