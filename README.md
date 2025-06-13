@@ -82,7 +82,7 @@ Importantly this will run whether you are using x64 (Intel / AMD) or ARM based h
 
 The service will then be available at http://localhost:8080
 
-The API is available with Open API (Swagger) documentation at http://localhost:3000/api/
+The API is available with Open API (Swagger) documentation at http://localhost:8080
 
 ### Postman documentation for the API can be found at: https://documenter.getpostman.com/view/10078469/2sA3JKeNb2
 
@@ -91,7 +91,7 @@ The API is available with Open API (Swagger) documentation at http://localhost:3
 2. **Put it to use**: You can now start using Resolver CE v3.0 in your projects. You'll be joining at least three GS1 Member Organisations who are already using Resolver CE v3.0 in various scenarios, and we are looking forward to hearing about your experiences.
 3. **Review the new data entry format** in the /tests folder which gives examples of the new format for data entry - although you will be pleased to know that the API will accept v2.x format data as well.
 3. **Look at the convertor scripts** in the useful_external_python_scripts folder. These scripts are useful for converting data between the previous versions of Resolver CE and the new format.
-4. **Try out the API yourself**: The API is available with Open API (Swagger) documentation at http://localhost:3000/api/ and, for Postman fans (complete with example data) at https://documenter.getpostman.com/view/10078469/2sA3JKeNb2
+4. **Try out the API yourself**: The API is available with Open API (Swagger) documentation at http://localhost:8080 and, for Postman fans (complete with example data) at https://documenter.getpostman.com/view/10078469/2sA3JKeNb2
 5. **Provide feedback**: We are looking for feedback from users to help us improve the software. Please provide feedback by creating an issue on the GitHub repository.
 
 ## Can I put this GS1 Resolver live?
