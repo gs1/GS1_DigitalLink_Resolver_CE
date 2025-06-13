@@ -8,7 +8,7 @@ In simple terms, a consumer scans the GS1 Digital Link QR Code on your product, 
 all without having to change your existing web applications or databases. You simply add the GS1 identifier and the corresponding target URL to the Resolver database.
 
 Even more useful is the fact that the same consumer could scan the QR Code before they purchase the product to check for nutritional red flags, and
-after they have purchased to the product to look at recipes! GS1 Resolver signposts people to the appropriate information based on <i>why</i> they scanned
+after they have purchased the product to look at recipes! GS1 Resolver signposts people to the appropriate information based on <i>why</i> they scanned
 the QR Code.
 
 It means that that consumers, supply chain workers and others can see contextually important information about a product that is
@@ -60,6 +60,7 @@ You could use a Mongo-cloud based solution such as MongoDB Atlas or Cosmos DB wi
 This container is just there to route incoming requests to data-entry and resolving (web) containers via a single endpoint through Docker or Kubernetes. Most of you have your own "front-door" routing services to your network applications, so you would just use that with appropriate rules.
 
 <hr>
+
 ### What has been simplified compared to previous versions?
 
 #### Two containers are dropped:
