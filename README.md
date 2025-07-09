@@ -8,7 +8,7 @@ In simple terms, a consumer scans the GS1 Digital Link QR Code on your product, 
 all without having to change your existing web applications or databases. You simply add the GS1 identifier and the corresponding target URL to the Resolver database.
 
 Even more useful is the fact that the same consumer could scan the QR Code before they purchase the product to check for nutritional red flags, and
-after they have purchased to the product to look at recipes! GS1 Resolver signposts people to the appropriate information based on <i>why</i> they scanned
+after they have purchased the product to look at recipes! GS1 Resolver signposts people to the appropriate information based on <i>why</i> they scanned
 the QR Code.
 
 It means that that consumers, supply chain workers and others can see contextually important information about a product that is
@@ -60,6 +60,7 @@ You could use a Mongo-cloud based solution such as MongoDB Atlas or Cosmos DB wi
 This container is just there to route incoming requests to data-entry and resolving (web) containers via a single endpoint through Docker or Kubernetes. Most of you have your own "front-door" routing services to your network applications, so you would just use that with appropriate rules.
 
 <hr>
+
 ### What has been simplified compared to previous versions?
 
 #### Two containers are dropped:
@@ -81,7 +82,7 @@ Importantly this will run whether you are using x64 (Intel / AMD) or ARM based h
 
 The service will then be available at http://localhost:8080
 
-The API is available with Open API (Swagger) documentation at http://localhost:3000/api/
+The API is available with Open API (Swagger) documentation at http://localhost:8080
 
 ### Postman documentation for the API can be found at: https://documenter.getpostman.com/view/10078469/2sA3JKeNb2
 
@@ -90,7 +91,7 @@ The API is available with Open API (Swagger) documentation at http://localhost:3
 2. **Put it to use**: You can now start using Resolver CE v3.0 in your projects. You'll be joining at least three GS1 Member Organisations who are already using Resolver CE v3.0 in various scenarios, and we are looking forward to hearing about your experiences.
 3. **Review the new data entry format** in the /tests folder which gives examples of the new format for data entry - although you will be pleased to know that the API will accept v2.x format data as well.
 3. **Look at the convertor scripts** in the useful_external_python_scripts folder. These scripts are useful for converting data between the previous versions of Resolver CE and the new format.
-4. **Try out the API yourself**: The API is available with Open API (Swagger) documentation at http://localhost:3000/api/ and, for Postman fans (complete with example data) at https://documenter.getpostman.com/view/10078469/2sA3JKeNb2
+4. **Try out the API yourself**: The API is available with Open API (Swagger) documentation at http://localhost:8080 and, for Postman fans (complete with example data) at https://documenter.getpostman.com/view/10078469/2sA3JKeNb2
 5. **Provide feedback**: We are looking for feedback from users to help us improve the software. Please provide feedback by creating an issue on the GitHub repository.
 
 ## Can I put this GS1 Resolver live?
