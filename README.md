@@ -1,6 +1,6 @@
 ## 📢 Welcome to GS1 Resolver Community Edition Version 3.0.0
 
-GS1 Resolver is a free and open-source web-server application that allows you to resolve GS1 identifiers to their corresponding web resources. 
+GS1 Resolver is a free and open-source web-server application that allows you to resolve GS1 identifiers to their corresponding web resources.
 
 This is really useful for products, services, and other entities that have a GS1 identifier stored in a GS1 Digital Link QR Code.
 
@@ -34,7 +34,7 @@ yet distributed, network of links to information resources.</i>
 3. **Separate GTIN Qualifiers**: GTIN qualifiers are now independent, free from a fixed 'qualifier path', offering enhanced flexibility.
 4. **Unified Database**: Streamline your infrastructure as maintaining both SQL *and* Document databases is no longer necessary—only the Document database is required.
 5. **Embrace the Pythonic Way with Python 3.10**: The evolution of the Resolver CE is taking a leap forward in code readability with Python. After discussions and feedback from the dev community implementing Resolver 2.x, we've shed the many layers of Node JavaScript source files in favor of Python's elegant simplicity and fewer script files. Resolver CE v3.0 is written in Python 3.10, adopting a 'pythonic' style of coding that is much easier to read and adjust as required. This isn't just a change; it's an upgrade to high-performance processing that is easier to read, comprehend and adjust.
-6. **Introduction of compression for GS1 Digital Link URls**: The Resolver CE v3.0 now supports the compression of GS1 Digital Link URLs. This feature is particularly useful when you have a long URL that you want to compress to a shorter one. The compressed URL can be used in place of the original URL, and the Resolver CE v3.0 will automatically decompress it when resolving the GS1 identifier. 
+6. **Introduction of compression for GS1 Digital Link URls**: The Resolver CE v3.0 now supports the compression of GS1 Digital Link URLs. This feature is particularly useful when you have a long URL that you want to compress to a shorter one. The compressed URL can be used in place of the original URL, and the Resolver CE v3.0 will automatically decompress it when resolving the GS1 identifier.
 
 ### 📚 Simplified Architecture
 The new architecture is based on a microservices approach. In this solution the data entry service with its API can be separated from the Front-end resolving web service.
@@ -67,7 +67,7 @@ This container is just there to route incoming requests to data-entry and resolv
 1. No relational database so the v1.x/v2.x SQL Server is dropped
 2. No separate GS1 Digital Toolkit service - now integrated into data entry and web services
 #### No more 'accounts'
-1. Originally resolver v1/v2 of needed to be self-standing with independent logins. No more! 
+1. Originally resolver v1/v2 of needed to be self-standing with independent logins. No more!
 2. There is an authentication key that can be set as a secret and provided by the calling client when acting on the Resolver CE data entry API. Alternatively, you can easily replace our simple 'Bearer' authentication with your own authentication mechanism. You would likely run the data entry service on your internal network and accessed by your existing applications, with only the Resolving web server facing the internet - although they are both accessible via the provided proxy server 'out of the box'.
 
 <hr>
@@ -87,7 +87,7 @@ The API is available with Open API (Swagger) documentation at http://localhost:8
 ### Postman documentation for the API can be found at: https://documenter.getpostman.com/view/10078469/2sA3JKeNb2
 
 ## What should I do next?
-1. **Try it out**: To do this, use the 'setup_test.py' script in the tests folder to add some test data to the database and test Resolver. Indeed, we recommend you read through - then step through - the heavily documented test suite which will give you examples of creating / reading / deleting entries using the API, and observing behaviour through the Resolver front-end service. 
+1. **Try it out**: To do this, use the 'setup_test.py' script in the tests folder to add some test data to the database and test Resolver. Indeed, we recommend you read through - then step through - the heavily documented test suite which will give you examples of creating / reading / deleting entries using the API, and observing behaviour through the Resolver front-end service.
 2. **Put it to use**: You can now start using Resolver CE v3.0 in your projects. You'll be joining at least three GS1 Member Organisations who are already using Resolver CE v3.0 in various scenarios, and we are looking forward to hearing about your experiences.
 3. **Review the new data entry format** in the /tests folder which gives examples of the new format for data entry - although you will be pleased to know that the API will accept v2.x format data as well.
 3. **Look at the convertor scripts** in the useful_external_python_scripts folder. These scripts are useful for converting data between the previous versions of Resolver CE and the new format.
