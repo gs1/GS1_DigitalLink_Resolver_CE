@@ -329,7 +329,7 @@ def _process_response(doc_id, identifiers, qualifier_path=None, compress=None, q
         response.headers['Location'] = response_data['data']['href']
         # if we have any query_strings then we need to append them to response.headers['Location']:
         if query_strings:
-            response.headers['Location'] += '?' + query_strings
+            response.headers['Location'] += '&' + query_strings if '?' in response.headers['Location'] else '?' + query_strings
 
         return response
 
