@@ -143,7 +143,7 @@ class DocOperations(TokenResource):
                 return token_result['message'], 401
             elif not token_result['result']:
                 return token_result['message'], 403
-        
+
             document_id = data_entry_logic.convert_path_to_document_id(f"/{anchor_ai_code}/{anchor_ai}/{extra_segments}")
             response_data = data_entry_logic.read_document(document_id)
             return response_data, response_data['response_status']

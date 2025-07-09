@@ -180,7 +180,7 @@ def _author_db_linkset_document(data_entry_format):
             return {"response_status": 400, "error": "Invalid data format: " + str(data_entry_format)}
 
         default_linktype = data_entry_format['defaultLinktype']
-        
+
         doc_id = convert_path_to_document_id( data_entry_format["anchor"])
 
         database_doc = {
@@ -373,7 +373,7 @@ def convert_path_to_document_id(path: str):
     if path.count('/') < 2:
         print("Error: path fomrant error")
         raise ValueError("Error: path fomrant error")
-    
+
     parts = path.strip().split('/')
     parts = [p for p in parts if p != '']
 
