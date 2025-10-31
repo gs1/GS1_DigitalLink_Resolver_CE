@@ -1,3 +1,6 @@
+# Important notice and disclaimer
+This freely licensed open source software is not maintained by GS1. Issues raised here may be answered by the community but will not be handled by GS1 itself. Users of this software should not assume that it conforms fully to the published [GS1-Conformant resolver standard](https://ref.gs1.org/standards/resolver/).
+
 ## 📢 Welcome to GS1 Resolver Community Edition Version 3.0.0
 
 GS1 Resolver is a free and open-source web-server application that allows you to resolve GS1 identifiers to their corresponding web resources.
