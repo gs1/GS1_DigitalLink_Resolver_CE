@@ -312,6 +312,11 @@ def _do_qualifiers_match(qualifier_path, doc_qualifiers):
              their matching actual values, if any. Returns False and None if no match found.
     """
     try:
+        # Handle the case where qualifier_path is None or empty
+        if qualifier_path is None or qualifier_path == '/':
+            # Return True only if doc_qualifiers is also empty
+            return len(doc_qualifiers) == 0, []
+
         # Initialize the list to store template variables
         template_variable_list = []
 
@@ -806,8 +811,9 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
                                                                                      entry['qualifiers'])
 
                 # If qualifiers match, replace template variables and process the linkset.
-                if yes_qualifiers_match:
-                    if len(template_variables_list) > 0:
+                # For linkset requests, also include entries with no qualifiers (GTIN-only entries).
+                if yes_qualifiers_match or (linkset_requested and len(entry['qualifiers']) == 0):
+                    if template_variables_list and len(template_variables_list) > 0:
                         entry['linkset'] = _replace_linkset_template_variables(entry['linkset'],
                                                                                template_variables_list)
 
@@ -835,6 +841,16 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
             # If multiple valid responses are prepared, return a 300 response with the linkset data.
             if len(response_links_list) == 1 and response_links_list[0]['response_status'] == 300:
                 return response_links_list[0], link_header_list[0]
+
+            # For linkset requests, merge all linksets into a single array
+            # This handles both single and multiple entries
+            if linkset_requested and len(response_links_list) > 0:
+                merged_linkset = []
+                for response in response_links_list:
+                    if response['response_status'] == 200 and 'data' in response:
+                        # response['data'] is the linkset array, extend it to merged_linkset
+                        merged_linkset.extend(response['data'])
+                return {"response_status": 200, "data": merged_linkset}, ','.join(link_header_list)
 
             # If multiple valid responses are prepared, return a 200 response with the linkset data.
             return {"response_status": 200, "data": response_links_list}, ','.join(link_header_list)
