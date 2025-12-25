@@ -6,13 +6,28 @@ from functools import wraps
 import logging
 import data_entry_logic
 from werkzeug.exceptions import UnsupportedMediaType
+from models.request_models import register_request_models
+from models.response_models import register_response_models
 
-data_entry_namespace = Namespace('', description='Resolver data entry operations')
+data_entry_namespace = Namespace(
+    '', 
+    description='Resolver data entry operations', 
+    authorizations={
+        'BearerAuth': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'Use format: Bearer <SESSION_TOKEN>'
+        }
+    }
+)
 
 logger = logging.getLogger(__name__)
 
 api = Api()
 
+new_document_model, new_document_link_model = register_request_models(data_entry_namespace)
+new_document_response_item_model = register_response_models(data_entry_namespace)
 
 class TokenResource(Resource):
     @staticmethod
@@ -38,7 +53,34 @@ class HeartBeat(TokenResource):
 
 @data_entry_namespace.route('/new')
 class NewDocOperations(TokenResource):
-    @api.doc(description="Create a new document")
+    @api.doc(
+        description=(
+            "Create or update one or more GS1 Digital Link resolver documents.\n\n"
+            "The endpoint accepts the following payloads:\n"
+            "- a single Resolver CE v3 data-entry document (see `NewDocument` model),\n"
+            "- a list of Resolver CE v3 documents, or\n"
+            "- the legacy Resolver v2 data-entry format, which will be converted to v3 automatically.\n\n"
+            "If a document with the same anchor already exists in the database, the data is "
+            "updated (upsert behaviour). Otherwise, a new document is created."
+        ),
+        body=new_document_model,
+        responses={
+            200: (
+                'Document updated successfully.',
+                new_document_response_item_model
+            ),
+            201: (
+                'Documents created successfully.',
+                fields.List(fields.Nested(new_document_response_item_model))
+            ),
+            400: 'Invalid data format. The payload could not be interpreted as v2 or v3 data-entry.',
+            401: 'Missing Authorization Header',
+            403: 'Token is invalid.',
+            415: 'Request must be in JSON format (Content-Type must be application/json).',
+            500: 'Internal server error'
+        },
+        security='BearerAuth'
+    )
     def post(self):
         try:
             token_result = self.is_auth_token_ok()
