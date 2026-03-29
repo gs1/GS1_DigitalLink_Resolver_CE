@@ -10,6 +10,7 @@ _GS1_AI_DATA_PATTERN = re.compile(r'^[\w()./:%-]+$')
 
 
 def _call_gs1_toolkit(ai_data_string):
+    global process
     if not _GS1_AI_DATA_PATTERN.match(ai_data_string):
         logger.warning("_call_gs1_toolkit: rejected unsafe input: %s", ai_data_string)
         return False
@@ -64,7 +65,12 @@ def _test_gs1_digital_link_syntax(url):
 
 
 def _validate_data(data):
-    # TODO - Implement data validation using latest GS1 Digital Link Toolkit
+    # TODO - Implement data validation using calls to your own applications where necessary.
+    #        For example, you may wish to ensure a product with matching GTIN exists in your product database,
+    #        or confirm that the 'href' web location exists and is accessible.
+    #        Simply adjust the validation logic as needed to fit your specific requirements and return
+    #        the data object (adjusted if necessary) or add Exception Throw logic to stop data entry of this document.
+    #        By default, the document is returned unchanged.
     return data
 
 
