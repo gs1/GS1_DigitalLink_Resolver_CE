@@ -470,10 +470,97 @@ def read_index():
         return {"response_status": 500, "error": "Internal Server Error"}
 
 
+def _find_matching_link(existing_links, new_link):
+    """
+    Find the index of an existing link that matches new_link by the
+    uniqueness key (linktype, hreflang, context).
+    Returns the index or None.
+    """
+    new_linktype = new_link.get('linktype', '')
+    new_hreflang = sorted(new_link.get('hreflang', []))
+    new_context = sorted(new_link.get('context', []))
+
+    for i, existing in enumerate(existing_links):
+        if (existing.get('linktype', '') == new_linktype and
+                sorted(existing.get('hreflang', [])) == new_hreflang and
+                sorted(existing.get('context', [])) == new_context):
+            return i
+
+    return None
+
+
 def update_document(document_id, data):
-    # currently update_document is not implemented in a different form from create_document
-    # although this can change, for now we just call create_document
-    return create_document(data)
+    """
+    Idempotent update of an existing document.
+    - Returns 404 if the document does not exist.
+    - Preserves fields not present in the payload.
+    - Merges links: matches by (linktype, hreflang, context).
+      Matching links are updated; unmatched links are added.
+    """
+    try:
+        # 1. Read the existing document
+        read_result = data_entry_db.read_document(document_id)
+        if read_result['response_status'] != 200:
+            return {"response_status": 404, "error": f"Document not found: {document_id}"}, 404
+
+        existing_db_doc = read_result['data']
+
+        # 2. Convert existing DB document to v3 format
+        existing_v3_list = _convert_mongo_linkset_to_v3(existing_db_doc)
+        if not existing_v3_list:
+            return {"response_status": 500, "error": "Failed to convert existing document"}, 500
+
+        # 3. Find the matching v3 item by qualifiers (default: no qualifiers)
+        payload_qualifiers = data.get('qualifiers', [])
+        matched_idx = 0
+        for i, v3_item in enumerate(existing_v3_list):
+            if _do_qualifiers_match(v3_item.get('qualifiers', []), payload_qualifiers):
+                matched_idx = i
+                break
+
+        matched_v3 = existing_v3_list[matched_idx]
+
+        # 4. Merge top-level scalar fields (preserve if absent from payload)
+        for field in ['itemDescription', 'defaultLinktype']:
+            if field in data:
+                matched_v3[field] = data[field]
+
+        # 5. Merge links
+        if 'links' in data:
+            existing_links = matched_v3.get('links', [])
+            for new_link in data['links']:
+                idx = _find_matching_link(existing_links, new_link)
+                if idx is not None:
+                    existing_links[idx].update(new_link)
+                else:
+                    existing_links.append(new_link)
+            matched_v3['links'] = existing_links
+
+        # 6. Convert merged v3 item back to DB format
+        authored_result = _author_db_linkset_document(matched_v3)
+        if authored_result['response_status'] != 200:
+            return authored_result, authored_result['response_status']
+
+        new_data_entry = authored_result['data']['data'][0]
+
+        # 7. Replace only the matched data entry; preserve other entries
+        existing_db_doc['data'][matched_idx] = new_data_entry
+
+        # Update top-level defaultLinktype if payload changed it
+        if 'defaultLinktype' in data:
+            existing_db_doc['defaultLinktype'] = data['defaultLinktype']
+
+        # 8. Persist
+        update_result = data_entry_db.update_document(existing_db_doc)
+        if update_result['response_status'] == 200:
+            return {"entry": document_id, "result": update_result}, 200
+        else:
+            return update_result, update_result['response_status']
+
+    except Exception as e:
+        print(f'update_document: Error: {str(e)}')
+        print(traceback.format_exc())
+        return {"response_status": 500, "error": f"Internal Server Error - {str(e)}"}, 500
 
 
 def delete_document(anchor):

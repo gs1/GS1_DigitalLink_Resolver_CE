@@ -147,13 +147,12 @@ class DocOperations(TokenResource):
                 return "Request must be in JSON format", 415
 
             data = request.json
-            # Currently create and update are the same code - will change in future
-            # to enable updating individual links
-            response_data, http_response_status = data_entry_logic.create_document(data)
+            document_id = f'{anchor_ai_code}_{anchor_ai}'
+            response_data, http_response_status = data_entry_logic.update_document(document_id, data)
             return response_data, http_response_status
 
         except Exception as e:
-            logger.warning('Error creating account: ' + str(e))
+            logger.warning('Error updating document: ' + str(e))
             abort(500, description="Error updating document:" + str(e))
 
     @api.doc(description="Delete a document using its anchor",
