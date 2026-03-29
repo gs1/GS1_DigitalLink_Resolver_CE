@@ -1,5 +1,6 @@
 import time
 import logging
+from typing import Any
 
 from flask_restx import Api
 from flask import Flask, url_for
@@ -13,7 +14,7 @@ from mongo_db_init import mongo, init_mongo
 logger = logging.getLogger(__name__)
 
 
-def create_app(test_config=None):
+def create_app(test_config: dict[str, Any] | None = None) -> Flask:
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True, static_folder='public')
     CORS(app)  # enable CORS

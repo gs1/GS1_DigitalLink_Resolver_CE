@@ -1,6 +1,7 @@
-from flask_restx import fields
+from flask_restx import Namespace, Model, fields
 
-def register_response_models(namespace):
+
+def register_response_models(namespace: Namespace) -> Model:
   new_document_result_model = namespace.model('NewDocumentResult', {
       'response_status': fields.Integer(
           required=True,

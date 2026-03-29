@@ -1,6 +1,8 @@
 import logging
 import re
 import subprocess
+from typing import Any
+
 import data_entry_db
 
 logger = logging.getLogger(__name__)
@@ -9,7 +11,7 @@ logger = logging.getLogger(__name__)
 _GS1_AI_DATA_PATTERN = re.compile(r'^[\w()./:%-]+$')
 
 
-def _call_gs1_toolkit(ai_data_string):
+def _call_gs1_toolkit(ai_data_string: str) -> bool:
     global process
     if not _GS1_AI_DATA_PATTERN.match(ai_data_string):
         logger.warning("_call_gs1_toolkit: rejected unsafe input: %s", ai_data_string)
@@ -40,7 +42,7 @@ def _call_gs1_toolkit(ai_data_string):
         return False
 
 
-def _test_gs1_digital_link_syntax(url):
+def _test_gs1_digital_link_syntax(url: str) -> bool:
     # To do this we make a command line call to the GS1 Digital Link Validator at
     # /app/gs1-digitallink-toolkit/callGS1encoder.js and pass the URL as an ai data string parameter.
     # For example /01/09521234543213/10/LOT/21/SERIAL becomes
@@ -64,7 +66,7 @@ def _test_gs1_digital_link_syntax(url):
         return False
 
 
-def _validate_data(data):
+def _validate_data(data: dict[str, Any]) -> dict[str, Any]:
     # TODO - Implement data validation using calls to your own applications where necessary.
     #        For example, you may wish to ensure a product with matching GTIN exists in your product database,
     #        or confirm that the 'href' web location exists and is accessible.
@@ -74,7 +76,7 @@ def _validate_data(data):
     return data
 
 
-def _convert_v2_to_v3(data_entry_v2_doc):
+def _convert_v2_to_v3(data_entry_v2_doc: dict[str, Any]) -> dict[str, Any]:
     rec_v3 = {
         'anchor': "/" + data_entry_v2_doc['identificationKeyType'] + "/" + data_entry_v2_doc['identificationKey'],
         'itemDescription': data_entry_v2_doc['itemDescription'],
@@ -131,7 +133,7 @@ def _convert_v2_to_v3(data_entry_v2_doc):
 
 
 # Transforms the provided mongo linkset format into the more compact Resolver CE v3 data entry format.
-def _convert_mongo_linkset_to_v3(mongo_linkset_format):
+def _convert_mongo_linkset_to_v3(mongo_linkset_format: dict[str, Any]) -> list[dict[str, Any]] | None:
     """
     Transforms the provided mongo linkset format into the more compact Resolver CE v3 data entry format.
     """
@@ -198,7 +200,7 @@ def _convert_mongo_linkset_to_v3(mongo_linkset_format):
         return None
 
 
-def _author_db_linkset_document(data_entry_format):
+def _author_db_linkset_document(data_entry_format: dict[str, Any]) -> dict[str, Any]:
     try:
         # First we must check if this a v2 or v3 document, and convert it to v3 if it's v2
         if 'identificationKeyType' in data_entry_format:
@@ -288,7 +290,7 @@ def _author_db_linkset_document(data_entry_format):
         return {"response_status": 500, "error": "Internal Server Error - " + str(e)}
 
 
-def _do_qualifiers_match(qualifiers1, qualifiers2):
+def _do_qualifiers_match(qualifiers1: list[dict[str, str]], qualifiers2: list[dict[str, str]]) -> bool:
     # qualifiers are lists in the document with up to three sets of AI codes and values:
     #      [{'aiCode1': 'aiValue1'}, {'aiCode2': 'value2'}{'aiCode2': 'value2'}
     # They may be in a different order, so we need to check for a match.
@@ -305,7 +307,7 @@ def _do_qualifiers_match(qualifiers1, qualifiers2):
 
 
 # Process the document for insertion or update in the database
-def _process_document_upsert(authored_doc):
+def _process_document_upsert(authored_doc: dict[str, Any]) -> tuple[dict[str, Any], int]:
     try:
         # Convert the incoming dictionary date entry item to a linkset-style document ("authored_doc")
 
@@ -363,7 +365,7 @@ def _process_document_upsert(authored_doc):
         return {"response_status": 500, "error": "Internal Server Error - " + str(e)}, 500
 
 
-def _author_db_linkset_list(data_list):
+def _author_db_linkset_list(data_list: list[dict[str, Any]]) -> dict[str, Any]:
     try:
         transformed_data_list = []
         for data in data_list:
@@ -394,7 +396,7 @@ def _author_db_linkset_list(data_list):
         logger.error('_author_mongo_linkset_list: Error processing document: %s', e)
         return {"response_status": 500, "error": "Internal Server Error - " + str(e)}
 
-def convert_path_to_document_id(path: str):
+def convert_path_to_document_id(path: str) -> str:
     if path.count('/') < 2:
         logger.warning("Error: path format error for: %s", path)
         raise ValueError("Error: path format error")
@@ -405,7 +407,7 @@ def convert_path_to_document_id(path: str):
     return '_'.join(parts)
 
 
-def create_document(data):
+def create_document(data: dict[str, Any] | list[dict[str, Any]]) -> tuple[dict[str, Any] | list[dict[str, Any]], int]:
     try:
         # If 'data' is a list
         if isinstance(data, list):
@@ -456,7 +458,7 @@ def create_document(data):
         return {"response_status": 500, "error": "Internal Server Error - " + str(e)}
 
 
-def read_document(document_id):
+def read_document(document_id: str) -> dict[str, Any]:
     try:
         # get the document from the database
         result = data_entry_db.read_document(document_id)
@@ -472,7 +474,7 @@ def read_document(document_id):
         return {"response_status": 500, "error": "Internal Server Error"}
 
 
-def read_index():
+def read_index() -> dict[str, Any]:
     try:
         # get the document index from the database
         result = data_entry_db.read_index()
@@ -490,7 +492,7 @@ def read_index():
         return {"response_status": 500, "error": "Internal Server Error"}
 
 
-def _find_matching_link(existing_links, new_link):
+def _find_matching_link(existing_links: list[dict[str, Any]], new_link: dict[str, Any]) -> int | None:
     """
     Find the index of an existing link that matches new_link by the
     uniqueness key (linktype, hreflang, context).
@@ -509,7 +511,7 @@ def _find_matching_link(existing_links, new_link):
     return None
 
 
-def update_document(document_id, data):
+def update_document(document_id: str, data: dict[str, Any]) -> tuple[dict[str, Any], int]:
     """
     Idempotent update of an existing document.
     - Returns 404 if the document does not exist.
@@ -582,7 +584,7 @@ def update_document(document_id, data):
         return {"response_status": 500, "error": f"Internal Server Error - {str(e)}"}, 500
 
 
-def delete_links(document_id, data):
+def delete_links(document_id: str, data: dict[str, Any]) -> tuple[dict[str, Any], int]:
     """
     Remove specific links from an existing document.
     Links are matched by the uniqueness key (linktype, hreflang, context).
@@ -649,7 +651,7 @@ def delete_links(document_id, data):
         return {"response_status": 500, "error": f"Internal Server Error - {str(e)}"}, 500
 
 
-def delete_document(anchor):
+def delete_document(anchor: str) -> dict[str, Any]:
     try:
         result = data_entry_db.delete_document(anchor)
         return result

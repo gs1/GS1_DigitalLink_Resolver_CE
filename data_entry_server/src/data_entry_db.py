@@ -1,16 +1,18 @@
 import logging
+from typing import Any
 
 from pymongo import errors
+from pymongo.collection import Collection
 from bson import errors as bson_errors
 from mongo_db_init import mongo
 
 logger = logging.getLogger(__name__)
 
 # Cached collection reference — PyMongo handles connection pooling underneath
-_resolver_collection = None
+_resolver_collection: Collection | None = None
 
 
-def _get_collection():
+def _get_collection() -> Collection:
     global _resolver_collection
     if _resolver_collection is None:
         resolver_db = mongo.cx['resolver_ce']
@@ -25,7 +27,7 @@ def _get_collection():
 # and any other '/' characters are replaced with '_'. This is because some
 # document database systems do not allow '/' characters in the primary identifier.
 # This function survives keeping the correct format if called with a format that is already the internal format!
-def _reformat_id_for_db(document_id):
+def _reformat_id_for_db(document_id: str) -> str:
     document_id = document_id.replace('/', '_')
     if document_id[:1] == '_':
         document_id = document_id[1:]
@@ -38,7 +40,7 @@ def _reformat_id_for_db(document_id):
 # we should be consistent with external views of id'.
 # Note that, like function _reformat_id_for_db(), this function survives keeping the
 # correct format should it be called with the external format already!
-def _reformat_id_for_external_use(document_id):
+def _reformat_id_for_external_use(document_id: str) -> str:
     if document_id[0:1] == '/':
         return document_id.replace('_', '/')
     else:
@@ -46,7 +48,7 @@ def _reformat_id_for_external_use(document_id):
 
 
 # Create a new document in the 'gs1resolver' collection
-def create_document(data):
+def create_document(data: dict[str, Any]) -> dict[str, Any]:
     # Ensure 'data['_id']' (_id) is provided in 'data'
     if '_id' not in data:
         return {"response_status": 400, "error": "Missing '_id' in data"}
@@ -74,7 +76,7 @@ def create_document(data):
 
 
 # Read a document from the 'gs1resolver' collection
-def read_document(document_id):
+def read_document(document_id: str) -> dict[str, Any]:
     try:
         resolver_coll = _get_collection()
         internal_document_id = _reformat_id_for_db(document_id)
@@ -95,7 +97,7 @@ def read_document(document_id):
         return {"response_status": 500, "error": "Database error: " + str(e)}
 
 
-def read_index():
+def read_index() -> dict[str, Any]:
     try:
         resolver_coll = _get_collection()
         document_ids = [doc['_id'] for doc in resolver_coll.find({}, {'_id': 1})]
@@ -115,7 +117,7 @@ def read_index():
 
 
 # Update an existing document in the 'gs1resolver' collection
-def update_document(data):
+def update_document(data: dict[str, Any]) -> dict[str, Any]:
     try:
         resolver_coll = _get_collection()
 
@@ -139,7 +141,7 @@ def update_document(data):
 
 
 # Delete a document from the 'gs1resolver' collection
-def delete_document(document_id):
+def delete_document(document_id: str) -> dict[str, Any]:
     try:
         resolver_coll = _get_collection()
         document_id = _reformat_id_for_db(document_id)

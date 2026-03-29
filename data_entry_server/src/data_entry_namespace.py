@@ -1,7 +1,8 @@
 import hmac
 import os
+from typing import Any
 
-from flask import request, abort
+from flask import request, abort, Response
 from flask_restx import Namespace, Resource, fields
 import logging
 import data_entry_logic
@@ -28,7 +29,7 @@ new_document_response_item_model = register_response_models(data_entry_namespace
 
 class TokenResource(Resource):
     @staticmethod
-    def is_auth_token_ok():
+    def is_auth_token_ok() -> dict[str, bool | str]:
         auth_header = request.headers.get('Authorization')
         if not auth_header:
             return {'result': False, 'message': "Missing Authorization Header"}
@@ -45,7 +46,7 @@ class TokenResource(Resource):
 @data_entry_namespace.route('/heartbeat')
 class HeartBeat(TokenResource):
     @data_entry_namespace.doc(description="Check if the server is running")
-    def get(self):
+    def get(self) -> tuple[dict[str, str], int]:
         return {'response_message': 'Server is running!'}, 200
 
 
@@ -79,7 +80,7 @@ class NewDocOperations(TokenResource):
         },
         security='BearerAuth'
     )
-    def post(self):
+    def post(self) -> tuple[Any, int] | Response:
         try:
             token_result = self.is_auth_token_ok()
             if not token_result['result'] and token_result['message'] == "Missing Authorization Header":
@@ -102,7 +103,7 @@ class NewDocOperations(TokenResource):
 @data_entry_namespace.route('/index')
 class DocOperationsAll(Resource):
     @data_entry_namespace.doc(description="Get the index for all documents in the database")
-    def get(self):
+    def get(self) -> tuple[dict[str, Any], int] | Response:
         try:
             response_data = data_entry_logic.read_index()
             return response_data, response_data['response_status']
@@ -115,7 +116,7 @@ class DocOperationsAll(Resource):
 @data_entry_namespace.route('/<anchor_ai_code>/<anchor_ai>')
 class DocOperations(TokenResource):
     @data_entry_namespace.doc(description="Retrieve a document using its anchor")
-    def get(self, anchor_ai_code, anchor_ai):
+    def get(self, anchor_ai_code: str, anchor_ai: str) -> tuple[Any, int] | Response:
         try:
             token_result = self.is_auth_token_ok()
             if not token_result['result'] and token_result['message'] == "Missing Authorization Header":
@@ -133,7 +134,7 @@ class DocOperations(TokenResource):
 
     @data_entry_namespace.doc(description="Update a document using its anchor",
              params={'anchor': 'The anchor of the document to update'})
-    def put(self, anchor_ai_code, anchor_ai):
+    def put(self, anchor_ai_code: str, anchor_ai: str) -> tuple[Any, int] | Response:
         try:
             token_result = self.is_auth_token_ok()
             if not token_result['result'] and token_result['message'] == "Missing Authorization Header":
@@ -158,7 +159,7 @@ class DocOperations(TokenResource):
                          "are removed (matched by linktype, hreflang and context). "
                          "If no body is provided, the entire document is deleted.",
              params={'anchor': 'The anchor of the document to delete or modify'})
-    def delete(self, anchor_ai_code, anchor_ai):
+    def delete(self, anchor_ai_code: str, anchor_ai: str) -> tuple[Any, int] | Response:
         try:
             token_result = self.is_auth_token_ok()
             if not token_result['result'] and token_result['message'] == "Missing Authorization Header":
@@ -187,7 +188,7 @@ class DocOperations(TokenResource):
 @data_entry_namespace.route('/<anchor_ai_code>/<anchor_ai>/<path:extra_segments>')
 class DocOperationsQualified(TokenResource):
     @data_entry_namespace.doc(description="Retrieve a document using its anchor")
-    def get(self, anchor_ai_code, anchor_ai, extra_segments):
+    def get(self, anchor_ai_code: str, anchor_ai: str, extra_segments: str) -> tuple[Any, int] | Response:
         try:
             token_result = self.is_auth_token_ok()
             if not token_result['result'] and token_result['message'] == "Missing Authorization Header":
