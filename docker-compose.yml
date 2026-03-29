@@ -3,9 +3,8 @@ services:
     build: './database_server'
     container_name: database-server
     restart: always
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    env_file:
+      - .env.example
     ports:
       - "27017:27017"
     volumes:
@@ -16,9 +15,8 @@ services:
   data-entry-service:
     build: './data_entry_server'
     container_name: data-entry-server
-    environment:
-      - SESSION_TOKEN=${SESSION_TOKEN}
-      - MONGO_URI=${MONGO_URI}
+    env_file:
+      - .env.example
     depends_on:
       - database-service
     restart: always
