@@ -1,4 +1,4 @@
-FROM python:3.10-bullseye
+FROM python:3.12-slim-bookworm
 LABEL authors="nick"
 
 # The environment variable ensures that the python output is set straight
