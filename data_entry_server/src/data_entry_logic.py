@@ -400,20 +400,15 @@ def create_document(data):
                     print('Processing item: ', item['_id'])
                     validated_doc = _validata_data(item)
 
-                    # Before we insert, we must delete - this is a create not update action
-                    delete_result = data_entry_db.delete_document(item['_id'])
-                    if delete_result['response_status'] == 200 or delete_result['response_status'] == 404:
-                        # 200 means the document was deleted, 404 means it didn't exist.
-                        # Process each 'item' in the list for insertion using the helper function we created
-                        # and get the result and status
-                        create_result, status = _process_document_upsert(validated_doc)
-                        print('Result: ', create_result, 'Status: ', status)
+                    # Use upsert: if the document exists its linksets are merged;
+                    # if it does not exist a new document is created.  This is the
+                    # same behaviour as the single-item (dict) path and avoids the
+                    # data-loss / race-condition issues of DELETE + CREATE.
+                    create_result, status = _process_document_upsert(validated_doc)
+                    print('Result: ', create_result, 'Status: ', status)
 
-                        # Append the result to the results list
-                        create_results_list.append(create_result)
-                    else:
-                        print('Error deleting document before we create the new version: ', item['_id'])
-                        create_results_list.append(delete_result)
+                    # Append the result to the results list
+                    create_results_list.append(create_result)
 
                 # Once all items have been processed, return the total result list and the successful status 201
                 return create_results_list, 201
