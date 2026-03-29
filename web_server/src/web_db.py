@@ -1,16 +1,18 @@
 import logging
+from typing import Any
 
 from pymongo import errors
+from pymongo.collection import Collection
 from bson import errors as bson_errors
 from mongo_db_init import mongo
 
 logger = logging.getLogger(__name__)
 
 # Cached collection reference — PyMongo handles connection pooling underneath
-_resolver_collection = None
+_resolver_collection: Collection | None = None
 
 
-def _get_collection():
+def _get_collection() -> Collection:
     global _resolver_collection
     if _resolver_collection is None:
         resolver_db = mongo.cx['resolver_ce']
@@ -18,7 +20,7 @@ def _get_collection():
     return _resolver_collection
 
 
-def _reformat_id(anchor_id):
+def _reformat_id(anchor_id: str) -> str:
     anchor_id = anchor_id.replace('/', '_')
     if anchor_id[:1] == '_':
         anchor_id = anchor_id[1:]
@@ -26,7 +28,7 @@ def _reformat_id(anchor_id):
 
 
 # Read a document from the 'gs1resolver' collection
-def read_document(anchor):
+def read_document(anchor: str) -> dict[str, Any]:
     try:
         resolver_coll = _get_collection()
         anchor = _reformat_id(anchor)

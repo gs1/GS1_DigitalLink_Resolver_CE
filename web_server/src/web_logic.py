@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import subprocess
+from typing import Any
 
 
 import web_db
@@ -14,14 +15,14 @@ logger = logging.getLogger(__name__)
 _SAFE_GS1_PATTERN = re.compile(r'^[A-Za-z0-9\-._~%()/:+]+$')
 
 
-def _validate_gs1_input(value):
+def _validate_gs1_input(value: str) -> str:
     """Reject values containing shell-special or unexpected characters before passing to subprocess."""
     if not _SAFE_GS1_PATTERN.match(value):
         raise ValueError(f"Invalid characters in GS1 input: {value!r}")
     return value
 
 
-def _call_gs1_toolkit(ai_data_string):
+def _call_gs1_toolkit(ai_data_string: str) -> bool:
     """
     This function calls the GS1 Digital Link Toolkit to validate the syntax of a GS1 Digital Link URL.
     :param ai_data_string:
@@ -44,7 +45,7 @@ def _call_gs1_toolkit(ai_data_string):
     return True
 
 
-def uncompress_gs1_digital_link(compressed_link):
+def uncompress_gs1_digital_link(compressed_link: str) -> dict[str, Any]:
     """
     This function checks if the AI data string is a compressed GS1 Digital link.
     The only library that does this id the GS1 Digital Link Toolkit GS1DigitalLinkToolkit.js
@@ -68,7 +69,7 @@ def uncompress_gs1_digital_link(compressed_link):
     return json.loads(stdout)
 
 
-def compress_gs1_digital_link(uncompressed_link):
+def compress_gs1_digital_link(uncompressed_link: str) -> dict[str, Any]:
     """
     This function compresses a GS1 Digital Link URL.
     The only library that does this id the GS1 Digital Link Toolkit GS1DigitalLinkToolkit.js
@@ -92,7 +93,7 @@ def compress_gs1_digital_link(uncompressed_link):
     return json.loads(stdout)
 
 
-def _test_gs1_digital_link_syntax(url):
+def _test_gs1_digital_link_syntax(url: str) -> bool:
     """
     This function tests the syntax of a GS1 Digital Link URL. It returns True if the URL is valid,
     and False if it is not.
@@ -122,7 +123,7 @@ def _test_gs1_digital_link_syntax(url):
         return False
 
 
-def _match_all_three_contexts(linktype_doc_list, accept_language_list, context, media_types_list):
+def _match_all_three_contexts(linktype_doc_list: list[dict[str, Any]], accept_language_list: list[str], context: str | None, media_types_list: list[str] | None) -> list[dict[str, Any]] | None:
     wanted_doc_list = []
     logger.debug('Matching all three contexts: %s, %s, %s', accept_language_list, context, media_types_list)
     for value in accept_language_list:  # iterate accept_language_list first
@@ -143,7 +144,7 @@ def _match_all_three_contexts(linktype_doc_list, accept_language_list, context, 
     return wanted_doc_list if wanted_doc_list else None
 
 
-def _match_accept_language_and_context(linktype_doc_list, accept_language_list, context):
+def _match_accept_language_and_context(linktype_doc_list: list[dict[str, Any]], accept_language_list: list[str], context: str | None) -> list[dict[str, Any]] | None:
     wanted_doc_list = []
     logger.debug('Matching accept_language and context: %s, %s', accept_language_list, context)
     for value in accept_language_list:  # iterate accept_language_list first
@@ -162,7 +163,7 @@ def _match_accept_language_and_context(linktype_doc_list, accept_language_list, 
     return wanted_doc_list if wanted_doc_list else None
 
 
-def _match_accept_language_and_media_types(linktype_doc_list, accept_language_list, media_types_list):
+def _match_accept_language_and_media_types(linktype_doc_list: list[dict[str, Any]], accept_language_list: list[str], media_types_list: list[str] | None) -> list[dict[str, Any]] | None:
     wanted_doc_list = []
     logger.debug('Matching accept_language and media_types: %s, %s', accept_language_list, media_types_list)
     for value in accept_language_list:  # iterate accept_language_list first
@@ -181,7 +182,7 @@ def _match_accept_language_and_media_types(linktype_doc_list, accept_language_li
     return wanted_doc_list if wanted_doc_list else None
 
 
-def _match_context_and_media_types(linktype_doc_list, context, media_types_list):
+def _match_context_and_media_types(linktype_doc_list: list[dict[str, Any]], context: str | None, media_types_list: list[str] | None) -> list[dict[str, Any]] | None:
     wanted_doc_list = []
     logger.debug('Matching context and media_types: %s, %s', context, media_types_list)
     for linktype_doc in linktype_doc_list:
@@ -196,7 +197,7 @@ def _match_context_and_media_types(linktype_doc_list, context, media_types_list)
     return wanted_doc_list if wanted_doc_list else None
 
 
-def _match_accept_language(linktype_doc_list, accept_language_list):
+def _match_accept_language(linktype_doc_list: list[dict[str, Any]], accept_language_list: list[str]) -> list[dict[str, Any]] | None:
     wanted_doc_list = []
     for value in accept_language_list:
         for linktype_doc in linktype_doc_list:
@@ -211,7 +212,7 @@ def _match_accept_language(linktype_doc_list, accept_language_list):
     return wanted_doc_list if wanted_doc_list else None
 
 
-def _match_context(linktype_doc_list, context):
+def _match_context(linktype_doc_list: list[dict[str, Any]], context: str | None) -> list[dict[str, Any]] | None:
     wanted_doc_list = []
     logger.debug('Matching context: %s', context)
     for linktype_doc in linktype_doc_list:
@@ -224,7 +225,7 @@ def _match_context(linktype_doc_list, context):
     return wanted_doc_list if wanted_doc_list else None
 
 
-def _match_media_type(linktype_doc_list, media_types_list):
+def _match_media_type(linktype_doc_list: list[dict[str, Any]], media_types_list: list[str] | None) -> list[dict[str, Any]] | None:
     wanted_doc_list = []
     logger.debug('Matching media_types: %s', media_types_list)
     for linktype_doc in linktype_doc_list:
@@ -237,7 +238,7 @@ def _match_media_type(linktype_doc_list, media_types_list):
     return wanted_doc_list if wanted_doc_list else None
 
 
-def _match_und_hreflang(linktype_doc_list):
+def _match_und_hreflang(linktype_doc_list: list[dict[str, Any]]) -> list[dict[str, Any]] | None:
     wanted_doc_list = []
     for linktype_doc in linktype_doc_list:
         if 'hreflang' in linktype_doc and 'und' in linktype_doc['hreflang']:
@@ -247,7 +248,7 @@ def _match_und_hreflang(linktype_doc_list):
         return wanted_doc_list
 
 
-def _match_und_media_type(linktype_doc_list):
+def _match_und_media_type(linktype_doc_list: list[dict[str, Any]]) -> list[dict[str, Any]] | None:
     wanted_doc_list = []
     for linktype_doc in linktype_doc_list:
         if 'type' in linktype_doc and 'und' in linktype_doc['type']:
@@ -257,7 +258,7 @@ def _match_und_media_type(linktype_doc_list):
         return wanted_doc_list
 
 
-def _get_appropriate_linktype_docs_list(linktype_doc_list, accept_language_list, context, media_types_list):
+def _get_appropriate_linktype_docs_list(linktype_doc_list: list[dict[str, Any]], accept_language_list: list[str], context: str | None, media_types_list: list[str] | None) -> list[dict[str, Any]]:
     """
     This function returns the most appropriate linktype document from a list of linktype documents.
     It does this by checking if the linktype document matches the accept_language_list, context, and media_types_list.
@@ -291,7 +292,7 @@ def _get_appropriate_linktype_docs_list(linktype_doc_list, accept_language_list,
     return linktype_doc_list
 
 
-def _do_qualifiers_match(qualifier_path, doc_qualifiers):
+def _do_qualifiers_match(qualifier_path: str | None, doc_qualifiers: list[dict[str, str]]) -> tuple[bool, list[dict[str, str]] | None]:
     """
     Checks if there is a match between the qualifier path and the document qualifiers.
     If the document qualifiers include template variables, this function replaces them
@@ -371,7 +372,7 @@ def _do_qualifiers_match(qualifier_path, doc_qualifiers):
         return False, [f"Unexpected error occurred. Details: {str(e)}"]
 
 
-def _author_link_header_with_pointer_to_linkset(linkset):
+def _author_link_header_with_pointer_to_linkset(linkset: list[dict[str, Any]]) -> str:
     """
     This function creates a Link header with a pointer to the linkset.
     This a change from previous versions of the GS1 Resolver Standard that tries to out all relevant links from
@@ -386,7 +387,7 @@ def _author_link_header_with_pointer_to_linkset(linkset):
 
 
 
-def _process_serialised_identifier(identifier):
+def _process_serialised_identifier(identifier: str) -> dict[str, Any] | None:
     """
     Processes the serialised component of the identifier using binary search to find
     the longest prefix that matches a database document with template variables.
@@ -447,7 +448,7 @@ def _process_serialised_identifier(identifier):
     return None
 
 
-def _validate_and_fetch_document(identifier, qualifier_path, doc_id):
+def _validate_and_fetch_document(identifier: str, qualifier_path: str | None, doc_id: str) -> dict[str, Any]:
     """
     searches for a partial identifier match and returns the wanted_db_document if found.
     If not found, it will return the same wanted_db_document as before.
@@ -511,7 +512,7 @@ def _validate_and_fetch_document(identifier, qualifier_path, doc_id):
         return {"response_status": 500, "error": f"Unexpected error occurred. Details: {str(e)}"}
 
 
-def _replace_linkset_template_variables(linkset, template_variables_list):
+def _replace_linkset_template_variables(linkset: list[dict[str, Any]], template_variables_list: list[dict[str, str]]) -> list[dict[str, Any]] | dict[str, Any]:
     """
     if template_variables_list is not empty, we need to replace the template variables in the linkset
     # with the actual values from the qualifier_path. Fortunately _do_qualifiers_match() has done the
@@ -547,8 +548,8 @@ def _replace_linkset_template_variables(linkset, template_variables_list):
         return {"response_status": 500, "error": f"Unexpected error - {str(e)}"}
 
 
-def _handle_link_type(linktype, default_linktype, linkset, accept_language_list, context, media_types_list,
-                      linkset_requested=False):
+def _handle_link_type(linktype: str | None, default_linktype: str, linkset: list[dict[str, Any]], accept_language_list: list[str], context: str | None, media_types_list: list[str] | None,
+                      linkset_requested: bool = False) -> dict[str, Any]:
     try:
         if linkset_requested or linktype in ['all', 'linkset']:
             return {"response_status": 200, "data": linkset}
@@ -590,7 +591,7 @@ def _handle_link_type(linktype, default_linktype, linkset, accept_language_list,
         return {"response_status": 500, "error": f"Unexpected error occurred. Details: {str(e)}"}
 
 
-def get_compressed_link(uncompressed_link):
+def get_compressed_link(uncompressed_link: str) -> dict[str, Any]:
     try:
         compressed_link = compress_gs1_digital_link(uncompressed_link)
         if compressed_link.get('SUCCESS'):
@@ -604,7 +605,7 @@ def get_compressed_link(uncompressed_link):
                 'error': 'Unexpected error occurred. Check GS1 Digital Link syntax is correct before compressing'}
 
 
-def _clean_q_values_from_header_entries(header_values_list):
+def _clean_q_values_from_header_entries(header_values_list: list[str]) -> list[str]:
     """
     Returns a new list with quality-value parameters stripped (e.g., ';q=0.8').
     Does not mutate the input list.
@@ -614,7 +615,7 @@ def _clean_q_values_from_header_entries(header_values_list):
     return [entry.split(';')[0] for entry in header_values_list]
 
 
-def format_linkset_for_external_use(response_data, identifiers):
+def format_linkset_for_external_use(response_data: dict[str, Any], identifiers: str) -> dict[str, Any]:
     ai_code = identifiers.split('/')[1]
     ai_value = identifiers.split('/')[2]
 
@@ -701,8 +702,8 @@ def format_linkset_for_external_use(response_data, identifiers):
     return response_linkset
 
 
-def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, accept_language_list=None, context=None,
-                  media_types_list=None, linkset_requested=False):
+def read_document(gs1dl_identifier: str, doc_id: str, qualifier_path: str | None = '/', linktype: str | None = None, accept_language_list: list[str] | None = None, context: str | None = None,
+                  media_types_list: list[str] | None = None, linkset_requested: bool = False) -> tuple[dict[str, Any], str | None] | dict[str, Any]:
     """
     Reads a document from the data source and returns the most appropriate link data based on the linktype, accept_language_list, context, and media_types_list.
     If the linkset_requested is True, the entire linkset for the entry is returned.

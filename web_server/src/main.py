@@ -1,9 +1,10 @@
 import signal
 import sys
+from types import FrameType
 from __init__ import create_app
 
 
-def signal_handler(sig, frame):
+def signal_handler(sig: int, frame: FrameType | None) -> None:
     print('SIGINT or SIGTERM received. Preparing to exit...')
     # I will add any cleanup logic here, you can too!
     sys.exit(0)

@@ -1,16 +1,17 @@
 from flask_restx import Api
-from flask import Flask
+from flask import Flask, Response
 from flask import Blueprint
 from flask_cors import CORS
 import logging
 import os
+from typing import Any
 from web_namespace import web_namespace
 from mongo_db_init import mongo, init_mongo
 
 logger = logging.getLogger(__name__)
 
 
-def create_app(test_config=None):
+def create_app(test_config: dict[str, Any] | None = None) -> Flask:
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True, static_folder='public')
 
@@ -66,7 +67,7 @@ def create_app(test_config=None):
         app.register_blueprint(api_blueprint)
 
     @app.after_request
-    def add_headers(response):
+    def add_headers(response: Response) -> Response:
         response.headers['Access-Control-Allow-Methods'] = 'GET, HEAD, OPTIONS'
         return response
 
