@@ -300,9 +300,255 @@ class APITestCase(unittest.TestCase):
                          'https://dalgiardino.com/medicinal-compound/assets?giai=095060001343999999',
                          'Link was not directed correctly with variable asset number')
 
-        #### UPDATE ENTRY ####
-        # UPDATE is buggy and needs working on in the API. For now use GET / DELETE / (update yourself) / POST
-        # print('Now update the entry with anchor /01/09506000134376')
+        #### UPDATE ENTRY (PUT) ####
+        # The PUT endpoint performs an idempotent merge-update on an existing document.
+        # Unlike POST (which creates a new document), PUT:
+        #   1. Returns 404 if the document does not already exist.
+        #   2. Preserves any fields you do not include in the payload (e.g. itemDescription, defaultLinktype).
+        #   3. Merges links intelligently:
+        #        - A link's identity is the combination of (linktype, hreflang, context).
+        #        - If the payload contains a link whose (linktype, hreflang, context) already exists
+        #          in the document, that existing link is updated with the new values (e.g. a new href or title).
+        #        - If the combination is new, the link is appended to the document.
+        #
+        # We will demonstrate this with the variable-asset document /8004/095060001343 which was
+        # created by POST earlier in this test. It currently has a single gs1:pip link.
+
+        # --- Step 1: Add a brand-new link via PUT ---
+        # We send a PUT with a gs1:epil link. Because no link with (gs1:epil, ["en"], ["sales","marketing"])
+        # exists yet, the API will append it to the document's links list.
+        print('\n---- PUT UPDATE TEST ----')
+        print('Step 1: Add a new gs1:epil link to /8004/095060001343 via PUT')
+
+        put_add_link_payload = {
+            "anchor": "/8004/095060001343",
+            "links": [
+                {
+                    "linktype": "gs1:epil",
+                    "href": "https://dalgiardino.com/medicinal-compound/patient-leaflet",
+                    "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules - Electronic Patient Information Leaflet",
+                    "type": "text/html",
+                    "hreflang": ["en"],
+                    "context": ["sales", "marketing"]
+                }
+            ]
+        }
+
+        response = requests.put(self.api_url + '/8004/095060001343',
+                                headers=self.headers,
+                                data=json.dumps(put_add_link_payload))
+
+        self.assertEqual(response.status_code, 200,
+                         f'PUT (add link): expected 200, got {response.status_code}: {response.text}')
+        print('  PUT returned 200 OK - new link added')
+
+        # Read the document back to confirm both links are present and that the
+        # original fields (itemDescription, defaultLinktype) were preserved.
+        response = requests.get(self.api_url + '/8004/095060001343', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        updated_entry = response.json()['data']
+        self.assertEqual(len(updated_entry), 1, 'Expected exactly one v3 entry')
+        links_after_add = updated_entry[0]['links']
+
+        self.assertEqual(len(links_after_add), 2,
+                         f'Expected 2 links after adding gs1:epil, got {len(links_after_add)}')
+        self.assertEqual(updated_entry[0]['itemDescription'], 'Dal Giardino Variable Asset',
+                         'itemDescription should be preserved when not in PUT payload')
+        self.assertEqual(updated_entry[0]['defaultLinktype'], 'gs1:pip',
+                         'defaultLinktype should be preserved when not in PUT payload')
+
+        link_types_present = [link['linktype'] for link in links_after_add]
+        self.assertIn('gs1:pip', link_types_present, 'Original gs1:pip link should still be present')
+        self.assertIn('gs1:epil', link_types_present, 'Newly added gs1:epil link should be present')
+        print('  GET confirms: 2 links present, original fields preserved')
+
+        # --- Step 2: Update the link we just added ---
+        # We now send another PUT whose link has the same (linktype, hreflang, context) as the
+        # gs1:epil link we just added - but with a different href and title.
+        # Because the identity key matches, the API will update that link in-place rather than
+        # creating a duplicate.
+        print('Step 2: Update the gs1:epil link (change href and title) via PUT')
+
+        put_update_link_payload = {
+            "anchor": "/8004/095060001343",
+            "links": [
+                {
+                    "linktype": "gs1:epil",
+                    "href": "https://dalgiardino.com/medicinal-compound/new-path-to-leaflet",
+                    "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules - Electronic Patient Information Leaflet (updated)",
+                    "type": "text/html",
+                    "hreflang": ["en"],
+                    "context": ["sales", "marketing"]
+                }
+            ]
+        }
+
+        response = requests.put(self.api_url + '/8004/095060001343',
+                                headers=self.headers,
+                                data=json.dumps(put_update_link_payload))
+
+        self.assertEqual(response.status_code, 200,
+                         f'PUT (update link): expected 200, got {response.status_code}: {response.text}')
+        print('  PUT returned 200 OK - existing link updated')
+
+        # Read back and verify that:
+        #   - The total number of links is still 2 (no duplicate was created).
+        #   - The gs1:epil link's href and title reflect the updated values.
+        #   - The gs1:pip link is completely unchanged.
+        response = requests.get(self.api_url + '/8004/095060001343', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        updated_entry = response.json()['data']
+        links_after_update = updated_entry[0]['links']
+
+        self.assertEqual(len(links_after_update), 2,
+                         f'Expected still 2 links after update (no duplicates), got {len(links_after_update)}')
+
+        epil_link = next((l for l in links_after_update if l['linktype'] == 'gs1:epil'), None)
+        self.assertIsNotNone(epil_link, 'gs1:epil link should still be present after update')
+        self.assertEqual(epil_link['href'],
+                         'https://dalgiardino.com/medicinal-compound/new-path-to-leaflet',
+                         'gs1:epil href should reflect the updated value')
+        self.assertEqual(epil_link['title'],
+                         'Dal Giardino Medicinal Compound 50 x 200mg Capsules - Electronic Patient Information Leaflet (updated)',
+                         'gs1:epil title should reflect the updated value')
+
+        pip_link = next((l for l in links_after_update if l['linktype'] == 'gs1:pip'), None)
+        self.assertIsNotNone(pip_link, 'gs1:pip link should be untouched by the update')
+        self.assertEqual(pip_link['href'],
+                         'https://dalgiardino.com/medicinal-compound/assets?giai=095060001343{1}',
+                         'gs1:pip href should be unchanged')
+        print('  GET confirms: gs1:epil updated, gs1:pip unchanged, no duplicates')
+
+        # --- Step 3: Verify that PUT on a non-existent document returns 404 ---
+        # PUT is strictly an update operation. If the document does not exist, the API must
+        # return 404 - new documents can only be created via POST.
+        print('Step 3: Confirm PUT on a non-existent anchor returns 404')
+
+        response = requests.put(self.api_url + '/8004/000000000000',
+                                headers=self.headers,
+                                data=json.dumps({
+                                    "anchor": "/8004/000000000000",
+                                    "links": []
+                                }))
+
+        self.assertEqual(response.status_code, 404,
+                         f'PUT on non-existent document: expected 404, got {response.status_code}: {response.text}')
+        print('  PUT returned 404 Not Found as expected')
+
+        print('---- PUT UPDATE TEST COMPLETE ----\n')
+
+        #### DELETE LINK FROM DOCUMENT (DELETE with body) ####
+        # The DELETE endpoint can also perform a partial delete: if you include a JSON body
+        # with a 'links' list, the API will remove only the links that match by the
+        # (linktype, hreflang, context) uniqueness key. The rest of the document is preserved.
+        #
+        # If you call DELETE without a body (as we did in the initial clean-up at the top of
+        # this test), the entire document is deleted.
+        #
+        # Here we will undo the link we added in the PUT steps above by sending a DELETE
+        # request whose body identifies the gs1:epil link.
+
+        # After Step 2, the document has two links: gs1:pip and gs1:epil (updated).
+        # We will remove the gs1:epil link and verify only gs1:pip remains.
+
+        # --- Step 5: Remove a specific link using DELETE with a body ---
+        print('---- DELETE LINK TEST ----')
+        print('Step 5: Remove the gs1:epil link from /8004/095060001343 via DELETE with body')
+
+        delete_link_payload = {
+            "anchor": "/8004/095060001343",
+            "links": [
+                {
+                    "linktype": "gs1:epil",
+                    "href": "https://dalgiardino.com/medicinal-compound/new-path-to-leaflet",
+                    "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules - Electronic Patient Information Leaflet (updated)",
+                    "type": "text/html",
+                    "hreflang": ["en"],
+                    "context": ["sales", "marketing"]
+                }
+            ]
+        }
+
+        response = requests.delete(self.api_url + '/8004/095060001343',
+                                   headers=self.headers,
+                                   data=json.dumps(delete_link_payload))
+
+        self.assertEqual(response.status_code, 200,
+                         f'DELETE (remove link): expected 200, got {response.status_code}: {response.text}')
+        print('  DELETE returned 200 OK - link removed')
+
+        # Read back and verify that the gs1:epil link has been removed while gs1:pip remains.
+        response = requests.get(self.api_url + '/8004/095060001343', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        after_delete = response.json()['data']
+        links_after_delete = after_delete[0]['links']
+
+        self.assertEqual(len(links_after_delete), 1,
+                         f'Expected 1 link after deleting gs1:epil, got {len(links_after_delete)}')
+        self.assertEqual(links_after_delete[0]['linktype'], 'gs1:pip',
+                         'The remaining link should be the original gs1:pip')
+        self.assertEqual(after_delete[0]['itemDescription'], 'Dal Giardino Variable Asset',
+                         'itemDescription should be preserved after partial delete')
+        self.assertEqual(after_delete[0]['defaultLinktype'], 'gs1:pip',
+                         'defaultLinktype should be preserved after partial delete')
+        print('  GET confirms: gs1:epil removed, gs1:pip and all other fields preserved')
+
+        # --- Step 6: DELETE with body on a non-existent link returns 404 ---
+        # If the link we try to remove does not exist in the document, the API returns 404.
+        print('Step 6: Confirm DELETE with body returns 404 when link is not found')
+
+        response = requests.delete(self.api_url + '/8004/095060001343',
+                                   headers=self.headers,
+                                   data=json.dumps({
+                                       "anchor": "/8004/095060001343",
+                                       "links": [
+                                           {
+                                               "linktype": "gs1:nonExistent",
+                                               "hreflang": ["en"],
+                                               "context": ["sales"]
+                                           }
+                                       ]
+                                   }))
+
+        self.assertEqual(response.status_code, 404,
+                         f'DELETE non-existent link: expected 404, got {response.status_code}: {response.text}')
+        print('  DELETE returned 404 as expected - no matching link to remove')
+
+        # --- Step 7: DELETE without a body still deletes the whole document ---
+        # Verify the original whole-document delete behaviour is preserved.
+        print('Step 7: Confirm DELETE without body still removes the entire document')
+
+        response = requests.delete(self.api_url + '/8004/095060001343', headers=self.headers)
+        self.assertEqual(response.status_code, 200,
+                         f'DELETE (whole doc): expected 200, got {response.status_code}: {response.text}')
+
+        response = requests.get(self.api_url + '/8004/095060001343', headers=self.headers)
+        self.assertEqual(response.status_code, 404,
+                         'GET after full DELETE should return 404')
+        print('  Document fully deleted, GET returns 404')
+
+        # --- Restore the document for any subsequent tests ---
+        print('Step 8: Restoring /8004/095060001343 to its original state')
+        original_doc = {
+            "anchor": "/8004/095060001343",
+            "itemDescription": "Dal Giardino Variable Asset",
+            "defaultLinktype": "gs1:pip",
+            "links": [
+                {
+                    "linktype": "gs1:pip",
+                    "href": "https://dalgiardino.com/medicinal-compound/assets?giai=095060001343{1}",
+                    "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules as a variable asset",
+                    "type": "text/html",
+                    "hreflang": ["en"],
+                    "context": ["sales", "marketing"]
+                }
+            ]
+        }
+        response = requests.post(self.api_url + '/new', headers=self.headers, data=json.dumps(original_doc))
+        self.assertIn(response.status_code, [200, 201], 'Clean-up: failed to restore original document')
+        print('  Document restored to original state')
+
+        print('---- DELETE LINK TEST COMPLETE ----\n')
 
         #### DELETE ENTRIES ####
         if DELETE_ENTRIES_ON_COMPLETION:
@@ -323,6 +569,115 @@ class APITestCase(unittest.TestCase):
             print('Data entry CRUD cycle test completed successfully - all data entries deleted from the database')
         else:
             print('Data entry CRUD cycle test completed successfully - data remains in the database')
+
+
+    def test_put_update_document(self):
+        """Test that PUT performs an idempotent merge-update, not a re-creation."""
+        print('Running PUT idempotent update test')
+
+        base_doc = {
+            "anchor": "/8004/095060001343",
+            "itemDescription": "Dal Giardino Variable Asset",
+            "defaultLinktype": "gs1:pip",
+            "links": [
+                {
+                    "linktype": "gs1:pip",
+                    "href": "https://dalgiardino.com/medicinal-compound/assets?giai=095060001343{1}",
+                    "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules as a variable asset",
+                    "type": "text/html",
+                    "hreflang": ["en"],
+                    "context": ["sales", "marketing"]
+                }
+            ]
+        }
+
+        # Clean slate: delete then create
+        requests.delete(self.api_url + '/8004/095060001343', headers=self.headers)
+        resp = requests.post(self.api_url + '/new', headers=self.headers, data=json.dumps(base_doc))
+        self.assertIn(resp.status_code, [200, 201], 'Setup: could not create base document')
+
+        # ---- 1. PUT adds a new link (different linktype) ----
+        put_add = {
+            "anchor": "/8004/095060001343",
+            "links": [
+                {
+                    "linktype": "gs1:epil",
+                    "href": "https://dalgiardino.com/medicinal-compound/patient-leaflet",
+                    "title": "Electronic Patient Information Leaflet",
+                    "type": "text/html",
+                    "hreflang": ["en"],
+                    "context": ["sales", "marketing"]
+                }
+            ]
+        }
+        resp = requests.put(self.api_url + '/8004/095060001343',
+                            headers=self.headers, data=json.dumps(put_add))
+        self.assertEqual(resp.status_code, 200,
+                         f'PUT (add link) expected 200, got {resp.status_code}: {resp.text}')
+
+        # Verify via GET
+        resp = requests.get(self.api_url + '/8004/095060001343', headers=self.headers)
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()['data']
+        self.assertEqual(len(data), 1, 'Expected exactly 1 v3 entry')
+        links = data[0]['links']
+        self.assertEqual(len(links), 2, f'Expected 2 links after add, got {len(links)}')
+
+        # Existing fields preserved
+        self.assertEqual(data[0]['itemDescription'], 'Dal Giardino Variable Asset')
+        self.assertEqual(data[0]['defaultLinktype'], 'gs1:pip')
+
+        linktypes = [l['linktype'] for l in links]
+        self.assertIn('gs1:pip', linktypes, 'Original gs1:pip link missing')
+        self.assertIn('gs1:epil', linktypes, 'New gs1:epil link not added')
+
+        # ---- 2. PUT updates an existing link (same linktype+hreflang+context) ----
+        put_update = {
+            "anchor": "/8004/095060001343",
+            "links": [
+                {
+                    "linktype": "gs1:epil",
+                    "href": "https://dalgiardino.com/medicinal-compound/new-path-to-leaflet",
+                    "title": "Updated Leaflet Title",
+                    "type": "text/html",
+                    "hreflang": ["en"],
+                    "context": ["sales", "marketing"]
+                }
+            ]
+        }
+        resp = requests.put(self.api_url + '/8004/095060001343',
+                            headers=self.headers, data=json.dumps(put_update))
+        self.assertEqual(resp.status_code, 200,
+                         f'PUT (update link) expected 200, got {resp.status_code}: {resp.text}')
+
+        # Verify via GET
+        resp = requests.get(self.api_url + '/8004/095060001343', headers=self.headers)
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()['data']
+        links = data[0]['links']
+        self.assertEqual(len(links), 2, f'Expected still 2 links after update, got {len(links)}')
+
+        epil = next((l for l in links if l['linktype'] == 'gs1:epil'), None)
+        self.assertIsNotNone(epil, 'gs1:epil link missing after update')
+        self.assertEqual(epil['href'],
+                         'https://dalgiardino.com/medicinal-compound/new-path-to-leaflet',
+                         'href not updated')
+        self.assertEqual(epil['title'], 'Updated Leaflet Title', 'title not updated')
+
+        pip = next((l for l in links if l['linktype'] == 'gs1:pip'), None)
+        self.assertIsNotNone(pip, 'gs1:pip link should be unchanged')
+        self.assertEqual(pip['href'],
+                         'https://dalgiardino.com/medicinal-compound/assets?giai=095060001343{1}',
+                         'gs1:pip href should be unchanged')
+
+        # ---- 3. PUT on a non-existent document returns 404 ----
+        resp = requests.put(self.api_url + '/8004/000000000000',
+                            headers=self.headers,
+                            data=json.dumps({"anchor": "/8004/000000000000", "links": []}))
+        self.assertEqual(resp.status_code, 404,
+                         f'PUT on missing doc expected 404, got {resp.status_code}: {resp.text}')
+
+        print('PUT idempotent update test completed successfully')
 
 
 if __name__ == '__main__':
