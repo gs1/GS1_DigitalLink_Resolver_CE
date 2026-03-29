@@ -155,8 +155,11 @@ class DocOperations(TokenResource):
             logger.warning('Error updating document: ' + str(e))
             abort(500, description="Error updating document:" + str(e))
 
-    @api.doc(description="Delete a document using its anchor",
-             params={'anchor': 'The anchor of the document to delete'})
+    @api.doc(description="Delete a document or remove specific links from it using its anchor. "
+                         "If a JSON body with a 'links' list is provided, only the matching links "
+                         "are removed (matched by linktype, hreflang and context). "
+                         "If no body is provided, the entire document is deleted.",
+             params={'anchor': 'The anchor of the document to delete or modify'})
     def delete(self, anchor_ai_code, anchor_ai):
         try:
             token_result = self.is_auth_token_ok()
@@ -166,12 +169,21 @@ class DocOperations(TokenResource):
                 return token_result['message'], 403
 
             document_id = f'{anchor_ai_code}_{anchor_ai}'
+
+            # If the request carries a JSON body with links, perform a partial delete
+            # (remove only the specified links). Otherwise delete the whole document.
+            if request.is_json and request.content_length:
+                data = request.json
+                if 'links' in data and len(data['links']) > 0:
+                    response_data, http_response_status = data_entry_logic.delete_links(document_id, data)
+                    return response_data, http_response_status
+
             response_data = data_entry_logic.delete_document(document_id)
             return response_data, response_data['response_status']
 
         except Exception as e:
             logger.warning('Error deleting document: ' + str(e))
-            abort(450, description="Error deleting document")
+            abort(500, description="Error deleting document")
 
 
 @data_entry_namespace.route('/<anchor_ai_code>/<anchor_ai>/<path:extra_segments>')

@@ -435,10 +435,100 @@ class APITestCase(unittest.TestCase):
                          f'PUT on non-existent document: expected 404, got {response.status_code}: {response.text}')
         print('  PUT returned 404 Not Found as expected')
 
-        # --- Clean-up: restore the original document so the DELETE section below is unaffected ---
-        # We delete and re-create the document to return it to its original single-link state.
-        print('Step 4: Restoring /8004/095060001343 to its original state')
-        requests.delete(self.api_url + '/8004/095060001343', headers=self.headers)
+        print('---- PUT UPDATE TEST COMPLETE ----\n')
+
+        #### DELETE LINK FROM DOCUMENT (DELETE with body) ####
+        # The DELETE endpoint can also perform a partial delete: if you include a JSON body
+        # with a 'links' list, the API will remove only the links that match by the
+        # (linktype, hreflang, context) uniqueness key. The rest of the document is preserved.
+        #
+        # If you call DELETE without a body (as we did in the initial clean-up at the top of
+        # this test), the entire document is deleted.
+        #
+        # Here we will undo the link we added in the PUT steps above by sending a DELETE
+        # request whose body identifies the gs1:epil link.
+
+        # After Step 2, the document has two links: gs1:pip and gs1:epil (updated).
+        # We will remove the gs1:epil link and verify only gs1:pip remains.
+
+        # --- Step 5: Remove a specific link using DELETE with a body ---
+        print('---- DELETE LINK TEST ----')
+        print('Step 5: Remove the gs1:epil link from /8004/095060001343 via DELETE with body')
+
+        delete_link_payload = {
+            "anchor": "/8004/095060001343",
+            "links": [
+                {
+                    "linktype": "gs1:epil",
+                    "href": "https://dalgiardino.com/medicinal-compound/new-path-to-leaflet",
+                    "title": "Dal Giardino Medicinal Compound 50 x 200mg Capsules - Electronic Patient Information Leaflet (updated)",
+                    "type": "text/html",
+                    "hreflang": ["en"],
+                    "context": ["sales", "marketing"]
+                }
+            ]
+        }
+
+        response = requests.delete(self.api_url + '/8004/095060001343',
+                                   headers=self.headers,
+                                   data=json.dumps(delete_link_payload))
+
+        self.assertEqual(response.status_code, 200,
+                         f'DELETE (remove link): expected 200, got {response.status_code}: {response.text}')
+        print('  DELETE returned 200 OK - link removed')
+
+        # Read back and verify that the gs1:epil link has been removed while gs1:pip remains.
+        response = requests.get(self.api_url + '/8004/095060001343', headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        after_delete = response.json()['data']
+        links_after_delete = after_delete[0]['links']
+
+        self.assertEqual(len(links_after_delete), 1,
+                         f'Expected 1 link after deleting gs1:epil, got {len(links_after_delete)}')
+        self.assertEqual(links_after_delete[0]['linktype'], 'gs1:pip',
+                         'The remaining link should be the original gs1:pip')
+        self.assertEqual(after_delete[0]['itemDescription'], 'Dal Giardino Variable Asset',
+                         'itemDescription should be preserved after partial delete')
+        self.assertEqual(after_delete[0]['defaultLinktype'], 'gs1:pip',
+                         'defaultLinktype should be preserved after partial delete')
+        print('  GET confirms: gs1:epil removed, gs1:pip and all other fields preserved')
+
+        # --- Step 6: DELETE with body on a non-existent link returns 404 ---
+        # If the link we try to remove does not exist in the document, the API returns 404.
+        print('Step 6: Confirm DELETE with body returns 404 when link is not found')
+
+        response = requests.delete(self.api_url + '/8004/095060001343',
+                                   headers=self.headers,
+                                   data=json.dumps({
+                                       "anchor": "/8004/095060001343",
+                                       "links": [
+                                           {
+                                               "linktype": "gs1:nonExistent",
+                                               "hreflang": ["en"],
+                                               "context": ["sales"]
+                                           }
+                                       ]
+                                   }))
+
+        self.assertEqual(response.status_code, 404,
+                         f'DELETE non-existent link: expected 404, got {response.status_code}: {response.text}')
+        print('  DELETE returned 404 as expected - no matching link to remove')
+
+        # --- Step 7: DELETE without a body still deletes the whole document ---
+        # Verify the original whole-document delete behaviour is preserved.
+        print('Step 7: Confirm DELETE without body still removes the entire document')
+
+        response = requests.delete(self.api_url + '/8004/095060001343', headers=self.headers)
+        self.assertEqual(response.status_code, 200,
+                         f'DELETE (whole doc): expected 200, got {response.status_code}: {response.text}')
+
+        response = requests.get(self.api_url + '/8004/095060001343', headers=self.headers)
+        self.assertEqual(response.status_code, 404,
+                         'GET after full DELETE should return 404')
+        print('  Document fully deleted, GET returns 404')
+
+        # --- Restore the document for any subsequent tests ---
+        print('Step 8: Restoring /8004/095060001343 to its original state')
         original_doc = {
             "anchor": "/8004/095060001343",
             "itemDescription": "Dal Giardino Variable Asset",
@@ -458,7 +548,7 @@ class APITestCase(unittest.TestCase):
         self.assertIn(response.status_code, [200, 201], 'Clean-up: failed to restore original document')
         print('  Document restored to original state')
 
-        print('---- PUT UPDATE TEST COMPLETE ----\n')
+        print('---- DELETE LINK TEST COMPLETE ----\n')
 
         #### DELETE ENTRIES ####
         if DELETE_ENTRIES_ON_COMPLETION:
