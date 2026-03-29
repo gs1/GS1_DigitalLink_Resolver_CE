@@ -39,6 +39,32 @@ yet distributed, network of links to information resources.</i>
 5. **Embrace the Pythonic Way with Python 3.10**: The evolution of the Resolver CE is taking a leap forward in code readability with Python. After discussions and feedback from the dev community implementing Resolver 2.x, we've shed the many layers of Node JavaScript source files in favor of Python's elegant simplicity and fewer script files. Resolver CE v3.0 is written in Python 3.10, adopting a 'pythonic' style of coding that is much easier to read and adjust as required. This isn't just a change; it's an upgrade to high-performance processing that is easier to read, comprehend and adjust.
 6. **Introduction of compression for GS1 Digital Link URls**: The Resolver CE v3.0 now supports the compression of GS1 Digital Link URLs. This feature is particularly useful when you have a long URL that you want to compress to a shorter one. The compressed URL can be used in place of the original URL, and the Resolver CE v3.0 will automatically decompress it when resolving the GS1 identifier.
 
+### Updates March 2026
+
+#### API Improvements
+* **PUT route rewritten** – now performs an idempotent merge-update instead of deleting and recreating the document. Existing fields not in the payload are preserved; links are matched by `(linktype, hreflang, context)` and merged or added accordingly. Returns `404` if the document does not exist.
+* **Partial DELETE** – the `DELETE` endpoint now accepts an optional JSON body containing specific links to remove (matched by `linktype`, `hreflang`, and `context`). If no body is provided, the entire document is deleted as before.
+* **Batch POST fix** – the `/new` endpoint no longer deletes existing documents before re-creating them, preventing data loss during batch uploads (resolves [#121](https://github.com/gs1/GS1_DigitalLink_Resolver_CE/issues/121)).
+
+#### Security & Performance
+* **Credential externalisation** – all hard-coded MongoDB credentials and session tokens have been moved to a project-wide `.env` file (with a committed `.env.example` template). Docker Compose references these via `${VAR}` substitution.
+* **Subprocess input validation** – both `data_entry_server` and `web_server` now validate GS1 AI data strings against a safe character pattern before passing them to Node.js subprocesses, with a 10-second timeout to prevent hangs.
+* **Constant-time token comparison** – bearer token authentication now uses `hmac.compare_digest()` to prevent timing side-channel attacks.
+* **Removed information disclosure** – startup database test writes and `server_info()` calls removed from both services.
+* **Header injection prevention** – the web server's `Accept` → `Content-Type` reflection is now restricted to an allowlist of safe MIME types.
+* **Logging migration** – all `print()` / `traceback` calls replaced with structured `logging` throughout both services.
+* **Code quality** – removed unused imports, fixed duplicate class names, corrected decorator references, and fixed typos in function names.
+
+#### Infrastructure
+* **Docker base images updated** – both services now use Python 3.12-slim-bookworm and Node.js 24.
+* **Dependency refresh** – `requirements.txt` updated for both services with current package versions.
+
+#### Developer Experience
+* **PEP 484 type annotations** – all Python functions across both `data_entry_server` (38 functions, 8 files) and `web_server` (53 functions, 6 files) now have full parameter and return type hints using Python 3.12 native syntax.
+* **Expanded test suite** – `tests/setup_test.py` now includes a full PUT update walkthrough (add link, update link, 404 test) and a partial DELETE walkthrough with commentary to help new users learn the API by example.
+* **Copilot instructions** – added `.github/copilot-instructions.md` to provide AI assistants with project context.
+
+
 ### 📚 Simplified Architecture
 The new architecture is based on a microservices approach. In this solution the data entry service with its API can be separated from the Front-end resolving web service.
 The main components, each architected as separate container images, are:
