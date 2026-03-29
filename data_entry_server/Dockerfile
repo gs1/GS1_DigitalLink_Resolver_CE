@@ -17,7 +17,7 @@ WORKDIR /app
 
 # Add requirements.txt before rest of repo for caching
 ADD src/requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --isolated --no-cache-dir --index-url https://pypi.org/simple -r requirements.txt
 
 # Add the current directory contents into the container at /app
 ADD src /app/
