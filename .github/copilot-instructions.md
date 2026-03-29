@@ -18,7 +18,7 @@ cd tests && python -m unittest setup_test.APITestCase.test_put_update_document -
 ```
 
 The API is available at `http://localhost:8080`. Swagger docs live at `http://localhost:8080/api/docs`.  
-Tests use `Authorization: Bearer secret` (the default `SESSION_TOKEN`).
+Tests use `Authorization: Bearer <SESSION_TOKEN>` (the token value from `.env`; defaults to `secret` in `.env.example`).
 
 ## Architecture
 
@@ -71,7 +71,7 @@ Legacy v2 payloads (detected by the presence of `identificationKeyType`) are aut
 
 ### Authentication
 
-Data entry endpoints require `Authorization: Bearer <SESSION_TOKEN>`. The token is set via the `SESSION_TOKEN` env var (default `secret`). The web resolver is public.
+Data entry endpoints require `Authorization: Bearer <SESSION_TOKEN>`. The token is set via the `SESSION_TOKEN` env var (configured in `.env`; see `.env.example`). The web resolver is public.
 
 ### Response format
 

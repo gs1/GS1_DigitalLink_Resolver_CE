@@ -1,18 +1,17 @@
 import json
 import logging
 import os
+from urllib.parse import urlencode
 
 from flask import request, abort, Response, send_from_directory, jsonify, make_response
-from flask_restx import Namespace, Resource, Api
+from flask_restx import Namespace, Resource
 
 import web_logic
 
 web_namespace = Namespace('', description='Resolver web operations')
-static_folder_path = os.path.join(os.getcwd(), 'public')
+static_folder_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public')
 
 logger = logging.getLogger(__name__)
-
-api = Api()
 
 
 @web_namespace.route('/favicon.ico')
@@ -68,7 +67,7 @@ class Heartbeat(Resource):
 
 @web_namespace.route('/<non_gs1dl_request>')
 class DocOperationsNonGS1DigitalLinkRequest(Resource):
-    @api.doc(description="Process non GS1 Digital Link requests (which can include compressed GS1 DLs)")
+    @web_namespace.doc(description="Process non GS1 Digital Link requests (which can include compressed GS1 DLs)")
     def get(self, non_gs1dl_request):
         response = self._handle_request(non_gs1dl_request)
         return response
@@ -94,11 +93,10 @@ class DocOperationsNonGS1DigitalLinkRequest(Resource):
         return response
 
     def _handle_request(self, non_gs1dl_request):
-        # Existing processing logic as outlined previously
         try:
-            print('NON GS1DL REQUEST: ', non_gs1dl_request)
+            logger.info('Non-GS1DL request received')
             decompress_result = web_logic.uncompress_gs1_digital_link(non_gs1dl_request)
-            print('DEBUG ==> decompress_result: ', decompress_result)
+            logger.debug('Decompress result: %s', decompress_result)
             if decompress_result['SUCCESS']:
                 # Process decompressed result
                 anchor_ai_code = list(decompress_result['identifiers'][0].keys())[0]
@@ -112,13 +110,13 @@ class DocOperationsNonGS1DigitalLinkRequest(Resource):
                 return jsonify({'error': decompress_result['error']}), 400
 
         except Exception as e:
-            logger.warning('Error getting document ' + str(e))
+            logger.warning('Error getting document: %s', e)
             abort(500, description="Error getting document")
 
 
 @web_namespace.route('/<anchor_ai_code>/<anchor_ai>')
 class DocOperationsIdentifiersOnly(Resource):
-    @api.doc(description="Get a document from the incoming URL (GS1 identifiers only)")
+    @web_namespace.doc(description="Get a document from the incoming URL (GS1 identifiers only)")
     def get(self, anchor_ai_code, anchor_ai):
         try:
             # Ensure that a Resolver Description File is returned
@@ -128,7 +126,7 @@ class DocOperationsIdentifiersOnly(Resource):
             anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
             identifiers = f'/{anchor_ai_code}/{anchor_ai}'
             doc_id = f'{anchor_ai_code}_{anchor_ai}'
-            print('GS1 identifiers only: ', identifiers)
+            logger.debug('GS1 identifiers only: %s', identifiers)
 
             # Extract all query strings into a URL-compatible string
             query_strings = _extract_query_strings(request)
@@ -137,7 +135,7 @@ class DocOperationsIdentifiersOnly(Resource):
             return _process_response(doc_id, identifiers, compress=compress, query_strings=query_strings)
 
         except Exception as e:
-            logger.warning('Error getting document ' + str(e))
+            logger.warning('Error getting document: %s', e)
             abort(500, description="Error getting document")
 
     def head(self, anchor_ai_code, anchor_ai):
@@ -166,9 +164,7 @@ class DocOperationsIdentifiersOnly(Resource):
 class DocOperationsResource(Resource):
     def get(self, anchor_ai_code, anchor_ai, extra_segments=None):
         try:
-            # Process the extra segments
-            # This will include everything after the anchor_ai, such as 'foo', qualifiers, etc.
-            print("Extra segments:", extra_segments)
+            logger.debug("Extra segments: %s", extra_segments)
 
             anchor_ai = _confirm_gtin_14(anchor_ai, anchor_ai_code)
             identifiers = f'/{anchor_ai_code}/{anchor_ai}'
@@ -179,7 +175,7 @@ class DocOperationsResource(Resource):
             else:
                 qualifier_path = ''
 
-            print('Processed identifiers and qualifiers:', identifiers + qualifier_path)
+            logger.debug('Processed identifiers and qualifiers: %s', identifiers + qualifier_path)
 
             # Extract all query strings into a URL-compatible string
             query_strings = _extract_query_strings(request)
@@ -188,7 +184,7 @@ class DocOperationsResource(Resource):
             return _process_response(doc_id, identifiers, qualifier_path=qualifier_path, compress=compress, query_strings=query_strings)
 
         except Exception as e:
-            logger.warning('Error getting document: ' + str(e))
+            logger.warning('Error getting document: %s', e)
             abort(500, description="Error getting document")
 
     def head(self, anchor_ai_code, anchor_ai, extra_segments=None):
@@ -247,14 +243,16 @@ def _confirm_gtin_14(anchor_ai, anchor_ai_code):
     return anchor_ai
 
 
-def _extract_query_strings(request):
-    # Extract all query strings into a URL-compatible string
-    query_strings = ''
-    for key, value in request.args.items():
-        query_strings += f"{key}={value}&"
-    # Remove the trailing '&' character
-    query_strings = query_strings[:-1]
-    return query_strings
+def _extract_query_strings(req):
+    """Extract all query parameters into a URL-encoded string."""
+    return urlencode(list(req.args.items(multi=True)))
+
+
+# Allowed Content-Type values that may be reflected from the Accept header
+_ALLOWED_CONTENT_TYPES = frozenset([
+    'application/json',
+    'application/linkset+json',
+])
 
 
 def _process_response(doc_id, identifiers, qualifier_path=None, compress=None, query_strings=''):
@@ -266,7 +264,7 @@ def _process_response(doc_id, identifiers, qualifier_path=None, compress=None, q
         uncompressed_link = identifiers
         if qualifier_path:
             uncompressed_link += qualifier_path
-        print(f'Compressing link {uncompressed_link}...')
+        logger.debug('Compressing link %s', uncompressed_link)
         response_data = web_logic.get_compressed_link(uncompressed_link)
         return response_data, 200
 
@@ -308,7 +306,6 @@ def _process_response(doc_id, identifiers, qualifier_path=None, compress=None, q
         )
 
 
-
     # add the link header, ensuring will survive over an HTTP 1.0 or 1.1 which allows latin-1 characters only.
     if link_header is not None:
         try:
@@ -316,12 +313,14 @@ def _process_response(doc_id, identifiers, qualifier_path=None, compress=None, q
         except UnicodeEncodeError:
             response.headers['Link'] = link_header.encode('unicode_escape').decode('ascii')
 
-    # if the accept header is application/json or application/linkset+json, return the response header
-    # 'Content-Type with the SAME value as the request 'Accept' header,
-    print('Accept header:', request.headers['Accept'])
-    if 'application/json' in request.headers['Accept'] or 'application/linkset+json' in request.headers['Accept']:
-        response.headers['Content-Type'] = request.headers['Accept']
-        return response
+    # If the Accept header contains a known JSON content type, reflect it as the Content-Type.
+    # Only allow known safe values to prevent header injection.
+    accept_header = request.headers.get('Accept', '')
+    logger.debug('Accept header: %s', accept_header)
+    for allowed_type in _ALLOWED_CONTENT_TYPES:
+        if allowed_type in accept_header:
+            response.headers['Content-Type'] = allowed_type
+            return response
 
 
     # If response_data['status'] is 307, we need to return a redirect response

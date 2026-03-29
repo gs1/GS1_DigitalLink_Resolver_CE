@@ -1,12 +1,24 @@
 import json
+import logging
 import os
+import re
 import subprocess
-import sys
-import traceback
-import warnings
 
 
 import web_db
+
+logger = logging.getLogger(__name__)
+
+# Pattern for validating GS1 Digital Link path segments (AI codes + values).
+# Allows alphanumeric characters, hyphens, dots, underscores, percent-encoded bytes, and parentheses.
+_SAFE_GS1_PATTERN = re.compile(r'^[A-Za-z0-9\-._~%()/:+]+$')
+
+
+def _validate_gs1_input(value):
+    """Reject values containing shell-special or unexpected characters before passing to subprocess."""
+    if not _SAFE_GS1_PATTERN.match(value):
+        raise ValueError(f"Invalid characters in GS1 input: {value!r}")
+    return value
 
 
 def _call_gs1_toolkit(ai_data_string):
@@ -15,6 +27,7 @@ def _call_gs1_toolkit(ai_data_string):
     :param ai_data_string:
     :return:
     """
+    _validate_gs1_input(ai_data_string)
     node_path = "/usr/bin/node"
     toolkit_path = "/app/gs1-digitallink-toolkit/callGS1encoder.js"
 
@@ -25,7 +38,7 @@ def _call_gs1_toolkit(ai_data_string):
     stdout, stderr = process.communicate()
 
     if process.returncode != 0:
-        print(f"_call_gs1_toolkit Error: {stderr.decode('utf-8')}")
+        logger.warning("_call_gs1_toolkit error: %s", stderr.decode('utf-8'))
         return False
 
     return True
@@ -38,6 +51,7 @@ def uncompress_gs1_digital_link(compressed_link):
     :param compressed_link: The compressed link to check
     :return: The uncompressed GS1 Digital Link if the AI data string is compressed, otherwise a failure message.
     """
+    _validate_gs1_input(compressed_link)
     node_path = "/usr/bin/node"
     toolkit_path = "/app/gs1-digitallink-toolkit/callGS1toolkit.js"
     process = subprocess.Popen([node_path, toolkit_path, compressed_link, 'uncompress'],
@@ -47,26 +61,10 @@ def uncompress_gs1_digital_link(compressed_link):
     stdout, stderr = process.communicate()
 
     if process.returncode != 0:
-        # process.exit(1) was called by the Node application, so we transfer the error back here
-        print(f"uncompress_gs1_digital_link Error: {stderr.decode('utf-8')}")
+        logger.warning("uncompress_gs1_digital_link error: %s", stderr.decode('utf-8'))
         return {'result': False, 'error': stderr.decode('utf-8')}
 
-    # Success!
-    # The uncompressed GS1 Digital Link is returned in the stdout as a set of identifiers, qualifier,
-    # dataAttributes and 'other':,
-    # For example, compressed link: http://example.org/AQnO2IRCICDKWcnpqQs6QiOu2_A?expirydate=20240724
-    # (which uncompressed, would be: https://id.gs1ie.org/01/05392000229648/10/LOT01/21/SER1234?expirydate=20240724 )
-    # would return:
-    # {
-    #   "identifiers": [{"01": "05392000229648"}],
-    #   "qualifiers": [{"10": "LOT01"}, {"21": "SER1234"}],
-    #   "dataAttributes": [],
-    #   "other": [{"expirydate": "20240724"}],
-    # }
-    #
-    # The code in callGS1toolkit.js" adds a 'SUCCESS' key to the above JSON object with true if the decompression was
-    # successful and false if it was not. We will check for this key and return the result.
-    print('DEBUG => stdout:', stdout)
+    logger.debug('Decompression stdout: %s', stdout)
     return json.loads(stdout)
 
 
@@ -74,9 +72,10 @@ def compress_gs1_digital_link(uncompressed_link):
     """
     This function compresses a GS1 Digital Link URL.
     The only library that does this id the GS1 Digital Link Toolkit GS1DigitalLinkToolkit.js
-    :param uncompressed_link: The compressed link to check
-    :return: The compressed GS1 Digital Link URL if the AI data string is compressed, otherwise a failure message.
+    :param uncompressed_link: The uncompressed link to compress
+    :return: The compressed GS1 Digital Link URL if successful, otherwise a failure message.
     """
+    _validate_gs1_input(uncompressed_link)
     node_path = "/usr/bin/node"
     toolkit_path = "/app/gs1-digitallink-toolkit/callGS1toolkit.js"
 
@@ -87,7 +86,7 @@ def compress_gs1_digital_link(uncompressed_link):
     stdout, stderr = process.communicate()
 
     if process.returncode != 0:
-        print(f"uncompress_gs1_digital_link Error: {stderr.decode('utf-8')}")
+        logger.warning("compress_gs1_digital_link error: %s", stderr.decode('utf-8'))
         return {'result': False, 'error': stderr.decode('utf-8')}
 
     return json.loads(stdout)
@@ -113,19 +112,19 @@ def _test_gs1_digital_link_syntax(url):
         return _call_gs1_toolkit(ai_data_string)
 
     except IndexError as e:
-        print("Error: URL is missing expected segments:", e)
+        logger.warning("URL is missing expected segments: %s", e)
         return False
     except KeyError as e:
-        print("KeyError occurred in _call_gs1_toolkit:", e)
+        logger.warning("KeyError in _call_gs1_toolkit: %s", e)
         return False
     except Exception as e:
-        print("An unexpected error occurred:", e)
+        logger.warning("Unexpected error in _test_gs1_digital_link_syntax: %s", e)
         return False
 
 
 def _match_all_three_contexts(linktype_doc_list, accept_language_list, context, media_types_list):
     wanted_doc_list = []
-    print('DEBUG Can we match on all three contexts?:', accept_language_list, context, media_types_list)
+    logger.debug('Matching all three contexts: %s, %s, %s', accept_language_list, context, media_types_list)
     for value in accept_language_list:  # iterate accept_language_list first
         for linktype_doc in linktype_doc_list:
             if 'hreflang' in linktype_doc and 'context' in linktype_doc and 'type' in linktype_doc and \
@@ -133,7 +132,7 @@ def _match_all_three_contexts(linktype_doc_list, accept_language_list, context, 
                     linktype_doc['type'] in media_types_list and \
                     value in linktype_doc['hreflang']:
                 # found a match, append it
-                print('DEBUG Found a match on all three contexts', value)
+                logger.debug('Matched all three contexts: %s', value)
                 wanted_doc_list.append(linktype_doc)
                 break
         else:
@@ -146,13 +145,13 @@ def _match_all_three_contexts(linktype_doc_list, accept_language_list, context, 
 
 def _match_accept_language_and_context(linktype_doc_list, accept_language_list, context):
     wanted_doc_list = []
-    print('DEBUG Can we match on accept_language_list and context?:', accept_language_list, context)
+    logger.debug('Matching accept_language and context: %s, %s', accept_language_list, context)
     for value in accept_language_list:  # iterate accept_language_list first
         for linktype_doc in linktype_doc_list:
             if 'hreflang' in linktype_doc and 'context' in linktype_doc and \
                     context in linktype_doc['context'] and \
                     value in linktype_doc['hreflang']:
-                print('DEBUG Found a match on accept_language_list and context', value)
+                logger.debug('Matched accept_language and context: %s', value)
                 wanted_doc_list.append(linktype_doc)
                 break
         else:
@@ -165,13 +164,13 @@ def _match_accept_language_and_context(linktype_doc_list, accept_language_list, 
 
 def _match_accept_language_and_media_types(linktype_doc_list, accept_language_list, media_types_list):
     wanted_doc_list = []
-    print('DEBUG Can we match on accept_language_list and media_types_list?:', accept_language_list, media_types_list)
+    logger.debug('Matching accept_language and media_types: %s, %s', accept_language_list, media_types_list)
     for value in accept_language_list:  # iterate accept_language_list first
         for linktype_doc in linktype_doc_list:
             if 'hreflang' in linktype_doc and 'type' in linktype_doc and \
                     linktype_doc['type'] in media_types_list and \
                     value in linktype_doc['hreflang']:
-                print('DEBUG Found a match on accept_language_list and media_types_list', value)
+                logger.debug('Matched accept_language and media_types: %s', value)
                 wanted_doc_list.append(linktype_doc)
                 break
         else:
@@ -184,13 +183,13 @@ def _match_accept_language_and_media_types(linktype_doc_list, accept_language_li
 
 def _match_context_and_media_types(linktype_doc_list, context, media_types_list):
     wanted_doc_list = []
-    print('DEBUG Can we match on context and media_types_list?:', context, media_types_list)
+    logger.debug('Matching context and media_types: %s, %s', context, media_types_list)
     for linktype_doc in linktype_doc_list:
         if 'context' in linktype_doc and \
                 'type' in linktype_doc and \
                 context in linktype_doc['context'] and \
                 (linktype_doc['type'] in media_types_list or 'und' in linktype_doc['type']):
-            print('DEBUG Found a match on context and media_types_list')
+            logger.debug('Matched context and media_types')
             wanted_doc_list.append(linktype_doc)
 
     # If list is not empty, return it. Otherwise, return None
@@ -214,11 +213,11 @@ def _match_accept_language(linktype_doc_list, accept_language_list):
 
 def _match_context(linktype_doc_list, context):
     wanted_doc_list = []
-    print('DEBUG Can we match on context?:', context)
+    logger.debug('Matching context: %s', context)
     for linktype_doc in linktype_doc_list:
         if 'context' in linktype_doc and \
                 context in linktype_doc['context']:
-            print('DEBUG Found a match on context')
+            logger.debug('Matched context')
             wanted_doc_list.append(linktype_doc)
 
     # If list is not empty, return it. Otherwise, return None
@@ -227,11 +226,11 @@ def _match_context(linktype_doc_list, context):
 
 def _match_media_type(linktype_doc_list, media_types_list):
     wanted_doc_list = []
-    print('DEBUG Can we match on media_types_list?:', media_types_list)
+    logger.debug('Matching media_types: %s', media_types_list)
     for linktype_doc in linktype_doc_list:
         if 'type' in linktype_doc and \
                 (linktype_doc['type'] in media_types_list or 'und' in linktype_doc['type']):
-            print('DEBUG Found a match on media_types_list')
+            logger.debug('Matched media_type')
             wanted_doc_list.append(linktype_doc)
 
     # If list is not empty, return it. Otherwise, return None
@@ -242,7 +241,7 @@ def _match_und_hreflang(linktype_doc_list):
     wanted_doc_list = []
     for linktype_doc in linktype_doc_list:
         if 'hreflang' in linktype_doc and 'und' in linktype_doc['hreflang']:
-            print('DEBUG Found a "und" match in linktype_doc[hreflang]')
+            logger.debug('Found und match in hreflang')
             wanted_doc_list.append(linktype_doc)
     if wanted_doc_list:
         return wanted_doc_list
@@ -252,7 +251,7 @@ def _match_und_media_type(linktype_doc_list):
     wanted_doc_list = []
     for linktype_doc in linktype_doc_list:
         if 'type' in linktype_doc and 'und' in linktype_doc['type']:
-            print('DEBUG Found a "und" match in linktype_doc[type]')
+            logger.debug('Found und match in type')
             wanted_doc_list.append(linktype_doc)
     if wanted_doc_list:
         return wanted_doc_list
@@ -262,8 +261,7 @@ def _get_appropriate_linktype_docs_list(linktype_doc_list, accept_language_list,
     """
     This function returns the most appropriate linktype document from a list of linktype documents.
     It does this by checking if the linktype document matches the accept_language_list, context, and media_types_list.
-    NOTE: I have included 'DEBUG' statements in all the called functions so you csn see the decisions being made
-    when deciding which link to choose.
+    Matching is logged at DEBUG level for diagnostic visibility.
     :param linktype_doc_list:
     :param accept_language_list:
     :param context:
@@ -289,7 +287,7 @@ def _get_appropriate_linktype_docs_list(linktype_doc_list, accept_language_list,
     elif match := _match_und_media_type(linktype_doc_list):
         return match
     # We are out of reasonable options, return the first linktype_doc in the list:
-    print('DEBUG Returning the first linktype_doc in the list')
+    logger.debug('No match found, returning first linktype_doc')
     return linktype_doc_list
 
 
@@ -363,13 +361,13 @@ def _do_qualifiers_match(qualifier_path, doc_qualifiers):
         return True, template_variable_list
 
     except KeyError as e:
-        print(f"_do_qualifiers_match - KeyError occurred. Details: {str(e)}")
+        logger.warning('_do_qualifiers_match KeyError: %s', e)
         return False, [f"KeyError occurred. Details: {str(e)}"]
     except TypeError as e:
-        print(f"_do_qualifiers_match - TypeError occurred. Details: {str(e)}")
+        logger.warning('_do_qualifiers_match TypeError: %s', e)
         return False, [f"TypeError occurred. Expected list or dictionary-like object. Details: {str(e)}"]
     except Exception as e:
-        print(f"_do_qualifiers_match - Exception occurred. Details: {str(e)}")
+        logger.warning('_do_qualifiers_match error: %s', e)
         return False, [f"Unexpected error occurred. Details: {str(e)}"]
 
 
@@ -388,111 +386,63 @@ def _author_link_header_with_pointer_to_linkset(linkset):
 
 
 
-def _author_compact_links_for_link_header(linkset):
-    """
-    Convert GS1 linkset to a compact link format for use with the Link header.
-
-    Args:
-        linkset (list): The input JSON data - one entry.
-
-    Returns:
-        str: The compact link format.
-    """
-    warnings.warn(
-        "_author_compact_links_for_link_header is deprecated and will be removed in a future release. Use the _author_link_header_with_pointer_to_linkset(linkset) instead.",
-        DeprecationWarning,
-        stacklevel=2
-    )
-
-    links = []
-    same_as_link = None
-
-    # Extract owl:sameAs link
-    anchor = 'https://' + os.getenv('FQDN', 'set-domain-name-in-env-variable-FQDN.com') + linkset[0].get("anchor")
-    if anchor:
-        same_as_link = f"<{anchor}>; rel=\"owl:sameAs\""
-
-    # As linkset is always a single list entry, let's just make it syntactically easier to code!
-    linkset = linkset[0]
-
-    # Iterate over the linkset
-    for entry in linkset:
-        # Iterate over the links
-        if isinstance(linkset[entry], list):
-            # Handle special cases
-            link_type = "gs1:" + entry.rsplit('/', 1)[-1]
-
-            # Extract link information
-            for link in linkset[entry]:
-                href = link.get("href")
-                title = link.get("title", "")
-                type_ = link.get("type", "")
-                hreflang = ", ".join(link.get("hreflang", []))
-
-                # Create the compact link format
-                link_str = f"<{href}>;rel=\"{link_type}\""
-                if type_:
-                    link_str += f";type=\"{type_}\""
-                if hreflang:
-                    link_str += f";hreflang=\"{hreflang}\""
-                if title:
-                    link_str += f";title=\"{title}\""
-
-                links.append(link_str)
-
-    # Add owl:sameAs link to the end of the list, if present
-    if same_as_link:
-        links.append(same_as_link)
-
-    return ",".join(links)
-
 def _process_serialised_identifier(identifier):
     """
-    Processes the serialised component of the identifier and returns the wanted_db_document. It works by
-    removing more and more of the serialised component until either:
-        1) a match is found AND the linkset documents has {0} or {1} template variables present, OR
-        2) The identifier, including '/<ai-code>/', is reduced to 12 characters.
+    Processes the serialised component of the identifier using binary search to find
+    the longest prefix that matches a database document with template variables.
 
-    If a match is found, it will return the wanted_db_document with the serialised component processed.
-    If no match is found, it will return None.
+    Uses binary search over the identifier length to minimise DB calls (O(log n) instead of O(n)).
+    After finding the boundary between found/not-found, it scans downward from the longest
+    match to find one with template variables {0} or {1}.
 
     :param identifier: The identifier portion of the digital link .e.g. '/8004/0950600013430000001'
     :return: The wanted_db_document with the serialised component processed, or None if no match found.
     """
-    for i in range(len(identifier) - 1, 11, -1):
-        wanted_db_document = web_db.read_document(identifier[:i])
-        if wanted_db_document['response_status'] == 200:
-            # Partial matches MUST have a template variable in the href property. If not, we reject the match.
-            # We have found a partial match, but we need to check for the presence of
-            # special template variable:
-            #    {0} in the href property (which means we redirect using the full identifier)
-            #    {1} which means we redirect using the partial identifier.
-            #  We can either traverse the linkset object or we can just convert the entire object to a string
-            #  and search for the template variable. We will do the latter unless we find it slower!
-            wanted_json = json.dumps(wanted_db_document['data'])
+    min_len = 12
+    max_len = len(identifier) - 1
 
-            if '{0}' not in wanted_json and '{1}' not in wanted_json:
-                # No template variables found in the linkset - this is not a partial match because we cannot
-                # substitute the template variable part of the href redirect with a template variable.
-                continue
+    if max_len <= min_len:
+        return None
 
-            # we need to extract the value part of the identifier after the second '/'
-            ai_value = identifier[:i].split('/')[2]
-            # remove the partial match from the full incoming identifier to get the remainder of the value.
-            # For example if ai_value (matched with the DB entry because it responded with '200') is
-            # '095060001343' and the incoming identifier is '/8004/095060001343999999'
-            # then ai_partial_value is '999999'.
-            ai_partial_value = identifier.split('/')[2].replace(ai_value, '')
+    # Binary search: find the longest prefix that exists in the DB
+    longest_found = -1
+    lo, hi = min_len + 1, max_len
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        result = web_db.read_document(identifier[:mid])
+        if result['response_status'] == 200:
+            longest_found = mid
+            lo = mid + 1  # try longer
+        else:
+            hi = mid - 1  # try shorter
 
-            # Now we need to replace the template variables {0} and {1} with the actual values
-            while '{0}' in wanted_json:
-                wanted_json = wanted_json.replace('{0}', ai_value)
-            while '{1}' in wanted_json:
-                wanted_json = wanted_json.replace('{1}', ai_partial_value)
+    if longest_found == -1:
+        return None
 
-            # convert the json string back to a dictionary
-            wanted_db_document['data'] = json.loads(wanted_json)
-            return wanted_db_document
+    # From the longest found match, scan downward looking for template variables
+    for i in range(longest_found, min_len, -1):
+        if i == longest_found:
+            wanted_db_document = web_db.read_document(identifier[:i])
+        else:
+            wanted_db_document = web_db.read_document(identifier[:i])
+        if wanted_db_document['response_status'] != 200:
+            continue
+
+        wanted_json = json.dumps(wanted_db_document['data'])
+
+        if '{0}' not in wanted_json and '{1}' not in wanted_json:
+            continue
+
+        # Extract the matched value and the remainder
+        ai_value = identifier[:i].split('/')[2]
+        ai_partial_value = identifier.split('/')[2].replace(ai_value, '')
+
+        # Replace template variables with actual values
+        wanted_json = wanted_json.replace('{0}', ai_value)
+        wanted_json = wanted_json.replace('{1}', ai_partial_value)
+
+        wanted_db_document['data'] = json.loads(wanted_json)
+        return wanted_db_document
 
     return None
 
@@ -517,11 +467,11 @@ def _validate_and_fetch_document(identifier, qualifier_path, doc_id):
 
         # If the link syntax is invalid, return an error dictionary along with a `None` wanted_db_document.
         if not dl_test_result:
-            print('Invalid GS1 Digital Link Syntax')
+            logger.debug('Invalid GS1 Digital Link Syntax')
             return {"response_status": 400, "error": f"Invalid GS1 Digital Link syntax: {digital_link}"}
 
         # If the link syntax is valid, attempt to fetch the corresponding document from the database.
-        print('identifier:', identifier)
+        logger.debug('identifier: %s', identifier)
         wanted_db_document = web_db.read_document(doc_id)
 
         if wanted_db_document['response_status'] == 200:
@@ -547,17 +497,17 @@ def _validate_and_fetch_document(identifier, qualifier_path, doc_id):
         return {"response_status": 404, "error": f"No document found for anchor: {doc_id}"}
 
     except ValueError as e:
-        print(f"_validate_and_fetch_document - ValueError occurred. Details: {str(e)}")
+        logger.warning('_validate_and_fetch_document ValueError: %s', e)
         return {"response_status": 400,
                 "error": f"ValueError occurred. Possibly invalid identifiers or qualifier_path. Details: {str(e)}"}
 
     except TypeError as e:
-        print(f"_validate_and_fetch_document - TypeError occurred. Details: {str(e)}")
+        logger.warning('_validate_and_fetch_document TypeError: %s', e)
         return {"response_status": 400,
                 "error": f"TypeError occurred. Expected string-like object. Details: {str(e)}"}
 
     except Exception as e:
-        print(f"_validate_and_fetch_document - Unexpected error occurred. Details: {str(e)}")
+        logger.error('_validate_and_fetch_document error: %s', e)
         return {"response_status": 500, "error": f"Unexpected error occurred. Details: {str(e)}"}
 
 
@@ -584,16 +534,16 @@ def _replace_linkset_template_variables(linkset, template_variables_list):
         return {"response_status": 400, "error": f"KeyError occurred - {str(e)}"}
 
     except TypeError as e:
-        print(f"replace_linkset_template_variables - TypeError occurred. Details: {str(e)}")
+        logger.warning('replace_linkset_template_variables TypeError: %s', e)
         return {"response_status": 400,
                 "error": f"TypeError occurred. Expected list or dictionary-like object - {str(e)}"}
 
     except json.JSONDecodeError as e:
-        print(f"replace_linkset_template_variables - JSONDecodeError occurred. Details: {str(e)}")
+        logger.warning('replace_linkset_template_variables JSONDecodeError: %s', e)
         return {"response_status": 400, "error": f"JSONDecodeError occurred. Invalid JSON format - {str(e)}"}
 
     except Exception as e:
-        print(f"replace_linkset_template_variables - Unexpected error occurred. Details: {str(e)}")
+        logger.error('replace_linkset_template_variables error: %s', e)
         return {"response_status": 500, "error": f"Unexpected error - {str(e)}"}
 
 
@@ -627,44 +577,41 @@ def _handle_link_type(linktype, default_linktype, linkset, accept_language_list,
             "response_status": response_status, "data": data}
 
     except KeyError as e:
-        print(f"handle_link_type - Linktype not found in linkset. Details: {str(e)}")
+        logger.debug('handle_link_type - Linktype not found: %s', e)
         return {"response_status": 404, "error": f"Linktype not found in linkset. Details: {str(e)}"}
 
     except TypeError as e:
-        print(f"handle_link_type - TypeError occurred. Details: {str(e)}")
+        logger.warning('handle_link_type TypeError: %s', e)
         return {"response_status": 400,
                 "error": f"TypeError occurred. Expected list or dictionary-like object. Details: {str(e)}"}
 
     except Exception as e:
-        print(f"handle_link_type - Unexpected error occurred. Details: {str(e)}")
+        logger.error('handle_link_type error: %s', e)
         return {"response_status": 500, "error": f"Unexpected error occurred. Details: {str(e)}"}
 
 
 def get_compressed_link(uncompressed_link):
     try:
         compressed_link = compress_gs1_digital_link(uncompressed_link)
-        if compressed_link['SUCCESS']:
+        if compressed_link.get('SUCCESS'):
             return {'response_status': 200, 'COMPRESSED_LINK': compressed_link['COMPRESSED']}
+        return {'response_status': 400,
+                'error': 'Compression failed. Check GS1 Digital Link syntax is correct before compressing'}
 
     except Exception as e:
-        print(f"get_compressed_link - Unexpected error occurred. Details: {str(e)}")
+        logger.warning('get_compressed_link error: %s', e)
         return {'response_status': 400,
-                'error': f"Unexpected error occurred. Check GS1 Digital Link syntax is correct before compressing"}
+                'error': 'Unexpected error occurred. Check GS1 Digital Link syntax is correct before compressing'}
 
 
 def _clean_q_values_from_header_entries(header_values_list):
     """
-    This function cleans the accept_language_list by removing any additional information including and after
-    the ';' symbol often sent by web browsers, usually the 'q=' value - e.g.: 'en-US;q=0.8', 'application/xml;q=0.9'
-    which is not needed for the comparison and would stop accurate matching.
+    Returns a new list with quality-value parameters stripped (e.g., ';q=0.8').
+    Does not mutate the input list.
     :param header_values_list:
-    :return header_values_list:
+    :return: cleaned list
     """
-    for i in range(len(header_values_list)):
-        if ';' in header_values_list[i]:
-            header_values_list[i] = header_values_list[i].split(';')[0]
-
-    return header_values_list
+    return [entry.split(';')[0] for entry in header_values_list]
 
 
 def format_linkset_for_external_use(response_data, identifiers):
@@ -746,8 +693,9 @@ def format_linkset_for_external_use(response_data, identifiers):
 
     # Internally, default_link does not have to be an array for ease of processing, but for external use, it must be
     # an array (list). Standards conformant!
-    if type(response_linkset['linkset'][0]['https://gs1.org/voc/defaultLink']) is not list:
-        response_linkset['linkset'][0]['https://gs1.org/voc/defaultLink'] = [response_linkset['linkset'][0]['https://gs1.org/voc/defaultLink']]
+    default_link = response_linkset['linkset'][0].get('https://gs1.org/voc/defaultLink')
+    if default_link is not None and not isinstance(default_link, list):
+        response_linkset['linkset'][0]['https://gs1.org/voc/defaultLink'] = [default_link]
 
 
     return response_linkset
@@ -790,7 +738,7 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
             if qualifier_path is None or qualifier_path == '/':
                 for entry in database_doc['data']:
                     if len(entry['qualifiers']) == 0:
-                        print('read_document: No qualifiers found in the document')
+                        logger.debug('read_document: No qualifiers found in the document')
                         return _handle_link_type(linktype,
                                                  database_doc['defaultLinktype'],
                                                  entry['linkset'],
@@ -857,11 +805,6 @@ def read_document(gs1dl_identifier, doc_id, qualifier_path='/', linktype=None, a
 
     except Exception as e:
         # Log the exception and return a server error response.
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        traceback_details = traceback.format_exception(exc_type, exc_value, exc_traceback)
-
-        print('read_document: Internal Server Error - ', str(e) + '\n')
-        for line in traceback_details:
-            print(line)
+        logger.error('read_document: Internal Server Error', exc_info=True)
 
         return {"response_status": 500, "error": "Internal Server Error: " + str(e)}
