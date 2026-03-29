@@ -1,23 +1,42 @@
+import logging
+import re
 import subprocess
 import data_entry_db
-import traceback
+
+logger = logging.getLogger(__name__)
+
+# Pattern for validating GS1 AI data strings before passing to subprocess
+_GS1_AI_DATA_PATTERN = re.compile(r'^[\w()./:%-]+$')
 
 
 def _call_gs1_toolkit(ai_data_string):
+    if not _GS1_AI_DATA_PATTERN.match(ai_data_string):
+        logger.warning("_call_gs1_toolkit: rejected unsafe input: %s", ai_data_string)
+        return False
+
     node_path = "/usr/bin/node"
     toolkit_path = "/app/gs1-digitallink-toolkit/callGS1encoder.js"
 
-    process = subprocess.Popen([node_path, toolkit_path, ai_data_string],
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
+    try:
+        process = subprocess.Popen([node_path, toolkit_path, ai_data_string],
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
 
-    stdout, stderr = process.communicate()
+        stdout, stderr = process.communicate(timeout=10)
 
-    if process.returncode != 0:
-        print(f"_call_gs1_toolkit Error: {stderr.decode('utf-8')}")
+        if process.returncode != 0:
+            logger.warning("_call_gs1_toolkit error: %s", stderr.decode('utf-8'))
+            return False
+
+        return True
+
+    except subprocess.TimeoutExpired:
+        process.kill()
+        logger.error("_call_gs1_toolkit: subprocess timed out for input: %s", ai_data_string)
         return False
-
-    return True
+    except Exception as e:
+        logger.error("_call_gs1_toolkit: unexpected error: %s", e)
+        return False
 
 
 def _test_gs1_digital_link_syntax(url):
@@ -26,20 +45,25 @@ def _test_gs1_digital_link_syntax(url):
     # For example /01/09521234543213/10/LOT/21/SERIAL becomes
     # (01)09521234543213(10)LOT(21)SERIAL
     # We then call the toolkit and return the true/false result.
-    url_parts = url.split('/')
-    # add the identifier
-    ai_data_string = f"({url_parts[1]}){url_parts[2]}"
+    try:
+        url_parts = url.split('/')
+        # add the identifier
+        ai_data_string = f"({url_parts[1]}){url_parts[2]}"
 
-    # add the qualifiers (up to three - CPV, LOT and SERIAL for GTINs, or GLNX for GLNs)
-    if len(url_parts) > 3:
-        for i in range(3, len(url_parts), 2):
-            ai_data_string += f"({url_parts[i]}){url_parts[i + 1]}"
+        # add the qualifiers (up to three - CPV, LOT and SERIAL for GTINs, or GLNX for GLNs)
+        if len(url_parts) > 3:
+            for i in range(3, len(url_parts), 2):
+                ai_data_string += f"({url_parts[i]}){url_parts[i + 1]}"
 
-    # call the toolkit
-    return _call_gs1_toolkit(ai_data_string)
+        # call the toolkit
+        return _call_gs1_toolkit(ai_data_string)
+
+    except (IndexError, TypeError) as e:
+        logger.warning("_test_gs1_digital_link_syntax: malformed URL %s: %s", url, e)
+        return False
 
 
-def _validata_data(data):
+def _validate_data(data):
     # TODO - Implement data validation using latest GS1 Digital Link Toolkit
     return data
 
@@ -58,7 +82,7 @@ def _convert_v2_to_v3(data_entry_v2_doc):
     else:
         del rec_v3['qualifiers']
 
-    print('There are {} responses to process'.format(len(data_entry_v2_doc['responses'])))
+    logger.info('There are %d responses to process', len(data_entry_v2_doc['responses']))
     for response in data_entry_v2_doc['responses']:
         link = {
             'linktype': response['linkType'],
@@ -158,13 +182,13 @@ def _convert_mongo_linkset_to_v3(mongo_linkset_format):
 
 
     except KeyError as key_error:
-        print(f'Missing key during conversion: {key_error}')
+        logger.error('Missing key during conversion: %s', key_error)
         return None
     except ValueError as value_error:
-        print(f'Type error occured: {value_error}')
+        logger.error('Type error occurred: %s', value_error)
         return None
     except Exception as e:
-        print(f'An unexpected error occurred during conversion: {e}')
+        logger.error('Unexpected error during conversion: %s', e)
         return None
 
 
@@ -172,10 +196,10 @@ def _author_db_linkset_document(data_entry_format):
     try:
         # First we must check if this a v2 or v3 document, and convert it to v3 if it's v2
         if 'identificationKeyType' in data_entry_format:
-            print('Converting v2 to v3')
+            logger.info('Converting v2 to v3')
             data_entry_format = _convert_v2_to_v3(data_entry_format)
         elif 'anchor' in data_entry_format:
-            print('Document is already in v3 format')
+            logger.debug('Document is already in v3 format')
         else:
             return {"response_status": 400, "error": "Invalid data format: " + str(data_entry_format)}
 
@@ -250,13 +274,11 @@ def _author_db_linkset_document(data_entry_format):
         return {"response_status": 200, "data": database_doc}
 
     except KeyError as key_error:
-        print(f'Missing key during conversion: {key_error}')
+        logger.error('Missing key during conversion: %s', key_error)
         return {"response_status": 400, "error": f'Missing key during conversion: {key_error}'}
 
     except Exception as e:
-        # If there's any exception during processing, return a server error response
-        print('_author_linkset_document: Error processing document: ', str(e))
-        print(traceback.format_exc())  # This will print the full traceback
+        logger.error('_author_linkset_document: Error processing document: %s', e, exc_info=True)
         return {"response_status": 500, "error": "Internal Server Error - " + str(e)}
 
 
@@ -286,7 +308,7 @@ def _process_document_upsert(authored_doc):
 
         # Document already exists with the id
         if read_result["response_status"] == 200:
-            print('Document already exists in database: ', authored_doc['_id'])
+            logger.info('Document already exists in database: %s', authored_doc['_id'])
 
             # Get the document from the read_result
             existing_db_document = read_result["data"]
@@ -318,7 +340,7 @@ def _process_document_upsert(authored_doc):
 
         # Document doesn't exist, so we create it
         elif read_result["response_status"] == 404:
-            print('Document does not exist: ', authored_doc['_id'])
+            logger.info('Document does not exist: %s', authored_doc['_id'])
 
             # Perform the document creation in the database
             create_result = data_entry_db.create_document(authored_doc)
@@ -331,9 +353,7 @@ def _process_document_upsert(authored_doc):
             return read_result, read_result["response_status"]
 
     except Exception as e:
-        # If there's any exception during processing, return a server error response
-        print('_process_document_insert: Error processing document: ', str(e))
-        print(traceback.format_exc())  # This will print the full traceback
+        logger.error('_process_document_insert: Error processing document: %s', e, exc_info=True)
         return {"response_status": 500, "error": "Internal Server Error - " + str(e)}, 500
 
 
@@ -365,14 +385,13 @@ def _author_db_linkset_list(data_list):
         return {"response_status": 200, "data": transformed_data_list}
 
     except Exception as e:
-        # If there's any exception during processing, return a server error response
-        print('_author_mongo_linkset_list: Error processing document: ', str(e))
+        logger.error('_author_mongo_linkset_list: Error processing document: %s', e)
         return {"response_status": 500, "error": "Internal Server Error - " + str(e)}
 
 def convert_path_to_document_id(path: str):
     if path.count('/') < 2:
-        print("Error: path fomrant error")
-        raise ValueError("Error: path fomrant error")
+        logger.warning("Error: path format error for: %s", path)
+        raise ValueError("Error: path format error")
 
     parts = path.strip().split('/')
     parts = [p for p in parts if p != '']
@@ -384,7 +403,7 @@ def create_document(data):
     try:
         # If 'data' is a list
         if isinstance(data, list):
-            print(f'Processing list of {len(data)} items: ')
+            logger.info('Processing list of %d items', len(data))
             create_results_list = []  # Initialize a list to store results
 
             authored_db_linkset_result = _author_db_linkset_list(data)
@@ -397,15 +416,15 @@ def create_document(data):
 
                 # Iterate over each item in the data list
                 for item in authored_db_linkset_docs:
-                    print('Processing item: ', item['_id'])
-                    validated_doc = _validata_data(item)
+                    logger.info('Processing item: %s', item['_id'])
+                    validated_doc = _validate_data(item)
 
                     # Use upsert: if the document exists its linksets are merged;
                     # if it does not exist a new document is created.  This is the
                     # same behaviour as the single-item (dict) path and avoids the
                     # data-loss / race-condition issues of DELETE + CREATE.
                     create_result, status = _process_document_upsert(validated_doc)
-                    print('Result: ', create_result, 'Status: ', status)
+                    logger.info('Result: %s Status: %s', create_result, status)
 
                     # Append the result to the results list
                     create_results_list.append(create_result)
@@ -416,7 +435,7 @@ def create_document(data):
             # If 'data' is a dictionary (i.e., a single entry and not a list)
         elif isinstance(data, dict):
             authored_linkset_doc = _author_db_linkset_document(data)
-            validated_doc = _validata_data(authored_linkset_doc)
+            validated_doc = _validate_data(authored_linkset_doc)
 
             # Process the single 'data' entry for insertion using the helper function and get the result and status
             create_result, status = _process_document_upsert(validated_doc['data'])
@@ -553,8 +572,7 @@ def update_document(document_id, data):
             return update_result, update_result['response_status']
 
     except Exception as e:
-        print(f'update_document: Error: {str(e)}')
-        print(traceback.format_exc())
+        logger.error('update_document: Error: %s', e, exc_info=True)
         return {"response_status": 500, "error": f"Internal Server Error - {str(e)}"}, 500
 
 
@@ -621,8 +639,7 @@ def delete_links(document_id, data):
             return update_result, update_result['response_status']
 
     except Exception as e:
-        print(f'delete_links: Error: {str(e)}')
-        print(traceback.format_exc())
+        logger.error('delete_links: Error: %s', e, exc_info=True)
         return {"response_status": 500, "error": f"Internal Server Error - {str(e)}"}, 500
 
 
