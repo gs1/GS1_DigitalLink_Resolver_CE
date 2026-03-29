@@ -1,48 +1,36 @@
 import time
+import logging
+from typing import Any
 
 from flask_restx import Api
 from flask import Flask, url_for
 from flask import Blueprint
-from flask_cors import CORS  # new
-import logging
+from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 from data_entry_namespace import data_entry_namespace
 from mongo_db_init import mongo, init_mongo
 
+logger = logging.getLogger(__name__)
 
-def create_app(test_config=None):
+
+def create_app(test_config: dict[str, Any] | None = None) -> Flask:
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True, static_folder='public')
     CORS(app)  # enable CORS
 
-    mongo_url = os.getenv('MONGO_URI', "mongodb://gs1resolver:gs1resolver@database-server:27017")
-    logging.info(f"Connecting to MongoDB at {mongo_url}")
-    print("Connecting to MongoDB at", mongo_url)
+    mongo_url = os.getenv('MONGO_URI')
+    if not mongo_url:
+        raise RuntimeError("MONGO_URI environment variable is not set")
+    # Log the host only — do not log credentials
+    mongo_host = mongo_url.split('@')[-1] if '@' in mongo_url else mongo_url
+    logger.info("Connecting to MongoDB at %s", mongo_host)
     app.config["MONGO_URI"] = mongo_url
     app.config["MONGO_DBNAME"] = "resolver_ce"
 
     # initialise the MongoDB connection
     init_mongo(app)
-    resolver_db = mongo.cx['resolver_ce']
-    print('database set up: ', resolver_db)
-    resolver_coll = resolver_db['gs1resolver']
-    print('create_app() - collection set up: ', resolver_coll)
-
-    # prints server host and port
-    print(f"Server info: {mongo.cx.server_info()}")
-    # Print out the database used in MongoClient
-    print("Database is:", mongo.cx.database)
-
-    # now test write a document to Mongo
-    resolver_coll.insert_one({"data_entry_test": "data_entry_test"})
-    print("Document inserted")
-    # now test read the document from Mongo
-    print(resolver_coll.find_one({"data_entry_test": "data_entry_test"}))
-    print("Document read")
-    # now test delete the document from Mongo
-    resolver_coll.delete_one({"data_entry_test": "data_entry_test"})
-    print("Document deleted")
+    logger.info("MongoDB connection initialised")
 
 
     with app.app_context():

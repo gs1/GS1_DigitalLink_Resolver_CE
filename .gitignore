@@ -4,3 +4,7 @@
 resolver_data_entry_server/node_modules/
 resolver_web_server/node_modules/
 build_sync_server/node_modules/
+
+# Environment variables — contains secrets; never commit
+.env
+__pycache__/

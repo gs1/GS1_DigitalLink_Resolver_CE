@@ -3,9 +3,8 @@ services:
     build: './database_server'
     container_name: database-server
     restart: always
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=gs1resolver
-      - MONGO_INITDB_ROOT_PASSWORD=gs1resolver
+    env_file:
+      - .env.example
     ports:
       - "27017:27017"
     volumes:
@@ -16,9 +15,8 @@ services:
   data-entry-service:
     build: './data_entry_server'
     container_name: data-entry-server
-    environment:
-      - SESSION_TOKEN=secret
-      - MONGO_URI=mongodb://gs1resolver:gs1resolver@database-service:27017
+    env_file:
+      - .env.example
     depends_on:
       - database-service
     restart: always
@@ -28,6 +26,8 @@ services:
   web-service:
     build: './web_server'
     container_name: resolver-web-server
+    environment:
+      - MONGO_URI=${MONGO_URI}
     depends_on:
       - database-service
     restart: always

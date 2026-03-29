@@ -1,4 +1,4 @@
-FROM python:3.10-bullseye
+FROM python:3.12-slim-bookworm
 LABEL authors="nick"
 
 # The environment variable ensures that the python output is set straight
@@ -6,7 +6,7 @@ LABEL authors="nick"
 ENV PYTHONUNBUFFERED 1
 
 # Install Node for GS1 Digital Link Toolikit
-RUN apt-get update && apt-get install -y curl && curl -sL https://deb.nodesource.com/setup_18.x | bash -
+RUN apt-get update && apt-get install -y curl && curl -sL https://deb.nodesource.com/setup_24.x | bash -
 RUN apt-get install -y nodejs nano
 ADD src/gs1-digitallink-toolkit /app/gs1-digitallink-toolkit
 WORKDIR /app/gs1-digitallink-toolkit
@@ -17,7 +17,7 @@ WORKDIR /app
 
 # Add requirements.txt before rest of repo for caching
 ADD src/requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --isolated --no-cache-dir --index-url https://pypi.org/simple -r requirements.txt
 
 # Add the current directory contents into the container at /app
 ADD src /app/

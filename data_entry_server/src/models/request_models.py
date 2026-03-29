@@ -1,6 +1,7 @@
-from flask_restx import fields
+from flask_restx import Namespace, Model, fields
 
-def register_request_models(namespace):
+
+def register_request_models(namespace: Namespace) -> tuple[Model, Model]:
   new_document_link_model = namespace.model('NewDocumentLink', {
       'linktype': fields.String(
           required=True,
