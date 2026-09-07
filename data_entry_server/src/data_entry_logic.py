@@ -332,8 +332,18 @@ def _process_document_upsert(authored_doc: dict[str, Any]) -> tuple[dict[str, An
                 found = False
                 for existing_db_entry in existing_db_document['data']:
                     if _do_qualifiers_match(existing_db_entry['qualifiers'], entry['qualifiers']):
-                        # If the qualifiers match, update the linkset
-                        existing_db_entry['linkset'].extend(entry['linkset'])
+                        # If the qualifiers match, merge the linkset by (linktype, hreflang,
+                        # context) — the same uniqueness key update_document (PUT) already
+                        # uses via _find_matching_link. A blind .extend() here (the previous
+                        # behavior) duplicated every link on each repeat POST /new for the
+                        # same anchor, since re-submitting identical data always "matched"
+                        # on qualifiers and then appended anyway.
+                        for new_link in entry['linkset']:
+                            idx = _find_matching_link(existing_db_entry['linkset'], new_link)
+                            if idx is not None:
+                                existing_db_entry['linkset'][idx].update(new_link)
+                            else:
+                                existing_db_entry['linkset'].append(new_link)
                         found = True
                         break
 
