@@ -781,7 +781,11 @@ def read_document(gs1dl_identifier: str, doc_id: str, qualifier_path: str | None
 
             if not response_links_list:
                 # If execution arrives here, a necessary linkset was not found, return a 404 Not Found.
-                return {"response_status": 404, "error": f"No linkset found for linktype: {linktype}"}
+                # Must be a 2-tuple like every other return in this function — callers do
+                # `response_data, link_header = read_document(...)`, and a bare dict here
+                # gets unpacked into its own keys (iterating a dict yields keys), which
+                # corrupts response_data into a string and crashes the caller's next line.
+                return {"response_status": 404, "error": f"No linkset found for linktype: {linktype}"}, None
 
             # If a single valid response is prepared, return it.
             if len(response_links_list) == 1 and response_links_list[0]['response_status'] == 307:
@@ -808,4 +812,5 @@ def read_document(gs1dl_identifier: str, doc_id: str, qualifier_path: str | None
         # Log the exception and return a server error response.
         logger.error('read_document: Internal Server Error', exc_info=True)
 
-        return {"response_status": 500, "error": "Internal Server Error: " + str(e)}
+        # Same 2-tuple contract as every other return path — see the comment above.
+        return {"response_status": 500, "error": "Internal Server Error: " + str(e)}, None
