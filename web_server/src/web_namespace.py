@@ -328,8 +328,13 @@ def _process_response(doc_id: str, identifiers: str, qualifier_path: str | None 
     if response_data['response_status'] == 307:
         response.headers['Location'] = response_data['data']['href']
         # if we have any query_strings then we need to append them to response.headers['Location']:
+        # use '&' when the href already has its own query string, otherwise the blind
+        # '?' concat below produces a second '?' that corrupts everything after it for
+        # any standard URL parser (the target service would silently misread every
+        # param after the first '?' as part of the previous param's value).
         if query_strings:
-            response.headers['Location'] += '?' + query_strings
+            separator = '&' if '?' in response.headers['Location'] else '?'
+            response.headers['Location'] += separator + query_strings
 
         return response
 
