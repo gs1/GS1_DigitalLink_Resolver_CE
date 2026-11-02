@@ -85,6 +85,14 @@ We can certainly foresee both these containers running as Azure Container Functi
 **What about MongoDB?**
 You could use a Mongo-cloud based solution such as MongoDB Atlas or Cosmos DB with Mongo APi connector. You then supply the connection string as an environment variable to data entry and web containers.
 
+**Can I use PostgreSQL instead of MongoDB?**
+Yes. The database backend is selected with the `DB_BACKEND` environment variable of the data entry and web containers: `mongo` (the default) or `postgres`. With `postgres`, set `DATABASE_URL` (e.g. `postgresql://user:password@host:5432/resolver_ce`) instead of `MONGO_URI`. The documents are stored as JSON in a single table, `gs1resolver (id TEXT PRIMARY KEY, doc JSON NOT NULL)`, which is created automatically when the services start.
+To run the whole composition with a PostgreSQL container instead of MongoDB:
+```bash
+docker compose -f docker-compose.postgres.yml up -d --build
+```
+To move existing documents from MongoDB to PostgreSQL, use `useful_external_python_scripts/migrate_mongo_to_postgres.py`.
+
 **What about the Proxy server?**
 This container is just there to route incoming requests to data-entry and resolving (web) containers via a single endpoint through Docker or Kubernetes. Most of you have your own "front-door" routing services to your network applications, so you would just use that with appropriate rules.
 
@@ -141,6 +149,12 @@ The database is stored in a Docker volume within the composition. To back up the
 ... and to restore the database from a backup archive file on your host computer, you can use the following command:
 ```bash
 docker compose exec -T database-service mongorestore --host localhost:27017 --username gs1resolver --password gs1resolver --archive=- --gzip < mongobackup.tar.gz
+```
+
+To back up the PostgreSQL database of `docker-compose.postgres.yml`, and to restore it:
+```bash
+docker compose -f docker-compose.postgres.yml exec -T database-service pg_dump -U gs1resolver -d resolver_ce --clean --if-exists > postgresbackup.sql
+docker compose -f docker-compose.postgres.yml exec -T database-service psql -U gs1resolver -d resolver_ce < postgresbackup.sql
 ```
 
 ## Looking for version Resolver CE v2.6?

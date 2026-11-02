@@ -32,6 +32,7 @@ Four Docker containers on an internal network (`resolver-internal-network`):
 | `database-service` | 27017 | MongoDB 7.0 (`resolver_ce` database, `gs1resolver` collection) |
 
 The data entry server is the only writer; the web server is read-only. Both connect to MongoDB via the `MONGO_URI` environment variable.
+Set `DB_BACKEND=postgres` and `DATABASE_URL` to use PostgreSQL instead (see `docker-compose.postgres.yml`); the backend is selected in `data_entry_db.py` / `web_db.py`, which delegate to `*_db_mongo.py` or `*_db_postgres.py`.
 
 ## Data Model
 

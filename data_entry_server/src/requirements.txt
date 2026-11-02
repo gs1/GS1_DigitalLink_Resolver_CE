@@ -6,3 +6,5 @@ python-dotenv==1.2.2
 bcrypt==5.0.0
 flask-pymongo==3.0.1
 pymongo==4.16.0
+psycopg[binary]==3.3.6
+psycopg-pool==3.3.3
