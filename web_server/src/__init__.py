@@ -6,7 +6,7 @@ import logging
 import os
 from typing import Any
 from web_namespace import web_namespace
-from mongo_db_init import mongo, init_mongo
+from db_init import init_db
 
 logger = logging.getLogger(__name__)
 
@@ -25,18 +25,8 @@ def create_app(test_config: dict[str, Any] | None = None) -> Flask:
     server_description = f"The web server is running at https://{os.getenv('FQDN', 'set-domain-name-in-env-variable-FQDN.com')}"
     logger.info(server_description)
 
-    mongo_url = os.getenv('MONGO_URI')
-    if not mongo_url:
-        raise RuntimeError("MONGO_URI environment variable is not set")
-    # Log the host only — do not log credentials
-    mongo_host = mongo_url.split('@')[-1] if '@' in mongo_url else mongo_url
-    logger.info("Connecting to MongoDB at %s", mongo_host)
-    app.config["MONGO_URI"] = mongo_url
-    app.config["MONGO_DBNAME"] = "resolver_ce"
-
-    # initialise the MongoDB connection
-    init_mongo(app)
-    logger.info("MongoDB connection initialised")
+    # initialise the database connection (MongoDB or PostgreSQL, selected by the DB_BACKEND environment variable)
+    init_db(app)
 
     with app.app_context():
         # setting up a blueprint for your API routes

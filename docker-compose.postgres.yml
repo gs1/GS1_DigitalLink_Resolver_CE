@@ -1,0 +1,67 @@
+# Alternative to docker-compose.yml that stores the resolver documents in PostgreSQL instead of MongoDB.
+#   docker compose -f docker-compose.postgres.yml up -d --build
+# The database settings (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, DATABASE_URL) are read from .env.example.
+services:
+  database-service:
+    image: postgres:17-bookworm
+    container_name: database-server
+    restart: always
+    env_file:
+      - .env.example
+    volumes:
+      - resolver-postgres-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - resolver-internal-network
+
+  data-entry-service:
+    build: './data_entry_server'
+    container_name: data-entry-server
+    env_file:
+      - .env.example
+    environment:
+      - DB_BACKEND=postgres
+    depends_on:
+      database-service:
+        condition: service_healthy
+    restart: always
+    networks:
+      - resolver-internal-network
+
+  web-service:
+    build: './web_server'
+    container_name: resolver-web-server
+    env_file:
+      - .env.example
+    environment:
+      - DB_BACKEND=postgres
+    depends_on:
+      database-service:
+        condition: service_healthy
+    restart: always
+    networks:
+      - resolver-internal-network
+
+  frontend-proxy-service:
+    build: './frontend_proxy_server'
+    container_name: frontend-proxy-server
+    depends_on:
+      - web-service
+      - data-entry-service
+    restart: always
+    ports:
+      - "8080:80"
+    networks:
+      - resolver-internal-network
+
+
+volumes:
+  resolver-postgres-volume: {}
+
+networks:
+  resolver-internal-network:
+    name: resolver-internal-network

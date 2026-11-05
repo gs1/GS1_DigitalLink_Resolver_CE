@@ -15,6 +15,13 @@ cd tests && python -m unittest setup_test.py
 # Run a single test method
 cd tests && python -m unittest setup_test.APITestCase.test_data_entry_CRUD_cycle -v
 cd tests && python -m unittest setup_test.APITestCase.test_put_update_document -v
+
+# Run the unit tests of a service (no containers needed; set TEST_DATABASE_URL to also run the live PostgreSQL tests)
+cd data_entry_server && PYTHONPATH=src python -m unittest discover -s tests
+cd web_server && PYTHONPATH=src python -m unittest discover -s tests
+
+# Start the stack with PostgreSQL instead of MongoDB (setup_test.py works the same way)
+docker compose -f docker-compose.postgres.yml up -d --build
 ```
 
 The API is available at `http://localhost:8080`. Swagger docs live at `http://localhost:8080/api/docs`.  
@@ -32,6 +39,7 @@ Four Docker containers on an internal network (`resolver-internal-network`):
 | `database-service` | 27017 | MongoDB 7.0 (`resolver_ce` database, `gs1resolver` collection) |
 
 The data entry server is the only writer; the web server is read-only. Both connect to MongoDB via the `MONGO_URI` environment variable.
+Set `DB_BACKEND=postgres` and `DATABASE_URL` to use PostgreSQL instead (see `docker-compose.postgres.yml`); the backend is selected in `data_entry_db.py` / `web_db.py`, which delegate to `*_db_mongo.py` or `*_db_postgres.py`.
 
 ## Data Model
 

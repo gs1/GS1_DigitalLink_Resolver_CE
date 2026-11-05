@@ -25,7 +25,7 @@ class APITestCase(unittest.TestCase):
         print('Running Create / Read / Update / Delete cycle test on data entry')
         # Welcome to this test script. Its aim is to test the CRUD cycle of a data entry in the Resolver database.
         # It will also walk you through the features and behaviours of the Resolver API and its frontend server.
-        # if you want to keep the data entries in Mongo DB at the wnd of the test, set this flag to False:
+        # if you want to keep the data entries in the database at the end of the test, set this flag to False:
         DELETE_ENTRIES_ON_COMPLETION = False
         print('Flag DELETE_ENTRIES_ON_COMPLETION is set to:', DELETE_ENTRIES_ON_COMPLETION, 'so data entries will {}be kept in the database'.format('not ' if DELETE_ENTRIES_ON_COMPLETION else ''))
 

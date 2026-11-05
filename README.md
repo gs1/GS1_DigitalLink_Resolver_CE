@@ -39,6 +39,11 @@ yet distributed, network of links to information resources.</i>
 5. **Embrace the Pythonic Way with Python 3.10**: The evolution of the Resolver CE is taking a leap forward in code readability with Python. After discussions and feedback from the dev community implementing Resolver 2.x, we've shed the many layers of Node JavaScript source files in favor of Python's elegant simplicity and fewer script files. Resolver CE v3.0 is written in Python 3.10, adopting a 'pythonic' style of coding that is much easier to read and adjust as required. This isn't just a change; it's an upgrade to high-performance processing that is easier to read, comprehend and adjust.
 6. **Introduction of compression for GS1 Digital Link URls**: The Resolver CE v3.0 now supports the compression of GS1 Digital Link URLs. This feature is particularly useful when you have a long URL that you want to compress to a shorter one. The compressed URL can be used in place of the original URL, and the Resolver CE v3.0 will automatically decompress it when resolving the GS1 identifier.
 
+### Updates November 2026
+
+* **PostgreSQL support** – the data entry and web services can now store the resolver documents in PostgreSQL instead of MongoDB. MongoDB remains the default, so existing deployments are not affected. See [Database backends](#-database-backends).
+* **Unit tests** – the database layer of both services now has unit tests that need no running containers (see [Running the tests](#-running-the-tests)), run by a GitHub Actions workflow.
+
 ### Updates March 2026
 
 #### API Improvements
@@ -85,6 +90,9 @@ We can certainly foresee both these containers running as Azure Container Functi
 **What about MongoDB?**
 You could use a Mongo-cloud based solution such as MongoDB Atlas or Cosmos DB with Mongo APi connector. You then supply the connection string as an environment variable to data entry and web containers.
 
+**Can I use PostgreSQL instead of MongoDB?**
+Yes: set `DB_BACKEND=postgres` on the data entry and web containers. See [Database backends](#-database-backends).
+
 **What about the Proxy server?**
 This container is just there to route incoming requests to data-entry and resolving (web) containers via a single endpoint through Docker or Kubernetes. Most of you have your own "front-door" routing services to your network applications, so you would just use that with appropriate rules.
 
@@ -93,7 +101,7 @@ This container is just there to route incoming requests to data-entry and resolv
 ### What has been simplified compared to previous versions?
 
 #### Two containers are dropped:
-1. No relational database so the v1.x/v2.x SQL Server is dropped
+1. No mandatory relational database so the v1.x/v2.x SQL Server is dropped (PostgreSQL is an optional, much simpler, document store - see [Database backends](#-database-backends))
 2. No separate GS1 Digital Toolkit service - now integrated into data entry and web services
 #### No more 'accounts'
 1. Originally resolver v1/v2 of needed to be self-standing with independent logins. No more!
@@ -112,6 +120,56 @@ Importantly this will run whether you are using x64 (Intel / AMD) or ARM based h
 The service will then be available at http://localhost:8080
 
 The API is available with Open API (Swagger) documentation at http://localhost:8080
+
+### 🗄️ Database backends
+Resolver CE stores its documents in MongoDB by default. PostgreSQL is available as an alternative. The backend is chosen with environment variables that are read by the data entry and web containers:
+
+| Variable | Backend | Default | Description |
+|---|---|---|---|
+| `DB_BACKEND` | both | `mongo` | `mongo` or `postgres` |
+| `MONGO_URI` | mongo | – | MongoDB connection string, e.g. `mongodb://user:password@database-service:27017` |
+| `DATABASE_URL` | postgres | – | PostgreSQL connection string, e.g. `postgresql://user:password@database-service:5432/resolver_ce` |
+| `DB_POOL_MAX_SIZE` | postgres | `10` | Maximum number of connections in each service's pool |
+| `DB_CONNECT_TIMEOUT` | postgres | `60` | Seconds to wait for the database at startup, which gives the database container time to start |
+
+To run the whole composition with a PostgreSQL container instead of MongoDB (the settings of the `database-service` container are `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` in `.env.example`):
+```bash
+docker compose -f docker-compose.postgres.yml up -d --build
+```
+To use an existing PostgreSQL server (or a managed one such as Amazon RDS, Azure Database for PostgreSQL or Neon), set `DB_BACKEND=postgres` and `DATABASE_URL` on the two containers and drop the `database-service` container.
+
+The documents are stored as JSON in a single table that the services create at startup if it does not exist:
+```sql
+CREATE TABLE IF NOT EXISTS gs1resolver (id TEXT PRIMARY KEY, doc JSON NOT NULL)
+```
+The `JSON` type is used rather than `JSONB` because `JSONB` does not preserve the order of the keys of an object, and the order of the links of a document is part of the API's output.
+
+To move documents from MongoDB to PostgreSQL, run `useful_external_python_scripts/migrate_mongo_to_postgres.py` (it needs `pip install pymongo "psycopg[binary]"`). It can be run again safely: existing rows are overwritten.
+```bash
+python useful_external_python_scripts/migrate_mongo_to_postgres.py \
+    --mongo-uri mongodb://gs1resolver:gs1resolver@localhost:27017 \
+    --postgres-url postgresql://gs1resolver:gs1resolver@localhost:5432/resolver_ce
+```
+The database code is in `data_entry_db.py` and `web_db.py`, which delegate to `*_db_mongo.py` or `*_db_postgres.py`. To support another database, add a module with the same functions and select it in these two files.
+
+### 🧪 Running the tests
+**Unit tests** need no running container. They cover the database layer of each service (`data_entry_server/tests` and `web_server/tests`): the MongoDB and PostgreSQL backends with a mocked connection, and the selection of the backend. Install the dependencies of the service, then run from the service directory:
+```bash
+cd data_entry_server
+pip install -r src/requirements.txt
+PYTHONPATH=src python -m unittest discover -s tests
+```
+(and the same in `web_server`). Some tests also run the PostgreSQL backend against a real database. They are skipped unless `TEST_DATABASE_URL` is set; use a throwaway database, for example:
+```bash
+docker run -d --rm --name resolver-test-db -p 55432:5432 -e POSTGRES_PASSWORD=pw -e POSTGRES_DB=resolver_ce postgres:17
+TEST_DATABASE_URL=postgresql://postgres:pw@localhost:55432/resolver_ce PYTHONPATH=src python -m unittest discover -s tests
+```
+**Integration tests** (`tests/setup_test.py`) call the API of the running composition, whichever database it uses. Start the composition (`docker compose up -d --build`, or `docker compose -f docker-compose.postgres.yml up -d --build`), then:
+```bash
+cd tests
+pip install requests
+python -m unittest setup_test
+```
 
 ### Postman documentation for the API can be found at: https://documenter.getpostman.com/view/10078469/2sA3JKeNb2
 
@@ -141,6 +199,12 @@ The database is stored in a Docker volume within the composition. To back up the
 ... and to restore the database from a backup archive file on your host computer, you can use the following command:
 ```bash
 docker compose exec -T database-service mongorestore --host localhost:27017 --username gs1resolver --password gs1resolver --archive=- --gzip < mongobackup.tar.gz
+```
+
+To back up the PostgreSQL database of `docker-compose.postgres.yml`, and to restore it:
+```bash
+docker compose -f docker-compose.postgres.yml exec -T database-service pg_dump -U gs1resolver -d resolver_ce --clean --if-exists > postgresbackup.sql
+docker compose -f docker-compose.postgres.yml exec -T database-service psql -U gs1resolver -d resolver_ce < postgresbackup.sql
 ```
 
 ## Looking for version Resolver CE v2.6?
